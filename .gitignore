@@ -1,2 +1,8 @@
+.build/
 .check/
+.containerignore
+.dockerignore
+output/
+*.bak*
+*.log
 .rollup-cache.json
