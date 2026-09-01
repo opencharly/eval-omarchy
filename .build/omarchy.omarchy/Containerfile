@@ -1,0 +1,178 @@
+# .build/omarchy.omarchy/Containerfile (generated -- do not edit)
+
+ARG BASE_IMAGE=ghcr.io/opencharly/arch:check-omarchy-suite-pod-pr9332-2026.244.2026
+
+FROM scratch AS omarchy-repo
+COPY .build/_candy/omarchy-repo.2026.242.0000/ /
+
+FROM scratch AS omarchy-runtime
+COPY .build/_candy/omarchy-runtime.2026.242.0000/ /
+
+FROM scratch AS omarchy-skel
+COPY .build/_candy/omarchy-skel.2026.242.0000/ /
+
+FROM scratch AS omarchy-base
+COPY .build/_candy/omarchy-base.2026.242.0000/ /
+
+FROM ${BASE_IMAGE}
+
+USER root
+
+# Layer: github.com/opencharly/layer-omarchy-base/candy/omarchy-repo
+ARG TARGETARCH
+ENV ARCH=${TARGETARCH}
+ENV OMARCHY_CHANNEL="stable"
+RUN --mount=type=bind,from=omarchy-repo,source=/,target=/ctx --mount=type=cache,id=charly-var-cache-pacman-pkg,dst=/var/cache/pacman/pkg,sharing=locked sh -c 'SH=/bin/sh; [ -x /bin/bash ] && SH=/bin/bash; exec "$SH"' sh <<'OVCMD'
+BUILD_ARCH=$(uname -m)
+case "$BUILD_ARCH" in
+  x86_64) ARCH=amd64 ;;
+  aarch64) ARCH=arm64 ;;
+  armv7l|armv7|armhf) ARCH=arm ;;
+  *) ARCH=$BUILD_ARCH ;;
+esac
+export BUILD_ARCH ARCH
+set -e
+set -eu
+# Capture before overwriting. `|| true` because a base image with no
+# NoExtract rules at all is legitimate — the [omarchy] rules below are
+# then the only ones, which is correct rather than an error.
+inherited=$(grep -E '^NoExtract' /etc/pacman.conf || true)
+case "${OMARCHY_CHANNEL}" in
+  stable) mirror=stable-mirror.omarchy.org ;;
+  edge)   mirror=mirror.omarchy.org ;;
+  rc)     mirror=rc-mirror.omarchy.org ;;
+  *) echo "unknown OMARCHY_CHANNEL=${OMARCHY_CHANNEL} (stable|edge|rc)" >&2; exit 1 ;;
+esac
+cat > /etc/pacman.conf <<PACMANCONF
+[options]
+# Upstream's own [options] (default/pacman/pacman-stable.conf) with two
+# deliberate omissions:
+#
+#  - Color/ILoveCandy/VerbosePkgLists are cosmetic and only add escape
+#    codes to a build log.
+#  - DownloadUser = alpm is DROPPED, and this is not a style choice.
+#    It makes pacman drop privileges to the alpm user for downloads,
+#    but charly mounts /var/cache/pacman/pkg as a root-owned build
+#    cache, which alpm cannot write to. Measured: the whole transaction
+#    dies with "failed to synchronize all databases (failed to retrieve
+#    some files)". Upstream can use it because a real install writes to
+#    a normal directory; a cache-mounted build cannot.
+#
+# HoldPkg is kept — a cheap safety net against removing pacman or glibc.
+HoldPkg = pacman glibc
+Architecture = auto
+CheckSpace
+ParallelDownloads = 5
+SigLevel = Required DatabaseOptional
+LocalFileSigLevel = Optional
+
+NoExtract = usr/share/libalpm/hooks/80-limine-efi-deploy.hook
+NoExtract = usr/share/libalpm/hooks/10-limine-snapper-lock.hook
+NoExtract = usr/share/libalpm/hooks/60-limine-mkinitcpio-remove-pre.hook
+NoExtract = usr/share/libalpm/hooks/90-limine-mkinitcpio-remove-post.hook
+NoExtract = etc/pacman.d/hooks/90-mkinitcpio-install.hook
+${inherited}
+
+[core]
+Server = https://${mirror}/\$repo/os/\$arch
+
+[extra]
+Server = https://${mirror}/\$repo/os/\$arch
+
+[multilib]
+Server = https://${mirror}/\$repo/os/\$arch
+
+[omarchy]
+SigLevel = Optional TrustAll
+Server = https://pkgs.omarchy.org/${OMARCHY_CHANNEL}/\$arch
+PACMANCONF
+OVCMD
+RUN --mount=type=bind,from=omarchy-repo,source=/,target=/ctx --mount=type=cache,id=charly-var-cache-pacman-pkg,dst=/var/cache/pacman/pkg,sharing=locked sh -c 'SH=/bin/sh; [ -x /bin/bash ] && SH=/bin/bash; exec "$SH"' sh <<'OVCMD'
+BUILD_ARCH=$(uname -m)
+case "$BUILD_ARCH" in
+  x86_64) ARCH=amd64 ;;
+  aarch64) ARCH=arm64 ;;
+  armv7l|armv7|armhf) ARCH=arm ;;
+  *) ARCH=$BUILD_ARCH ;;
+esac
+export BUILD_ARCH ARCH
+set -e
+set -eu
+pacman-key --init
+pacman-key --populate archlinux
+pacman-key --recv-keys 40DFB630FF42BCFFB047046CF0134EE680CAC571
+pacman-key --lsign-key 40DFB630FF42BCFFB047046CF0134EE680CAC571
+# -Syy, NOT -Sy. The base image ships a sync DB already populated from
+# UPSTREAM Arch, and Omarchy's mirror is a SNAPSHOT — its databases are
+# deliberately older. `pacman -Sy` compares freshness and keeps the
+# newer local DB, so the repoint above would silently have no effect:
+# pacman would resolve upstream Arch versions and then 404 fetching them
+# from the snapshot, which serves only its own. Observed exactly that:
+# the DB offered qt6-base 6.11.2-3 (upstream) while the mirror serves
+# 6.11.2-2. A forced refresh is the documented way to switch mirrors.
+pacman -Syy --noconfirm
+OVCMD
+RUN --mount=type=bind,from=omarchy-repo,source=/,target=/ctx --mount=type=cache,id=charly-var-cache-pacman-pkg,dst=/var/cache/pacman/pkg,sharing=locked sh -c 'SH=/bin/sh; [ -x /bin/bash ] && SH=/bin/bash; exec "$SH"' sh <<'OVCMD'
+BUILD_ARCH=$(uname -m)
+case "$BUILD_ARCH" in
+  x86_64) ARCH=amd64 ;;
+  aarch64) ARCH=arm64 ;;
+  armv7l|armv7|armhf) ARCH=arm ;;
+  *) ARCH=$BUILD_ARCH ;;
+esac
+export BUILD_ARCH ARCH
+set -e
+set -eu
+pacman -Syuu --noconfirm
+OVCMD
+
+# Layer: github.com/opencharly/layer-omarchy-base/candy/omarchy-runtime
+RUN --mount=type=cache,id=charly-var-cache-pacman-pkg,dst=/var/cache/pacman/pkg,sharing=locked \
+pacman-key --init && \
+# Reseed pacman keyring from the locally-installed
+# keyring packages (cachyos-keyring, archlinux-keyring).
+# `--populate` is local-only and FAST (sub-second per
+# repo); does NOT do keyserver roundtrips. Non-fatal
+# (`|| true`) so air-gapped / restricted-network builds
+# succeed when the keyring was already current.
+(pacman-key --populate 2>/dev/null || true) && \
+OMARCHY_ALLOW_DIRECT_PACMAN=1 pacman -Syu --noconfirm --needed omarchy omarchy-settings gum jq git perl fakeroot pacman-contrib expac less man-db unzip inetutils whois socat inotify-tools plocate libsecret gnome-keyring libyaml lua51 luarocks
+
+# Layer: github.com/opencharly/layer-omarchy-base/candy/omarchy-skel
+ARG TARGETARCH
+ENV ARCH=${TARGETARCH}
+USER 1000
+RUN --mount=type=bind,from=omarchy-skel,source=/,target=/ctx --mount=type=cache,id=charly-tmp-npm-cache-uid1000,dst=/tmp/npm-cache,uid=1000,gid=1000 sh -c 'SH=/bin/sh; [ -x /bin/bash ] && SH=/bin/bash; exec "$SH"' sh <<'OVCMD'
+BUILD_ARCH=$(uname -m)
+case "$BUILD_ARCH" in
+  x86_64) ARCH=amd64 ;;
+  aarch64) ARCH=arm64 ;;
+  armv7l|armv7|armhf) ARCH=arm ;;
+  *) ARCH=$BUILD_ARCH ;;
+esac
+export BUILD_ARCH ARCH
+set -e
+cp -af /etc/skel/. "${HOME}/"
+OVCMD
+USER root
+
+# Layer: github.com/opencharly/layer-omarchy-base/candy/omarchy-base
+
+USER 1000
+# Image metadata
+LABEL ai.opencharly.version="2026.242.0000"
+LABEL ai.opencharly.box="omarchy"
+LABEL ai.opencharly.uid="1000"
+LABEL ai.opencharly.gid="1000"
+LABEL ai.opencharly.user="user"
+LABEL ai.opencharly.home="/home/user"
+LABEL ai.opencharly.registry="ghcr.io/opencharly"
+LABEL ai.opencharly.platform.distro='["omarchy","arch"]'
+LABEL ai.opencharly.platform.format='["pac"]'
+LABEL ai.opencharly.description='{"candy":[{"origin":"candy:github.com/opencharly/layer-omarchy-base/candy/omarchy-repo","description":"Points pacman at Omarchy'\''s package sources and neutralises the boot hooks a container cannot satisfy.\nomarchy-repo is the first thing every other Omarchy layer needs: it repoints\n/etc/pacman.d/mirrorlist at Omarchy'\''s own pinned Arch mirror snapshot, adds\nthe [omarchy] and [multilib] repositories, imports and locally signs the\nOmarchy packaging key, downgrades the base image'\''s preinstalled packages onto\nthat snapshot so the image is Omarchy'\''s version set rather than a mix of\nOmarchy'\''s and Arch'\''s, and stops the limine alpm hooks that cannot succeed\nwithout a mounted ESP from ever being extracted. It installs no packages of\nits own — that is\ndeliberate, because a candy'\''s plan: steps are emitted AFTER its distro:\npackages, so a candy that both configured pacman and installed from it would\nconfigure too late. Members that install packages require: this one instead.\nVerifiable on the built image: pacman resolves core/extra/multilib from an\nomarchy.org host, the [omarchy] repo answers, the key is locally signed, no\ninstalled package is newer than the snapshot serves, and no limine alpm hook\nis present on the image.\n","plan":[{"check":"pacman resolves core from an omarchy.org mirror, not from upstream Arch","plugin":"command","id":"omarchy-repo-core-mirror","context":["build"],"plugin_input":{"command":"pacman-conf --repo core Server"},"intent_do":"assert","stdout":[{"op":"contains","value":"omarchy.org"}]},{"check":"the [omarchy] repository is configured and answers","plugin":"command","id":"omarchy-repo-omarchy-repo","context":["build"],"plugin_input":{"command":"pacman-conf --repo omarchy Server"},"intent_do":"assert","stdout":[{"op":"contains","value":"pkgs.omarchy.org"}]},{"check":"the [multilib] repository is enabled (the lib32-nvidia-* packages need it)","plugin":"command","id":"omarchy-repo-multilib","context":["build"],"plugin_input":{"command":"pacman-conf --repo multilib Server"},"intent_do":"assert","exit_status":0},{"check":"the Omarchy packaging key is locally signed","plugin":"command","id":"omarchy-repo-key-lsigned","context":["build"],"plugin_input":{"command":"pacman-key --list-keys 40DFB630FF42BCFFB047046CF0134EE680CAC571"},"intent_do":"assert","stdout":[{"op":"contains","value":"40DFB630FF42BCFFB047046CF0134EE680CAC571"}]},{"check":"the omarchy package resolves from the configured repositories","plugin":"command","id":"omarchy-repo-omarchy-resolvable","context":["build"],"plugin_input":{"command":"pacman -Si omarchy"},"intent_do":"assert","stdout":[{"op":"contains","value":"Repository      : omarchy"}]},{"check":"no limine alpm hook was extracted onto the image","plugin":"command","id":"omarchy-repo-no-limine-hooks","context":["build"],"plugin_input":{"command":"set -eu\nfound=$(ls /usr/share/libalpm/hooks/ 2\u003e/dev/null | grep -i limine || true)\n[ -z \"$found\" ] || { echo \"limine hooks were extracted: $found\" \u003e\u00262; exit 1; }\n[ ! -e /etc/pacman.d/hooks/90-mkinitcpio-install.hook ] || {\n  echo \"limine'\''s /etc mkinitcpio hook was extracted\" \u003e\u00262; exit 1; }\n"},"intent_do":"assert","exit_status":0},{"check":"no installed package differs from what Omarchy'\''s snapshot serves","plugin":"command","id":"omarchy-repo-snapshot-aligned","context":["build"],"plugin_input":{"command":"set -eu\ndrift=$(pacman -Sl 2\u003e/dev/null | grep '\''installed:'\'' || true)\n[ -z \"$drift\" ] || {\n  echo \"these packages differ from the Omarchy snapshot:\" \u003e\u00262\n  echo \"$drift\" \u003e\u00262\n  exit 1; }\n"},"intent_do":"assert","exit_status":0},{"check":"Omarchy'\''s own pacman update guard is still on the image","plugin":"command","id":"omarchy-repo-update-guard-intact","context":["build"],"plugin_input":{"command":"set -eu\ntest -e /usr/share/libalpm/hooks/00-omarchy-update-guard.hook || {\n  echo \"the omarchy update guard is missing; this layer must not remove it\" \u003e\u00262\n  exit 1; }\n"},"intent_do":"assert","exit_status":0},{"check":"the NoExtract rules that keep those hooks off the image are configured","plugin":"command","id":"omarchy-repo-noextract-configured","context":["build"],"plugin_input":{"command":"set -eu\nmine=$(grep -c '\''^NoExtract = usr/share/libalpm/hooks/\\|^NoExtract = etc/pacman.d/hooks/'\'' /etc/pacman.conf)\n[ \"$mine\" -eq 5 ] || { echo \"expected 5 limine NoExtract rules, found $mine\" \u003e\u00262; exit 1; }\ngrep -qE '\''^NoExtract.*usr/share/man'\'' /etc/pacman.conf || {\n  echo \"the base image'\''s man-page NoExtract rule was not carried over\" \u003e\u00262; exit 1; }\ngrep -qE '\''^NoExtract.*etc/pacman\\.conf'\'' /etc/pacman.conf || {\n  echo \"the base image'\''s etc/pacman.conf NoExtract rule was not carried over\" \u003e\u00262\n  echo \"without it a pacman upgrade can overwrite the file this candy writes\" \u003e\u00262\n  exit 1; }"},"intent_do":"assert","exit_status":0}]},{"origin":"candy:github.com/opencharly/layer-omarchy-base/candy/omarchy-runtime","description":"The Omarchy runtime itself — the omarchy and omarchy-settings packages and the CLI tools they call.\nomarchy-runtime installs the two packages that ARE Omarchy: `omarchy` ships\n/usr/share/omarchy/{bin,shell,themes,default,install,migrations} and the\n~200 omarchy-* commands, and `omarchy-settings` ships all of /etc/skel plus\nthe system drop-ins and the limine/snapper/sddm/plymouth templates. Everything\nelse here is a tool those commands shell out to. Because both packages are\nfully self-contained, charly vendors NO Omarchy configuration: there is no\ncopy of config/hypr/*.lua, no themes/ tree and no default/themed/*.tpl\nanywhere in this repo. Verifiable on the built image: the package tree, the\nomarchy commands, and a populated /etc/skel.\n","plan":[{"check":"the omarchy package tree is installed","plugin":"file","id":"omarchy-runtime-tree","context":["build"],"plugin_input":{"exists":true,"file":"/usr/share/omarchy/version"},"intent_do":"assert"},{"check":"the Quickshell desktop-shell tree ships with the omarchy package","plugin":"file","id":"omarchy-runtime-shell-tree","context":["build"],"plugin_input":{"exists":true,"file":"/usr/share/omarchy/shell"},"intent_do":"assert"},{"check":"the bundled themes ship with the omarchy package","plugin":"command","id":"omarchy-runtime-themes","context":["build"],"plugin_input":{"command":"sh -c '\''test \"$(ls -1 /usr/share/omarchy/themes | wc -l)\" -ge 22'\''"},"intent_do":"assert","exit_status":0},{"check":"the omarchy CLI is on PATH","plugin":"file","id":"omarchy-runtime-cli","context":["build"],"plugin_input":{"exists":true,"file":"/usr/bin/omarchy"},"intent_do":"assert"},{"check":"omarchy-settings populated /etc/skel, the source omarchy-skel copies from","plugin":"file","id":"omarchy-runtime-skel-populated","context":["build"],"plugin_input":{"exists":true,"file":"/etc/skel/.config/hypr/hyprland.lua"},"intent_do":"assert"},{"check":"the themed templates that render a theme into app configs are present","plugin":"file","id":"omarchy-runtime-themed-templates","context":["build"],"plugin_input":{"exists":true,"file":"/usr/share/omarchy/default/themed"},"intent_do":"assert"}]},{"origin":"candy:github.com/opencharly/layer-omarchy-base/candy/omarchy-skel","description":"Seeds the image user'\''s home from /etc/skel, which useradd already ran past.\nomarchy-settings ships every Omarchy dotfile into /etc/skel, and on a real\nOmarchy install those reach the user because the installer creates the account\nAFTER the package is in place. A charly image is the other way round: the user\nexists before any candy runs, so /etc/skel never fires and the home directory\nwould be empty of Hyprland, waybar, theme and shell configuration. This candy\ncloses that gap by copying the tree in explicitly. It installs no packages;\nits whole observable effect is a populated home.\n","plan":[{"check":"the Hyprland entry config landed in the user'\''s home","plugin":"file","id":"omarchy-skel-hypr","context":["build"],"plugin_input":{"exists":true,"file":"${HOME}/.config/hypr/hyprland.lua"},"intent_do":"assert"},{"check":"the omarchy user configuration landed in the user'\''s home","plugin":"file","id":"omarchy-skel-omarchy-config","context":["build"],"plugin_input":{"exists":true,"file":"${HOME}/.config/omarchy"},"intent_do":"assert"}]},{"origin":"candy:github.com/opencharly/layer-omarchy-base/candy/omarchy-base","description":"The Omarchy foundation — package sources, the Omarchy runtime, and a seeded home.\nomarchy-base is the meta every other Omarchy layer composes. It installs\nnothing of its own; composing it yields, in order: pacman pointed at Omarchy'\''s\nown pinned Arch mirror snapshot with the [omarchy] and [multilib] repositories\nand a locally signed packaging key (omarchy-repo), the omarchy and\nomarchy-settings packages plus the CLI tools they call (omarchy-runtime), and\nthe /etc/skel tree copied into the image user'\''s home (omarchy-skel). Its\nobservable effect is that the Omarchy package tree, the omarchy commands and a\npopulated home coexist on the built image.\n","plan":[{"check":"composing the meta yields the Omarchy runtime and a seeded home","plugin":"command","id":"omarchy-base-composed","context":["build"],"plugin_input":{"command":"set -eu\ntest -f /usr/share/omarchy/version\ntest -d /usr/share/omarchy/shell\ntest -f \"${HOME}/.config/hypr/hyprland.lua\"\n"},"intent_do":"assert","exit_status":0}]}],"box":[{"origin":"box:omarchy.omarchy","description":"The canonical Omarchy base image — plain Arch plus Omarchy'\''s own package\nsources and runtime.\nOmarchy publishes no container image, only an installer ISO, so what makes\nthis image Omarchy is the package set and the repositories it comes from,\nboth supplied by the omarchy-base layer. This box is the pod-safe floor: the\nboot and display stack arrives as a hard dependency of the omarchy package\nand is left inert, while machine-only surfaces belong to the machine images.\nIts own observable claim is the one thing no layer can assert for it — that\nthe [omarchy, arch] tag chain resolved, so Omarchy'\''s package sources are in\neffect on an Arch base.\n","plan":[{"check":"the image identifies as Omarchy with an arch ID_LIKE, and Omarchy'\''s sources are in effect","plugin":"command","id":"omarchy-box-identity","context":["build"],"plugin_input":{"command":"set -eu\ngrep -q '\''^ID=omarchy$'\'' /etc/os-release\ngrep -q '\''^ID_LIKE=arch$'\'' /etc/os-release\npacman-conf --repo omarchy Server | grep -q '\''pkgs\\.omarchy\\.org'\''\npacman -Q omarchy \u003e/dev/null\n"},"intent_do":"assert","exit_status":0}]}]}'
+LABEL ai.opencharly.env_accept='[{"name":"OMARCHY_CHANNEL","description":"Omarchy package channel: stable (default), edge, or rc."}]'
+LABEL ai.opencharly.status="testing"
+LABEL ai.opencharly.check_level="noagent"
+LABEL ai.opencharly.info='The canonical Omarchy base image — plain Arch plus Omarchy'\''s own package; github.com/opencharly/layer-omarchy-base/candy/omarchy-repo: Points pacman at Omarchy'\''s package sources and neutralises the boot hooks a container cannot satisfy.; github.com/opencharly/layer-omarchy-base/candy/omarchy-runtime: The Omarchy runtime itself — the omarchy and omarchy-settings packages and the CLI tools they call.; github.com/opencharly/layer-omarchy-base/candy/omarchy-skel: Seeds the image user'\''s home from /etc/skel, which useradd already ran past.; github.com/opencharly/layer-omarchy-base/candy/omarchy-base: The Omarchy foundation — package sources, the Omarchy runtime, and a seeded home.'
+LABEL ai.opencharly.candy_version='{"github.com/opencharly/layer-omarchy-base/candy/omarchy-base":"2026.242.0000","github.com/opencharly/layer-omarchy-base/candy/omarchy-repo":"2026.242.0000","github.com/opencharly/layer-omarchy-base/candy/omarchy-runtime":"2026.242.0000","github.com/opencharly/layer-omarchy-base/candy/omarchy-skel":"2026.242.0000"}'
+

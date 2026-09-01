@@ -108,21 +108,21 @@ omarchy-suite-base-pr9332:
                   STUB
                   cat >"$fake/omarchy-pkg-add" <<'STUB'
                   #!/bin/bash
-                  printf 'pkg-add %s\n' "$*" >>"$fake/calls.log"
+                  printf 'pkg-add %s\n' "$*" >>/tmp/calls.log
                   STUB
                   cat >"$fake/sudo" <<'STUB'
                   #!/bin/bash
-                  printf 'sudo %s\n' "$*" >>"$fake/calls.log"
+                  printf 'sudo %s\n' "$*" >>/tmp/calls.log
                   exec "$@"
                   STUB
                   cat >"$fake/systemctl" <<'STUB'
                   #!/bin/bash
-                  printf 'systemctl %s\n' "$*" >>"$fake/calls.log"
+                  printf 'systemctl %s\n' "$*" >>/tmp/calls.log
                   exit 0
                   STUB
                   cat >"$fake/rm" <<'STUB'
                   #!/bin/bash
-                  printf 'rm %s\n' "$*" >>"$fake/calls.log"
+                  printf 'rm %s\n' "$*" >>/tmp/calls.log
                   exit 0
                   STUB
                   cat >"$fake/cardwire" <<'STUB'
@@ -139,8 +139,9 @@ omarchy-suite-base-pr9332:
                   :
                   STUB
                   chmod +x "$fake"/*
+                  rm -f /tmp/calls.log
                   PATH="$fake:$PATH" bash /usr/share/omarchy/bin/omarchy-toggle-hybrid-gpu || true
-                  calls=$(cat "$fake/calls.log")
+                  calls=$(cat /tmp/calls.log)
                   grep -qF 'pkg-add cardwire' <<<"$calls"
                   grep -qF 'systemctl enable --now cardwired' <<<"$calls"
                   grep -qF 'systemctl disable --now supergfxd.service' <<<"$calls"
@@ -168,7 +169,7 @@ omarchy-suite-base-pr9332:
                   #!/bin/bash
                   case "$1" in
                   get) printf 'Current Mode: Hybrid\nAvailable Mode: integrated, hybrid, smart\n' ;;
-                  set) printf 'cardwire set %s\n' "$2" >>"$fake/calls.log" ;;
+                  set) printf 'cardwire set %s\n' "$2" >>/tmp/calls.log ;;
                   *) exit 64 ;;
                   esac
                   STUB
@@ -181,8 +182,9 @@ omarchy-suite-base-pr9332:
                   :
                   STUB
                   chmod +x "$fake"/*
+                  rm -f /tmp/calls.log
                   PATH="$fake:$PATH" bash /usr/share/omarchy/bin/omarchy-toggle-hybrid-gpu
-                  grep -qF 'cardwire set integrated' "$fake/calls.log"
+                  grep -qF 'cardwire set integrated' /tmp/calls.log
                   /bin/rm -rf "$fake"
 
             - check: the toggle applies the hybrid mode when in integrated
@@ -204,7 +206,7 @@ omarchy-suite-base-pr9332:
                   #!/bin/bash
                   case "$1" in
                   get) printf 'Current Mode: Integrated\nAvailable Mode: integrated, hybrid, smart\n' ;;
-                  set) printf 'cardwire set %s\n' "$2" >>"$fake/calls.log" ;;
+                  set) printf 'cardwire set %s\n' "$2" >>/tmp/calls.log ;;
                   *) exit 64 ;;
                   esac
                   STUB
@@ -217,8 +219,9 @@ omarchy-suite-base-pr9332:
                   :
                   STUB
                   chmod +x "$fake"/*
+                  rm -f /tmp/calls.log
                   PATH="$fake:$PATH" bash /usr/share/omarchy/bin/omarchy-toggle-hybrid-gpu
-                  grep -qF 'cardwire set hybrid' "$fake/calls.log"
+                  grep -qF 'cardwire set hybrid' /tmp/calls.log
                   /bin/rm -rf "$fake"
 
             - check: the toggle fails clearly when cardwired cannot answer

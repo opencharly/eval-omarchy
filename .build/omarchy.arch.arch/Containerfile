@@ -1,0 +1,44 @@
+# .build/omarchy.arch.arch/Containerfile (generated -- do not edit)
+
+ARG BASE_IMAGE=quay.io/archlinux/archlinux:base-20260719.0.558306
+
+FROM ${BASE_IMAGE}
+
+# Bootstrap
+RUN --mount=type=cache,id=charly-var-cache-pacman-pkg,dst=/var/cache/pacman/pkg,sharing=locked \
+    pacman-key --init && pacman -Syu --noconfirm --needed curl ca-certificates && \
+    { [ -L /usr/local ] && mkdir -p "$(readlink /usr/local)"; mkdir -p /usr/local/bin; } && \
+    ARCH=$(uname -m) && \
+    case "$ARCH" in x86_64) ARCH=amd64;; aarch64) ARCH=arm64;; esac && \
+    TASK_URL="https://github.com/go-task/task/releases/latest/download/task_linux_${ARCH}.tar.gz" && \
+    (curl -fsSL "$TASK_URL" || wget -qO- "$TASK_URL") | tar -xzf - -C /usr/local/bin task
+
+RUN if ! getent passwd 1000 >/dev/null 2>&1; then \
+      LOGIN_SHELL=/bin/sh; [ -x /bin/bash ] && LOGIN_SHELL=/bin/bash; \
+      if command -v useradd >/dev/null 2>&1; then \
+        (getent group 1000 >/dev/null 2>&1 || groupadd -g 1000 user) && \
+        useradd -m -u 1000 -g 1000 -s "$LOGIN_SHELL" user; \
+      else \
+        (getent group 1000 >/dev/null 2>&1 || addgroup -g 1000 user) && \
+        adduser -D -h /home/user -u 1000 -G user -s "$LOGIN_SHELL" user; \
+      fi; \
+    fi
+
+WORKDIR /home/user
+
+USER 1000
+# Image metadata
+LABEL ai.opencharly.version="2026.144.1443"
+LABEL ai.opencharly.box="arch"
+LABEL ai.opencharly.uid="1000"
+LABEL ai.opencharly.gid="1000"
+LABEL ai.opencharly.user="user"
+LABEL ai.opencharly.home="/home/user"
+LABEL ai.opencharly.registry="ghcr.io/opencharly"
+LABEL ai.opencharly.platform.distro='["arch"]'
+LABEL ai.opencharly.platform.format='["pac"]'
+LABEL ai.opencharly.builder.use='{"aur":"omarchy.arch.arch-builder","cargo":"omarchy.arch.arch-builder","npm":"omarchy.arch.arch-builder","pixi":"omarchy.arch.arch-builder"}'
+LABEL ai.opencharly.builder.provide='["pixi","npm","cargo","aur"]'
+LABEL ai.opencharly.status="working"
+LABEL ai.opencharly.check_level="noagent"
+
