@@ -1,4 +1,4 @@
-#  opencharly/omarchy-eval — the omarchy PR evaluation repo.
+#  opencharly/eval-omarchy — the omarchy PR evaluation repo.
 #
 #  Dedicated home for the omarchy evaluation beds and their results. The beds
 #  derive from the shipped distro-omarchy boxes (imported as the `omarchy`
@@ -11,7 +11,7 @@
 #      charly check run check-omarchy-suite-pod-pr9332
 #      python3 scripts/omarchy-rollup.py .check
 version: 2026.240.1943
-repo: github.com/opencharly/omarchy-eval
+repo: github.com/opencharly/eval-omarchy
 defaults:
     platform:
         - linux/amd64

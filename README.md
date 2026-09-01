@@ -1,4 +1,4 @@
-# omarchy-eval
+# eval-omarchy
 
 Dedicated home for the **omarchy PR evaluation beds** and their **eval results**.
 
