@@ -1,0 +1,254 @@
+omarchy-suite-base-pr9332:
+    candy:
+        version: 2026.244.0000
+        description: |
+            The Tier-1 PR-injection image for omacom/omarchy#9332: the suite-base
+            image with PR #9332 applied at BUILD time via the omarchy-pr-9332
+            candy, plus the declarative behavior checks — the charly consequence-
+            check variant of the PR's own shell tests (mock cardwire/supergfxd,
+            assert the resulting behavior). The PR migrates hybrid GPU switching
+            from supergfxctl to cardwire: the toggle installs cardwire + enables
+            cardwired, retires a leftover supergfxd, queries via `cardwire get`
+            and switches via `cardwire set`; the hw detection gates on cardwire
+            reporting `integrated` as an available mode with an lspci GPU-count
+            fallback; the supergfxd-only workarounds are dropped. All checks are
+            idempotent behavior assertions with no side effects.
+        base: omarchy.omarchy-suite-base
+        build:
+            - pac
+        platform:
+            - linux/amd64
+        distro:
+            - omarchy
+            - arch
+        candy:
+            - omarchy-pr-9332
+        plan:
+            - check: the retired supergfxd workarounds are gone from the installed tree
+              id: pr9332-retired-files-absent
+              context:
+                - build
+              command: |
+                  set -eu
+                  for f in \
+                    /usr/share/omarchy/default/systemd/system-sleep/force-igpu \
+                    /usr/share/omarchy/default/systemd/system/supergfxd.service.d/delay-start.conf; do
+                    if [[ -e $f ]]; then echo "still present: $f" >&2; exit 1; fi
+                  done
+
+            - check: hybrid GPU detection sees a laptop hybrid system (cardwire reports integrated)
+              id: pr9332-hw-detects-laptop
+              context:
+                - build
+              command: |
+                  set -eu
+                  fake=$(mktemp -d)
+                  cat >"$fake/cardwire" <<'STUB'
+                  #!/bin/bash
+                  [[ $1 == "get" ]] || exit 64
+                  printf 'Current Mode: Hybrid\nAvailable Mode: integrated, hybrid, smart\n'
+                  STUB
+                  chmod +x "$fake/cardwire"
+                  PATH="$fake:$PATH" timeout --kill-after=1s 10s bash /usr/share/omarchy/bin/omarchy-hw-hybrid-gpu
+                  /bin/rm -rf "$fake"
+
+            - check: hybrid GPU detection hides on desktop systems (no integrated mode)
+              id: pr9332-hw-desktop
+              context:
+                - build
+              command: |
+                  set -eu
+                  fake=$(mktemp -d)
+                  cat >"$fake/cardwire" <<'STUB'
+                  #!/bin/bash
+                  [[ $1 == "get" ]] || exit 64
+                  printf 'Current Mode: Hybrid\nAvailable Mode: hybrid, manual\n'
+                  STUB
+                  chmod +x "$fake/cardwire"
+                  if PATH="$fake:$PATH" timeout --kill-after=1s 10s bash /usr/share/omarchy/bin/omarchy-hw-hybrid-gpu; then
+                    echo "expected non-hybrid detection to fail" >&2
+                    exit 1
+                  fi
+                  /bin/rm -rf "$fake"
+
+            - check: hybrid GPU detection counts GPUs when cardwire cannot answer
+              id: pr9332-hw-fallback
+              context:
+                - build
+              command: |
+                  set -eu
+                  fake=$(mktemp -d)
+                  cat >"$fake/cardwire" <<'STUB'
+                  #!/bin/bash
+                  exit 1
+                  STUB
+                  cat >"$fake/lspci" <<'STUB'
+                  #!/bin/bash
+                  echo "VGA compatible controller: Intel"
+                  echo "3D controller: NVIDIA"
+                  STUB
+                  chmod +x "$fake"/*
+                  PATH="$fake:$PATH" timeout --kill-after=1s 10s bash /usr/share/omarchy/bin/omarchy-hw-hybrid-gpu
+                  /bin/rm -rf "$fake"
+
+            - check: the toggle installs cardwire and retires supergfxd
+              id: pr9332-toggle-install-retire
+              context:
+                - build
+              command: |
+                  set -eu
+                  fake=$(mktemp -d)
+                  cat >"$fake/omarchy-cmd-missing" <<'STUB'
+                  #!/bin/bash
+                  exit 0
+                  STUB
+                  cat >"$fake/omarchy-pkg-present" <<'STUB'
+                  #!/bin/bash
+                  exit 0
+                  STUB
+                  cat >"$fake/omarchy-pkg-add" <<'STUB'
+                  #!/bin/bash
+                  printf 'pkg-add %s\n' "$*" >>"$fake/calls.log"
+                  STUB
+                  cat >"$fake/sudo" <<'STUB'
+                  #!/bin/bash
+                  printf 'sudo %s\n' "$*" >>"$fake/calls.log"
+                  exec "$@"
+                  STUB
+                  cat >"$fake/systemctl" <<'STUB'
+                  #!/bin/bash
+                  printf 'systemctl %s\n' "$*" >>"$fake/calls.log"
+                  exit 0
+                  STUB
+                  cat >"$fake/rm" <<'STUB'
+                  #!/bin/bash
+                  printf 'rm %s\n' "$*" >>"$fake/calls.log"
+                  exit 0
+                  STUB
+                  cat >"$fake/cardwire" <<'STUB'
+                  #!/bin/bash
+                  [[ $1 == "get" ]] || exit 64
+                  printf 'Current Mode: Hybrid\nAvailable Mode: integrated, hybrid, smart\n'
+                  STUB
+                  cat >"$fake/gum" <<'STUB'
+                  #!/bin/bash
+                  exit 1
+                  STUB
+                  cat >"$fake/sleep" <<'STUB'
+                  #!/bin/bash
+                  :
+                  STUB
+                  chmod +x "$fake"/*
+                  PATH="$fake:$PATH" bash /usr/share/omarchy/bin/omarchy-toggle-hybrid-gpu || true
+                  calls=$(cat "$fake/calls.log")
+                  grep -qF 'pkg-add cardwire' <<<"$calls"
+                  grep -qF 'systemctl enable --now cardwired' <<<"$calls"
+                  grep -qF 'systemctl disable --now supergfxd.service' <<<"$calls"
+                  grep -qF 'rm -f /etc/supergfxd.conf' <<<"$calls"
+                  grep -qF 'rm -rf /usr/lib/systemd/system-sleep/force-igpu' <<<"$calls"
+                  grep -qF 'rm -rf /etc/systemd/system/supergfxd.service.d' <<<"$calls"
+                  /bin/rm -rf "$fake"
+
+            - check: the toggle applies the integrated mode when in hybrid
+              id: pr9332-toggle-switch-integrated
+              context:
+                - build
+              command: |
+                  set -eu
+                  fake=$(mktemp -d)
+                  cat >"$fake/omarchy-cmd-missing" <<'STUB'
+                  #!/bin/bash
+                  exit 1
+                  STUB
+                  cat >"$fake/omarchy-pkg-present" <<'STUB'
+                  #!/bin/bash
+                  exit 1
+                  STUB
+                  cat >"$fake/cardwire" <<'STUB'
+                  #!/bin/bash
+                  case "$1" in
+                  get) printf 'Current Mode: Hybrid\nAvailable Mode: integrated, hybrid, smart\n' ;;
+                  set) printf 'cardwire set %s\n' "$2" >>"$fake/calls.log" ;;
+                  *) exit 64 ;;
+                  esac
+                  STUB
+                  cat >"$fake/gum" <<'STUB'
+                  #!/bin/bash
+                  exit 0
+                  STUB
+                  cat >"$fake/sleep" <<'STUB'
+                  #!/bin/bash
+                  :
+                  STUB
+                  chmod +x "$fake"/*
+                  PATH="$fake:$PATH" bash /usr/share/omarchy/bin/omarchy-toggle-hybrid-gpu
+                  grep -qF 'cardwire set integrated' "$fake/calls.log"
+                  /bin/rm -rf "$fake"
+
+            - check: the toggle applies the hybrid mode when in integrated
+              id: pr9332-toggle-switch-hybrid
+              context:
+                - build
+              command: |
+                  set -eu
+                  fake=$(mktemp -d)
+                  cat >"$fake/omarchy-cmd-missing" <<'STUB'
+                  #!/bin/bash
+                  exit 1
+                  STUB
+                  cat >"$fake/omarchy-pkg-present" <<'STUB'
+                  #!/bin/bash
+                  exit 1
+                  STUB
+                  cat >"$fake/cardwire" <<'STUB'
+                  #!/bin/bash
+                  case "$1" in
+                  get) printf 'Current Mode: Integrated\nAvailable Mode: integrated, hybrid, smart\n' ;;
+                  set) printf 'cardwire set %s\n' "$2" >>"$fake/calls.log" ;;
+                  *) exit 64 ;;
+                  esac
+                  STUB
+                  cat >"$fake/gum" <<'STUB'
+                  #!/bin/bash
+                  exit 0
+                  STUB
+                  cat >"$fake/sleep" <<'STUB'
+                  #!/bin/bash
+                  :
+                  STUB
+                  chmod +x "$fake"/*
+                  PATH="$fake:$PATH" bash /usr/share/omarchy/bin/omarchy-toggle-hybrid-gpu
+                  grep -qF 'cardwire set hybrid' "$fake/calls.log"
+                  /bin/rm -rf "$fake"
+
+            - check: the toggle fails clearly when cardwired cannot answer
+              id: pr9332-toggle-unavailable
+              context:
+                - build
+              command: |
+                  set -eu
+                  fake=$(mktemp -d)
+                  cat >"$fake/omarchy-cmd-missing" <<'STUB'
+                  #!/bin/bash
+                  exit 1
+                  STUB
+                  cat >"$fake/omarchy-pkg-present" <<'STUB'
+                  #!/bin/bash
+                  exit 1
+                  STUB
+                  cat >"$fake/cardwire" <<'STUB'
+                  #!/bin/bash
+                  exit 1
+                  STUB
+                  cat >"$fake/sleep" <<'STUB'
+                  #!/bin/bash
+                  :
+                  STUB
+                  chmod +x "$fake"/*
+                  set +e
+                  out=$(PATH="$fake:$PATH" bash /usr/share/omarchy/bin/omarchy-toggle-hybrid-gpu 2>&1)
+                  status=$?
+                  set -e
+                  (( status == 1 )) || { echo "expected exit 1, got $status" >&2; exit 1; }
+                  grep -qF 'cardwired is not responding' <<<"$out"
+                  /bin/rm -rf "$fake"

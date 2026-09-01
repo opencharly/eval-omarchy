@@ -1,0 +1,55 @@
+#  opencharly/omarchy-eval — the omarchy PR evaluation repo.
+#
+#  Dedicated home for the omarchy evaluation beds and their results. The beds
+#  derive from the shipped distro-omarchy boxes (imported as the `omarchy`
+#  namespace) and inject a PR's files at BUILD time via a per-PR candy
+#  (candy/omarchy-pr-<N>), then assert the PR's BEHAVIOR as charly consequence
+#  checks — the charly variant of the PR's own shell tests, strictly stronger
+#  than upstream's mocked call sequences. Eval results land in eval/.
+#
+#  Usage:
+#      charly check run check-omarchy-suite-pod-pr9332
+#      python3 scripts/omarchy-rollup.py .check
+version: 2026.240.1943
+repo: github.com/opencharly/omarchy-eval
+defaults:
+    platform:
+        - linux/amd64
+    tag: auto
+    registry: ghcr.io/opencharly
+    build:
+        - pac
+    merge:
+        auto: false
+        max_mb: 128
+import:
+    # The omarchy image family (base box, suite-base, VM templates) lives in
+    # opencharly/distro-omarchy. Qualified refs: omarchy.omarchy-suite-base.
+    - omarchy: '@github.com/opencharly/distro-omarchy:v2026.244.1743'
+discover:
+    - path: box
+      recursive: true
+    - path: candy
+      recursive: true
+
+# ── Tier-1 PR-injection bed (PR #9332) ────────────────────────────────────────
+# omacom/omarchy#9332 — "Migrate hybrid GPU switching from supergfxctl to
+# cardwire". The PR-variant image (omarchy-suite-base-pr9332) applies the PR's
+# files at BUILD time via the omarchy-pr-9332 candy and runs the declarative
+# behavior checks: the toggle installs cardwire + enables cardwired, retires a
+# leftover supergfxd, queries via `cardwire get` and switches via `cardwire set`;
+# the hw detection gates on cardwire reporting `integrated` with an lspci
+# GPU-count fallback; the supergfxd-only workarounds are dropped. The checks
+# pass ONLY with the PR applied — the injection proof.
+check-omarchy-suite-pod-pr9332:
+    pod:
+        image: omarchy-suite-base-pr9332
+        disposable: true
+        lifecycle: dev
+        description: >-
+            Tier-1 PR-injection bed for omacom/omarchy#9332 (hybrid GPU
+            supergfxctl→cardwire migration): builds the PR-variant image (PR
+            applied at BUILD time via the omarchy-pr-9332 candy) and runs the
+            declarative behavior checks — the charly consequence-check variant
+            of the PR's own shell tests. The checks are idempotent behavior
+            assertions with no side effects.
