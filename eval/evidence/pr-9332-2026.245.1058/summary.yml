@@ -1,5 +1,6 @@
 bed: check-omarchy-suite-pod-pr9332
-calver: 2026.244.2026
+calver: 2026.245.1058
+repo_override: github.com/opencharly/opencharly=/home/atrawog/Sync/Atrapub/coder/pi/opencharly
 steps:
   - name: image-build
     duration_seconds: 27
@@ -8,7 +9,7 @@ steps:
       errors: 0
       warnings: 1
       allowlisted: 1
-      cache_hits: 78
+      cache_hits: 83
       cache_steps: 90
       findings:
         - severity: warning
@@ -37,7 +38,7 @@ steps:
           allowlisted: dev-worktree-binary-notice
           text: "WARNING: charly is a dev/worktree build (not installed at /usr/bin or /usr/local/bin); NOT loading the installed package's plugins from /usr/lib/charly/plugins (they may be built against a different c…"
   - name: deploy-add
-    duration_seconds: 6
+    duration_seconds: 5
     ok: true
     diagnostics:
       errors: 0
@@ -96,7 +97,7 @@ steps:
           allowlisted: dev-worktree-binary-notice
           text: "WARNING: charly is a dev/worktree build (not installed at /usr/bin or /usr/local/bin); NOT loading the installed package's plugins from /usr/lib/charly/plugins (they may be built against a different c…"
   - name: feature-run
-    duration_seconds: 3
+    duration_seconds: 2
     ok: true
     diagnostics:
       errors: 0
@@ -138,7 +139,7 @@ steps:
           allowlisted: dev-worktree-binary-notice
           text: "WARNING: charly is a dev/worktree build (not installed at /usr/bin or /usr/local/bin); NOT loading the installed package's plugins from /usr/lib/charly/plugins (they may be built against a different c…"
   - name: feature-run-rebuild
-    duration_seconds: 3
+    duration_seconds: 2
     ok: true
     diagnostics:
       errors: 0
@@ -168,14 +169,14 @@ steps:
   - name: cleanup-members
     duration_seconds: 0
     ok: true
-total_seconds: 106
+total_seconds: 104
 diagnostics:
   errors: 0
   warnings: 1
   allowlisted: 15
   errors_fatal: true
   warnings_fatal: false
-  cache_hits: 78
+  cache_hits: 83
   cache_steps: 90
   allowlist_used:
     - id: dev-worktree-binary-notice
