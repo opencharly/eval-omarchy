@@ -7,9 +7,12 @@
 #  checks — the charly variant of the PR's own shell tests, strictly stronger
 #  than upstream's mocked call sequences. Eval results land in eval/.
 #
+#  Every evaluation report (eval/pr-<N>.md) and every posted PR comment is
+#  rendered from eval/PR-EVAL-TEMPLATE.md and carries its EXTERNAL,
+#  NON-AUTHORITATIVE-by-opencharly.ai disclaimer verbatim.
+#
 #  Usage:
 #      charly check run check-omarchy-suite-pod-pr9332
-#      python3 scripts/omarchy-rollup.py .check
 version: 2026.240.1943
 repo: github.com/opencharly/eval-omarchy
 defaults:
