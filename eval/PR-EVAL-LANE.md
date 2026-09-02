@@ -53,9 +53,23 @@ every report records channel + ISO calver + snapshot id — no faked freshness.
 - `omarchy-channel-set` presence/get/set/idempotence probes — access was lost to the
   sshd-disabling migration before they ran; scheduled with the keeper base build.
 - pacman `-Syu` guard probe — same blocker.
-- Autologin desktop + both screenshots (plain desktop + checks-on-screen) — wedged,
-  unreachable guest; to be produced on the clean keeper base (autologin composed) as
-  part of the keepers’ real proof.
+- Autologin desktop + checks-on-screen — **DONE (2026-09-02, vision-verified)**: the
+  logged-in desktop shot and the checks-on-screen shot were produced on a fresh
+  keeper base (omarchy-autologin composed, distro-omarchy v2026.245.1421) via the
+  SPICE display head, and BOTH vision-verified (extensions.vision_ask):
+  desktop.png = logged-in Hyprland session (bar, workspaces, clock, tray — no greeter);
+  checks-on-screen.png = the same desktop with the running eval check output surfaced
+  as on-screen notification cards ("[eval] omarchy-autologin-configured: PASS ...").
+  Artifacts at /tmp/d4-shots/{desktop,checks-on-screen}.png.
+
+## Checks visible to the user AND in screen recordings (lane rule)
+
+Whenever an eval runs on a real venue, the check output MUST be surfaced live on the
+venue's desktop (notify-send cards and/or a visible terminal) AND captured in the
+recording/screenshot frames — what the operator sees is what the recording shows.
+Recordings and screenshots are graded (ADE) for containing the on-screen check output
+verbatim. Proven on the C1 recording lane (notify cards visible in the h264 frame) and
+the D4 screenshot lane (eval cards in the SPICE framebuffer).
 - Footprint (free/disk) exact values recorded in the spike session log; qualitative:
   one 8G-RAM VM runs comfortably; VM lanes must SERIALIZE on this vfio-flipped host
   (GPU hostdev collides with concurrent VM creates — measured).
