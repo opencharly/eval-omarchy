@@ -31,13 +31,35 @@ is fresh (revert + re-apply); one full fresh-install R10 anchor run stays per ba
 lane-only evals report the `analysed on a live system` tier unless the anchor ran;
 every report records channel + ISO calver + snapshot id — no faked freshness.
 
-## Spike (decision gate, before the lane is claimed)
+## Spike (2026-09-02 — run with a real base VM; results honest, run vs NOT-RUN)
 
-1. snapshot metadata survives `charly update`'s domain destroy+recreate (internal qcow2)?
-2. non-destructive layer re-apply path on a running VM?
-3. revert-and-start leaves the guest usable for `charly check live`?
-4. dev channel: `omarchy-channel-set dev` + update rebuild from `~/omarchy` (checkout
-   layout, rebuild trigger)?
-5. 4-keepers resource footprint on the host?
+**RAN (measured on a live omarchy-vm base, ISO 4.0.1 unattended install):**
+- **Base build+start:** the official-ISO install completed unattended and the guest
+  reached a running state within the spike window.
+- **`omarchy update -y` is NOT fully scriptable.** The update progressed through its
+  phases (mise upgrade to node 26.7.0, “Update system packages”, migration stages) and
+  then **stalled without exit at the “Orphan system packages” review stage** — killed
+  by timeout after 8 min (`UPDATE_Y_EXIT=KILLED-BY-TIMEOUT`). Keepers must pre-resolve
+  orphans or pipe the answer; a bare `-y` does not suffice.
+- **CRITICAL — the update’s migration disabled AND stopped sshd mid-run** (migration
+  1788124236; persistent across reboot), cutting remote access mid-flight. The qemu
+  guest agent was NOT connected (no fallback path in the stock guest). Lane rule: never
+  kill an update mid-flight; every keeper base must ship an ENABLED qemu-guest-agent as
+  a console fallback; updates run with pre-resolved inputs.
+- **Halt state:** the base VM was stopped after the spike (GPU freed; host clean —
+  stale leftover check-* domains from earlier crashed runs were also undefined).
 
-Results land in this file when the channel-keepers cutover runs them.
+**NOT-RUN with documented blockers (no fabrication):**
+- `omarchy-channel-set` presence/get/set/idempotence probes — access was lost to the
+  sshd-disabling migration before they ran; scheduled with the keeper base build.
+- pacman `-Syu` guard probe — same blocker.
+- Autologin desktop + both screenshots (plain desktop + checks-on-screen) — wedged,
+  unreachable guest; to be produced on the clean keeper base (autologin composed) as
+  part of the keepers’ real proof.
+- Footprint (free/disk) exact values recorded in the spike session log; qualitative:
+  one 8G-RAM VM runs comfortably; VM lanes must SERIALIZE on this vfio-flipped host
+  (GPU hostdev collides with concurrent VM creates — measured).
+
+**Open spike items (carry into the keepers cutover):** channel-set + guard semantics;
+snapshot-survives-recreate; revert-and-start usability; dev-checkout rebuild; footprint
+for 4 keepers. The lane is NOT claimed until those land.
