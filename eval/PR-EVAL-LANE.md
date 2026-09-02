@@ -63,3 +63,22 @@ every report records channel + ISO calver + snapshot id — no faked freshness.
 **Open spike items (carry into the keepers cutover):** channel-set + guard semantics;
 snapshot-survives-recreate; revert-and-start usability; dev-checkout rebuild; footprint
 for 4 keepers. The lane is NOT claimed until those land.
+## Phase B decision (2026-09-02 — gated OFF, recorded per plan LEG 5)
+
+The spike and the anchor runs showed NO measured need for new charly surface, so
+Phase B is gated off with this evidence:
+- Snapshot create/revert/list/delete: ALREADY EXISTS via the `libvirt: snapshot/*`
+  verb (plugin-vm) + the vm-deploy `snapshot: on_finalize: golden` capability — no
+  new verbs/cli needed for the lane.
+- Per-PR apply: the per-PR candy seam (build-time + deploy-time) is the ONE apply
+  mechanism (R3) — no second mechanism added.
+- Batch orchestration: scripts/omarchy-rollup.py (SHA-keyed cache) covers the
+  batch loop; the keepers+twins cover the per-channel bases. A `pr-eval`
+  orchestration plugin remains a candidate ONLY if batch throughput is measured
+  insufficient later — not the case today.
+- Host mechanics (measured): the VM-lane fresh-rebuild tail (`charly update`) does
+  not conclude on this host (re-exec churn; dev-worktree binary hypothesis) and
+  VM lanes must serialize on the vfio-flipped host — those are HOST issues to
+  resolve (installed binary / org CI), not plugin gaps.
+- `source.kind: clone` / host `charly vm snapshot` CLI: no measured need (the golden
+  snapshot + libvirt verbs cover the lane) — gated off.
