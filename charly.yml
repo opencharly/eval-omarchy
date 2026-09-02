@@ -13,7 +13,6 @@
 #
 #  Usage:
 #      charly check run check-omarchy-suite-pod-pr9332
-#      python3 scripts/omarchy-rollup.py .check
 version: 2026.240.1943
 repo: github.com/opencharly/eval-omarchy
 defaults:
