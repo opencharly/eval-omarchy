@@ -64,6 +64,25 @@ ok: <true|false>
 
 All beds above ran on charly <version>; base provenance as in Evaluation identity.
 
+## Recordings
+
+Recording artifacts from the beds, when the change class puts them in scope (the two lanes are
+charly surfaces — author the steps per plan §4.3 in the per-PR bed, then reference the evidence):
+
+- **Terminal lane (asciinema):** `.cast` of the flow — `record: start` → `record: run|cmd` →
+  `record: stop` with `artifact:` + `artifact_min_bytes`/`artifact_min_cast_events`; playback on
+  the host with `asciinema play` / `asciinema convert -f raw <file>.cast -`.
+- **SPICE video lane (VM display):** `.mjpeg` of the display during the flow — `spice: {method:
+  record, action: start, fps}` → drive steps → `spice: {method: record, action: stop,
+  artifact:}`; reality-check with `ffprobe` + a frame extract (`ffmpeg -i <file>.mjpeg -frames:v 1
+  out.png`, vision-verified).
+
+Per recording: file path (host, after teardown), bytes, format, event/frame count, playback proof.
+Artifacts are pulled host-side at `record: stop`/the stop step — BEFORE the disposable bed's
+teardown destroys the venue — and copied into `eval/evidence/<pr>-<calver>/` with the summary.
+
+`N/A — <reason>` when the class does not put recordings in scope (e.g. docs-only).
+
 ## Per-check matrix
 
 | # | Check | Context | Verdict |
