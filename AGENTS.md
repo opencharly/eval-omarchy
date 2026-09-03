@@ -82,9 +82,13 @@ live-system behavior from a container run.
 **Routing rule:** a PR whose core behavior is system-level (hardware switching,
 filesystem/snapshot behavior, session environment, network state, keybindings,
 service behavior) MUST be evaluated on a live VM (Tier-2), not just the container.
-If the live tier cannot run (no base VM), the report must say "live behavior not
-tested — requires the Tier-2 VM lane" and the verdict is capped accordingly — a
-container run never becomes a live-behavior claim.
+
+**Hard-fail rule:** a system-behavior PR evaluated ONLY on the container tier is a
+**HARD FAIL** — the wrong test environment was chosen, and the validation is
+invalid until the Tier-2 live VM run completes. It is NEVER a soft pass: "mostly
+works — live behavior not yet tested" is faking success for something the eval
+could not test. A container run never becomes a live-behavior claim, and an
+untested live behavior never becomes a pass.
 
 ## The per-PR artifact pattern
 

@@ -39,8 +39,9 @@ evidence → revert.
    (idempotence/double-run, failure paths, clean-install vs upgrade). A PR whose core
    behavior is system-level (hardware switching, filesystem/snapshot behavior, session
    environment, network state, keybindings, service behavior) MUST be tested on a live
-   omarchy VM (Tier-2), never only in a container. Do not stop at the first green
-   check.
+   omarchy VM (Tier-2), never only in a container. A system-behavior PR evaluated
+   only in a container is a HARD FAIL (wrong tier) — never a soft pass. Do not stop
+   at the first green check.
 6. **Record every evaluation — both lanes.** Every PR evaluation produces a terminal
    asciinema `.cast` AND a full-screen video (desktop recording or VM display
    recording), saved to the gitignored `media/<pr>-<calver>/`. Check output must be
@@ -103,10 +104,17 @@ live-system behavior from a container run.
 **Routing rule:** a PR whose core behavior is system-level (hardware switching,
 filesystem/snapshot behavior, session environment, network state, keybindings,
 service behavior) MUST be evaluated on a live VM (Tier-2), not just the container.
-The container tier alone is insufficient for these classes. If the live tier cannot
-run (no base VM), the report must say "live behavior not tested — requires the
-Tier-2 VM lane" and the verdict is capped accordingly — a container run never
-becomes a live-behavior claim.
+The container tier alone is insufficient for these classes.
+
+**Hard-fail rule:** a system-behavior PR evaluated ONLY on the container tier is a
+**HARD FAIL** — the wrong test environment was chosen, and the validation is
+invalid until the Tier-2 live VM run completes. It is NEVER a soft pass: "mostly
+works — live behavior not yet tested" is faking success for something the eval
+could not test. The verdict for a wrong-tier eval is `FAIL — wrong tier: the
+PR's core behavior is system-level and was only tested in a container; the live
+behavior is untested until the Tier-2 live VM run completes`. A container run
+never becomes a live-behavior claim, and an untested live behavior never becomes a
+pass.
 
 ## Mechanics (all reuse — no new tooling)
 
