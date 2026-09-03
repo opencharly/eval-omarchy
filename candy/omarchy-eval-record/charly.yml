@@ -1,0 +1,30 @@
+omarchy-eval-record:
+    candy:
+        version: 2026.246.0000
+        description: |
+            The recording tooling for omarchy PR evaluations (eval rule 6):
+            tmux + asciinema installed natively, so a venue can run the
+            record: gif loop (start a terminal recording → run a command →
+            stop → render the .cast to an animated GIF with agg). agg itself
+            is NOT packaged in any distro — it arrives via the asciinema
+            layer's pinned prebuilt binary (layer-asciinema v2026.246.1622,
+            which also ships the DejaVu monospace font). Add this candy to a
+            bed whose venue derives from omarchy-vm (which does not carry the
+            recording tools by default); the omarchy-suite-base already
+            composes layer-tmux + layer-asciinema.
+        plan:
+            - run: install the recording tools (tmux + asciinema)
+              id: eval-record-install
+              command: |
+                  set -eu
+                  pacman -S --needed --noconfirm tmux asciinema
+            - check: tmux is installed
+              id: eval-record-tmux
+              context:
+                - build
+              command: tmux -V
+            - check: asciinema is installed
+              id: eval-record-asciinema
+              context:
+                - build
+              command: asciinema --version
