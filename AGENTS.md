@@ -82,9 +82,21 @@ live-system behavior from a container run.
 **Routing rule:** a PR whose core behavior is system-level (hardware switching,
 filesystem/snapshot behavior, session environment, network state, keybindings,
 service behavior) MUST be evaluated on a live VM (Tier-2), not just the container.
-If the live tier cannot run (no base VM), the report must say "live behavior not
-tested — requires the Tier-2 VM lane" and the verdict is capped accordingly — a
-container run never becomes a live-behavior claim.
+
+**The validation's purpose is binary: does it actually work?** The only valid
+verdicts are PASS (verified working on a live system) and FAIL (verified not
+working on a live system). NO VALIDATION means the validation itself failed — it
+could not answer the question because the core behavior could not be tested on a
+live system.
+
+**Strict prohibition:** any "might work" / "mostly works" / "it works" evaluation
+that is NOT verified on a live system is **STRICTLY FORBIDDEN** — it fakes
+success for something the validation could not test. A pod-only eval is NOT a
+validation: the container tier cannot test live system behavior, so a container
+run of a system-behavior PR proves nothing about the PR and must never be
+presented as a validation. If the validation cannot test the thing on a live
+system, the validation itself FAILS — the result is NO VALIDATION, and no report
+is produced.
 
 ## The per-PR artifact pattern
 
@@ -107,6 +119,11 @@ to the Tier-2 live VM, never mocked.
   NON-AUTHORITATIVE disclaimer verbatim and the Assisted-by footer.
 - Claims are scoped to the tier that produced them; untested live behavior is stated
   explicitly ("requires the Tier-2 VM lane").
+- Every evaluation result is validated by a **cold reader** against the criteria before
+  it is finalized or posted — a fresh reader who did not author the evaluation checks
+  never-mock, known-red, tier compliance, scoped claims, non-empty recordings, the
+  Assisted-by footer, the disclaimer, and triage. A report that fails the cold read
+  is fixed, not posted.
 - Reports are **plain language** — understandable to an average user and to an agent
   that knows nothing about opencharly. No charly-internal jargon (R-numbers, ADE,
   RDD, NestedExecutor, keeper, spike, bed, venue, allowlist, etc.). Real config keys

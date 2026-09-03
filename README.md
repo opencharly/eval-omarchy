@@ -25,7 +25,12 @@ the full evidence rigor (step matrix, per-check matrix, findings tied to evidenc
 Claims are scoped to the tier that produced them: a container run proves script logic
 and file application with REAL tools, never live system behavior and never with mocked
 tools — system-behavior PRs are tested on a live omarchy VM, and every PR-specific
-check must fail without the PR applied.
+check must fail without the PR applied. The validation's purpose is binary: does
+it actually work? The only valid verdicts are PASS (verified working on a live
+system) and FAIL (verified not working). Any "might work" evaluation not verified
+on a live system is strictly forbidden — a system-behavior PR whose core behavior
+cannot be tested on a live system gets NO VALIDATION (the validation itself
+fails); a pod-only eval is not a validation.
 
 ## Layout
 
@@ -62,4 +67,5 @@ what was tested (channel, base provenance, the PR's own Verification claim), how
 run log), the per-check verdict matrix, the recordings (both lanes, saved to the
 gitignored `media/`), and what was noticed (findings tied to evidence, including
 hardware-bound classes that are PARTIAL/NOT-EVALUABLE, never faked). Every posted PR
-comment ends with the `*Assisted-by: …*` footer.
+comment ends with the `*Assisted-by: …*` footer. Every evaluation result is
+validated by a cold reader against the criteria before it is finalized or posted.

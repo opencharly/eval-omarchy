@@ -39,8 +39,9 @@ evidence → revert.
    (idempotence/double-run, failure paths, clean-install vs upgrade). A PR whose core
    behavior is system-level (hardware switching, filesystem/snapshot behavior, session
    environment, network state, keybindings, service behavior) MUST be tested on a live
-   omarchy VM (Tier-2), never only in a container. Do not stop at the first green
-   check.
+   omarchy VM (Tier-2), never only in a container. A system-behavior PR evaluated
+   only in a container is a HARD FAIL (wrong tier) — never a soft pass. Do not stop
+   at the first green check.
 6. **Record every evaluation — both lanes.** Every PR evaluation produces a terminal
    asciinema `.cast` AND a full-screen video (desktop recording or VM display
    recording), saved to the gitignored `media/<pr>-<calver>/`. Check output must be
@@ -81,6 +82,15 @@ evidence → revert.
    or by verification (run the checks against the base image without the PR candy and
    confirm they fail). General sanity checks (e.g. "bash is installed") are allowed
    but must be labeled non-PR-specific and never counted as PR proof.
+10. **Every evaluation result is validated by a cold reader against the criteria.**
+    Before a report is finalized or a comment is posted, a fresh reader who did NOT
+    author the evaluation validates the report against the validation criteria:
+    never mock (no mocked checks), known-red (every PR-specific check fails without
+    the PR), tier compliance (system-behavior PRs tested on the live VM; wrong-tier =
+    FAIL), claims scoped to the tier (no live-behavior claims from container runs),
+    recordings non-empty and showing the actual commands, Assisted-by footer present,
+    disclaimer verbatim, triage applied. The cold reader's verdict is recorded in the
+    report; a report that fails the cold read is fixed, not posted.
 
 ## What each tier proves (honest semantics)
 
@@ -103,10 +113,23 @@ live-system behavior from a container run.
 **Routing rule:** a PR whose core behavior is system-level (hardware switching,
 filesystem/snapshot behavior, session environment, network state, keybindings,
 service behavior) MUST be evaluated on a live VM (Tier-2), not just the container.
-The container tier alone is insufficient for these classes. If the live tier cannot
-run (no base VM), the report must say "live behavior not tested — requires the
-Tier-2 VM lane" and the verdict is capped accordingly — a container run never
-becomes a live-behavior claim.
+The container tier alone is insufficient for these classes.
+
+**The validation's purpose is binary: does it actually work?** The only valid
+verdicts are PASS (verified working on a live system) and FAIL (verified not
+working on a live system). NO VALIDATION means the validation itself failed — it
+could not answer the question because the core behavior could not be tested on a
+live system.
+
+**Strict prohibition:** any "might work" / "mostly works" / "it works" evaluation
+that is NOT verified on a live system is **STRICTLY FORBIDDEN** — it fakes
+success for something the validation could not test. A pod-only eval is NOT a
+validation: the container tier cannot test live system behavior, so a container
+run of a system-behavior PR proves nothing about the PR and must never be
+presented as a validation. If the validation cannot test the thing on a live
+system, the validation itself FAILS — the result is NO VALIDATION, and no report
+is produced. A container run never becomes a live-behavior claim, and an untested
+live behavior never becomes a pass or a fail — it becomes nothing.
 
 ## Mechanics (all reuse — no new tooling)
 
