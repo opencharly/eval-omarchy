@@ -25,7 +25,8 @@ the full evidence rigor (step matrix, per-check matrix, findings tied to evidenc
 Claims are scoped to the tier that produced them: a container run proves script logic
 and file application with REAL tools, never live system behavior and never with mocked
 tools — system-behavior PRs are tested on a live omarchy VM, and every PR-specific
-check must fail without the PR applied.
+check must fail without the PR applied. A system-behavior PR evaluated only in a
+container is a HARD FAIL (wrong tier) — never a soft pass.
 
 ## Layout
 
