@@ -1,0 +1,18 @@
+omarchy-eval-flatpak:
+    candy:
+        version: 2026.244.0000
+        description: |
+            Installs flatpak (the Linux application sandboxing framework) from the
+            Arch repos so the omarchy PR evals test the Flatpak session behavior
+            with the REAL tool — per the eval guidelines: install missing software,
+            never mock. The real session behavior runs on the Tier-2 live VM.
+        package:
+            - flatpak
+        plan:
+            - check: flatpak is installed
+              id: flatpak-installed
+              context:
+                - build
+              command: |
+                  set -eu
+                  flatpak --version

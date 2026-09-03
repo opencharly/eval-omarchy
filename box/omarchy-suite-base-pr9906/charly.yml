@@ -17,6 +17,7 @@ omarchy-suite-base-pr9906:
             - arch
         candy:
             - omarchy-pr-9906
+            - omarchy-eval-flatpak
             - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.245.1438'
             - '@github.com/opencharly/layer-tmux:v2026.240.0202'
             - '@github.com/opencharly/layer-asciinema:v2026.240.0119'

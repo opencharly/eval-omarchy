@@ -17,6 +17,8 @@ omarchy-suite-base-pr9332:
             - arch
         candy:
             - omarchy-pr-9332
+            - omarchy-eval-cardwire
+            - '@github.com/opencharly/layer-yay:v2026.240.0121'
             - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.245.1438'
             - '@github.com/opencharly/layer-tmux:v2026.240.0202'
             - '@github.com/opencharly/layer-asciinema:v2026.240.0119'

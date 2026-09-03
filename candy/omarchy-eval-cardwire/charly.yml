@@ -1,0 +1,23 @@
+omarchy-eval-cardwire:
+    candy:
+        version: 2026.244.0000
+        description: |
+            Installs cardwire (the GPU manager, supergfxctl successor) from AUR so
+            the omarchy PR evals test the cardwire-driven behavior with the REAL
+            tool — per the eval guidelines: install missing software, never mock.
+            The live install + cardwired service + full switch cycle run on the
+            Tier-2 live VM (cardwire needs systemd + a GPU); the container tier
+            verifies the tool is installed and the CLI answers.
+        plan:
+            - run: install cardwire from AUR
+              id: cardwire-install
+              command: |
+                  set -eu
+                  yay -S --noconfirm --needed cardwire
+            - check: cardwire is installed
+              id: cardwire-installed
+              context:
+                - build
+              command: |
+                  set -eu
+                  cardwire --version
