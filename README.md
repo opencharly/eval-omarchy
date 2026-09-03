@@ -14,6 +14,10 @@ files at **BUILD time** via a per-PR candy (`candy/omarchy-pr-<N>`), then assert
 the PR's **behavior** as charly consequence checks — the charly variant of the
 PR's own shell tests, strictly stronger than upstream's mocked call sequences.
 
+Every evaluation is written the way **another user who tried the PR** would report it —
+first person, what worked, what did not, what could not be done and why — while keeping
+the full evidence rigor (step matrix, per-check matrix, findings tied to evidence).
+
 ## Layout
 
 | Path | Purpose |
@@ -21,8 +25,11 @@ PR's own shell tests, strictly stronger than upstream's mocked call sequences.
 | `candy/omarchy-pr-<N>/charly.yml` | Per-PR candy: fetches the PR head and installs its changed files over the installed omarchy tree at build time |
 | `box/omarchy-suite-base-pr<N>/charly.yml` | Per-PR image: the suite-base + the PR candy + the declarative behavior checks |
 | `charly.yml` | The `check-omarchy-suite-pod-pr<N>` beds (Tier-1 pod PR injection) |
-| `eval/PR-EVAL-TEMPLATE.md` | **The PR-eval template** — every evaluation report (`eval/pr-<N>.md`) and every posted PR comment is rendered from it, carrying its EXTERNAL, NON-AUTHORITATIVE disclaimer verbatim |
-| `eval/pr-<N>.md` | Per-PR evaluation reports (classification, evidence, verdict, findings) |
+| `eval/PR-EVAL-TEMPLATE.md` | **The PR-eval template** — every evaluation report (`eval/pr-<N>.md`) and every posted PR comment is rendered from it, in user-testing voice, carrying its EXTERNAL, NON-AUTHORITATIVE disclaimer verbatim and the Assisted-by footer |
+| `eval/PR-EVAL-LANE.md` | The eval lane + standing rules (install missing software, test to the max, record both lanes, reusable candies, snapshot-VM + `local:` apply mechanics) |
+| `eval/pr-<N>.md` | Per-PR evaluation reports (what I tested, how it went, what I ran, what I noticed) |
+| `eval/evidence/` | Committed small evidence (summary.yml + per-check logs per pr+calver) |
+| `media/` | Recording artifacts (asciinema `.cast` + full-screen video per pr+calver) — **gitignored** |
 | `.check/` | charly check-run artifacts (summary.yml per bed+calver) — gitignored |
 
 ## Running a bed
@@ -39,8 +46,9 @@ check live → fresh update → teardown) runs unattended.
 
 Every evaluation report is rendered from **`eval/PR-EVAL-TEMPLATE.md`** and carries
 its EXTERNAL, NON-AUTHORITATIVE disclaimer verbatim. Each `eval/pr-<N>.md` records:
-the Tier-0 diff classification and venue, the evaluated **channel** (stable/rc/edge/dev)
-and base provenance, the PR's own Verification claim, the evidence (check-run summary +
-run log), the per-check verdict matrix, the verdict (SHA-anchored, with the stale-check
-warning), and the findings (including hardware-bound classes that are PARTIAL/
-NOT-EVALUABLE, never faked).
+what was tested (channel, base provenance, the PR's own Verification claim), how it went
+(the overall result + first-person justification), what was run (check-run summary +
+run log), the per-check verdict matrix, the recordings (both lanes, saved to the
+gitignored `media/`), and what was noticed (findings tied to evidence, including
+hardware-bound classes that are PARTIAL/NOT-EVALUABLE, never faked). Every posted PR
+comment ends with the `*Assisted-by: …*` footer.
