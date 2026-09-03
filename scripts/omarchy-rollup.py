@@ -88,7 +88,7 @@ def main():
             # The golden identity folds into the cache key: a re-provisioned
             # golden invalidates every verdict against the old base.
             gsha = golden.get(bed, "")
-            key = hashlib.sha256(f"{bed}:{calver}:{gsha}".encode()).hexdigest()[:12]
+            key = cache_key(bed, calver, gsha)
             rows.append({
                 "bed": bed,
                 "calver": calver,
