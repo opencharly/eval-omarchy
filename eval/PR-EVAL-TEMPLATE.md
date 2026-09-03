@@ -24,7 +24,7 @@ empty section is not a valid answer). Delete the "Render instructions" block bef
 
 ## How it went
 
-**Overall:** it works / mostly works / I couldn't fully test it / **FAIL — wrong tier: the PR's core behavior is system-level and was only tested in a container; the live behavior is untested until the Tier-2 live VM run completes** (a system-behavior PR without live-VM evidence is a hard fail, never a soft pass)
+**Overall:** PASS (verified working on a live system) / FAIL (verified not working on a live system) / **NO VALIDATION — the validation itself failed: the PR's core behavior could not be tested on a live system, so the question "does it work?" is unanswered and no report is produced**. "it works" / "mostly works" / "might work" framings for behavior NOT verified on a live system are STRICTLY FORBIDDEN — they fake success for something the validation could not test.
 
 **What I did:** <one first-person paragraph — I applied the PR to a fresh omarchy
 install, ran the checks, and here is what happened. What worked, what did not, what I
