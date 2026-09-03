@@ -4,12 +4,9 @@ omarchy-suite-base-pr9894:
         description: |
             The Tier-1 PR-injection image for omacom/omarchy#9894: the suite-base
             image with PR #9894 applied at BUILD time via the omarchy-pr-9894 candy,
-            plus the declarative behavior checks — the charly consequence-check
-            variant of the PR's own shell tests. The PR fixes the Tailscale panel
-            failing to reconnect when accept-routes is enabled: resume via the
-            localapi prefs PATCH instead of `tailscale up`, login-interactive for
-            authorization, and a connecting state in the panel. All checks are
-            idempotent behavior assertions with no side effects.
+            plus the declarative behavior checks — REAL tools only (never mock),
+            every PR-specific check fails without the PR (known-red). The PR fixes the Tailscale panel failing to reconnect when accept-routes is enabled. The container tier verifies the fix is present and correctly authored (known-red content checks). The live reconnect against a real tailnet requires the Tier-2 live VM.
+            All checks are idempotent behavior assertions with no side effects.
         base: omarchy.omarchy-suite-base
         build:
             - pac
@@ -20,8 +17,11 @@ omarchy-suite-base-pr9894:
             - arch
         candy:
             - omarchy-pr-9894
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.245.1438'
+            - '@github.com/opencharly/layer-tmux:v2026.240.0202'
+            - '@github.com/opencharly/layer-asciinema:v2026.240.0119'
         plan:
-            - check: the reconnect path resumes via the localapi prefs PATCH
+            - check: the reconnect path resumes via the localapi prefs PATCH (known-red)
               id: pr9894-prefs-resume
               context:
                 - build
@@ -30,7 +30,7 @@ omarchy-suite-base-pr9894:
                   grep -qF '/localapi/v0/prefs' /usr/share/omarchy/shell/plugins/panels/tailscale/Model.js
                   grep -qF 'WantRunning' /usr/share/omarchy/shell/plugins/panels/tailscale/Model.js
 
-            - check: the authorization path uses login-interactive
+            - check: the authorization path uses login-interactive (known-red)
               id: pr9894-login-interactive
               context:
                 - build
@@ -38,7 +38,7 @@ omarchy-suite-base-pr9894:
                   set -eu
                   grep -qF 'login-interactive' /usr/share/omarchy/shell/plugins/panels/tailscale/Model.js
 
-            - check: the panel shows a connecting state
+            - check: the panel shows a connecting state (known-red)
               id: pr9894-connecting-state
               context:
                 - build
@@ -46,7 +46,7 @@ omarchy-suite-base-pr9894:
                   set -eu
                   grep -qF 'tailscale.connecting' /usr/share/omarchy/shell/plugins/panels/tailscale/Panel.qml
 
-            - check: peers and exit nodes gate on tailscale.running
+            - check: peers and exit nodes gate on tailscale.running (known-red)
               id: pr9894-running-gates
               context:
                 - build

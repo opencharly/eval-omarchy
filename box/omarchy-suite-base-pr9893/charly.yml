@@ -4,15 +4,9 @@ omarchy-suite-base-pr9893:
         description: |
             The Tier-1 PR-injection image for omacom/omarchy#9893: the suite-base
             image with PR #9893 applied at BUILD time via the omarchy-pr-9893 candy,
-            plus the declarative behavior checks — the charly consequence-check
-            variant of the PR's own shell tests. The PR makes low-space update
-            failures explainable: the free-space check detects a Btrfs snapshot boot
-            and tells the user to reboot into the regular Omarchy entry. Per the
-            eval guidelines (never mock), the container tier verifies only what the
-            container's real tools can prove: the snapshot message and detection
-            logic are present. The real low-disk btrfs snapshot behavior requires
-            the Tier-2 live VM. All checks are idempotent behavior assertions with
-            no side effects.
+            plus the declarative behavior checks — REAL tools only (never mock),
+            every PR-specific check fails without the PR (known-red). The PR makes low-space update failures explainable (btrfs snapshot boot detection). The container tier verifies the snapshot message and detection logic are present (known-red content checks). The real behavior — a system booted from a btrfs snapshot with low disk — is not testable in a container and requires the Tier-2 live VM.
+            All checks are idempotent behavior assertions with no side effects.
         base: omarchy.omarchy-suite-base
         build:
             - pac
@@ -23,8 +17,11 @@ omarchy-suite-base-pr9893:
             - arch
         candy:
             - omarchy-pr-9893
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.245.1438'
+            - '@github.com/opencharly/layer-tmux:v2026.240.0202'
+            - '@github.com/opencharly/layer-asciinema:v2026.240.0119'
         plan:
-            - check: the snapshot-boot message is present in the free-space script
+            - check: the snapshot-boot message is present in the free-space script (known-red)
               id: pr9893-snapshot-message
               context:
                 - build
@@ -32,7 +29,7 @@ omarchy-suite-base-pr9893:
                   set -eu
                   grep -qF 'booted from a Btrfs snapshot' /usr/share/omarchy/bin/omarchy-update-requires-free-space
 
-            - check: the snapshot detection uses findmnt on the root mount
+            - check: the snapshot detection uses findmnt on the root mount (known-red)
               id: pr9893-snapshot-detection
               context:
                 - build
@@ -40,8 +37,3 @@ omarchy-suite-base-pr9893:
                   set -eu
                   grep -qF 'findmnt -no OPTIONS /' /usr/share/omarchy/bin/omarchy-update-requires-free-space
                   grep -qF '.snapshots/.*/snapshot' /usr/share/omarchy/bin/omarchy-update-requires-free-space
-
-            # The real low-disk btrfs snapshot behavior is NOT testable in a
-            # container (no real btrfs snapshot boot, no real low-disk system) —
-            # per the eval guidelines (never mock) it is not mocked here; it
-            # requires the Tier-2 live VM.

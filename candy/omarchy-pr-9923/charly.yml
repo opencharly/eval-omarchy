@@ -4,15 +4,10 @@ omarchy-pr-9923:
         description: |
             Applies PR #9923 (omacom/omarchy) to the omarchy system at BUILD time:
             fetches the PR head and installs its changed files over the installed
-            tree. The PR fixes the network panel's split-brain: when the wifi route
-            is up but Quickshell's connectedWifiNetwork lags, the panel no longer
-            paints NOT CONNECTED — a wifiRebind nudge re-runs the connected-network
-            lookup on the existing status-poller cadence, kind stays "wifi" when the
-            interface is up, and NOT CONNECTED is only painted when there is no
-            interface at all. A candy's run steps are the install timeline — they
-            emit as Containerfile RUN directives (as root), so the PR's files land in
-            the image once, and the checks that follow are idempotent state/behavior
-            assertions with no side effects.
+            tree. The PR fixes the network panel's split-brain: when the wifi route is up but Quickshell's connectedWifiNetwork lags, the panel no longer paints NOT CONNECTED — a wifiRebind nudge re-runs the connected-network lookup on the existing status-poller cadence, kind stays "wifi" when the interface is up, and NOT CONNECTED is only painted when there is no interface at all. A candy's run steps are the install timeline —
+            they emit as Containerfile RUN directives (as root), so the PR's files
+            land in the image once, and the checks that follow are idempotent
+            state/behavior assertions with no side effects.
         plan:
             - run: fetch PR #9923's head and install its changed files
               id: pr-apply
@@ -25,10 +20,10 @@ omarchy-pr-9923:
                   git fetch -q --depth 1 origin pull/9923/head
                   git checkout -q FETCH_HEAD
                   cp shell/plugins/panels/network/Panel.qml /usr/share/omarchy/shell/plugins/panels/network/Panel.qml
-            - check: the PR's network panel is installed
+            - check: the PR's changed files are installed (known-red — PR-specific content present)
               id: pr-applied
               context:
                 - build
-              file:
-                  file: /usr/share/omarchy/shell/plugins/panels/network/Panel.qml
-                  exists: true
+              command: |
+                  set -eu
+                  grep -qF 'wifiRebind' /usr/share/omarchy/shell/plugins/panels/network/Panel.qml
