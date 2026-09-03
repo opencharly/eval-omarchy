@@ -1,0 +1,74 @@
+omarchy-suite-base-pr9912:
+    candy:
+        version: 2026.244.0000
+        description: |
+            The Tier-1 PR-injection image for omacom/omarchy#9912: the suite-base
+            image with PR #9912 applied at BUILD time via the omarchy-pr-9912 candy,
+            plus the declarative behavior checks — the charly consequence-check
+            variant of the PR's own shell tests. The PR makes `omarchy pkg add`
+            group-aware: omarchy-pkg-missing recognizes Arch package groups and
+            treats a group as present only when every member is installed, and
+            omarchy-pkg-add uses that check for post-install verification. All
+            checks are idempotent behavior assertions with no side effects.
+        base: omarchy.omarchy-suite-base
+        build:
+            - pac
+        platform:
+            - linux/amd64
+        distro:
+            - omarchy
+            - arch
+        candy:
+            - omarchy-pr-9912
+        plan:
+            - check: an installed package is not reported missing
+              id: pr9912-installed-not-missing
+              context:
+                - build
+              command: |
+                  set -eu
+                  if /usr/share/omarchy/bin/omarchy-pkg-missing bash; then
+                    echo "installed package bash reported missing" >&2
+                    exit 1
+                  fi
+
+            - check: a missing package is detected
+              id: pr9912-missing-detected
+              context:
+                - build
+              command: |
+                  set -eu
+                  /usr/share/omarchy/bin/omarchy-pkg-missing definitely-not-a-real-package-xyz
+
+            - check: a fully-installed package group is not reported missing
+              id: pr9912-group-fully-installed
+              context:
+                - build
+              command: |
+                  set -eu
+                  # `base` is a group, not a package record: pacman -Q base fails,
+                  # so without the PR this exits 0 (missing). With the PR, the
+                  # group-aware path resolves the members and reports not-missing.
+                  if /usr/share/omarchy/bin/omarchy-pkg-missing base; then
+                    echo "fully-installed group 'base' reported missing" >&2
+                    exit 1
+                  fi
+
+            - check: a group with missing members is detected
+              id: pr9912-group-missing-member
+              context:
+                - build
+              command: |
+                  set -eu
+                  # lv2-plugins is a real Arch group (the PR's own example); its
+                  # members are not installed in the suite-base image, so the
+                  # group-aware path reports it missing.
+                  /usr/share/omarchy/bin/omarchy-pkg-missing lv2-plugins
+
+            - check: pkg add uses the group-aware check for verification
+              id: pr9912-pkg-add-uses-group-check
+              context:
+                - build
+              command: |
+                  set -eu
+                  grep -qF 'omarchy-pkg-missing' /usr/share/omarchy/bin/omarchy-pkg-add

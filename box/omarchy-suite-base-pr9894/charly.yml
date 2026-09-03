@@ -1,0 +1,56 @@
+omarchy-suite-base-pr9894:
+    candy:
+        version: 2026.244.0000
+        description: |
+            The Tier-1 PR-injection image for omacom/omarchy#9894: the suite-base
+            image with PR #9894 applied at BUILD time via the omarchy-pr-9894 candy,
+            plus the declarative behavior checks — the charly consequence-check
+            variant of the PR's own shell tests. The PR fixes the Tailscale panel
+            failing to reconnect when accept-routes is enabled: resume via the
+            localapi prefs PATCH instead of `tailscale up`, login-interactive for
+            authorization, and a connecting state in the panel. All checks are
+            idempotent behavior assertions with no side effects.
+        base: omarchy.omarchy-suite-base
+        build:
+            - pac
+        platform:
+            - linux/amd64
+        distro:
+            - omarchy
+            - arch
+        candy:
+            - omarchy-pr-9894
+        plan:
+            - check: the reconnect path resumes via the localapi prefs PATCH
+              id: pr9894-prefs-resume
+              context:
+                - build
+              command: |
+                  set -eu
+                  grep -qF '/localapi/v0/prefs' /usr/share/omarchy/shell/plugins/panels/tailscale/Model.js
+                  grep -qF 'WantRunning' /usr/share/omarchy/shell/plugins/panels/tailscale/Model.js
+
+            - check: the authorization path uses login-interactive
+              id: pr9894-login-interactive
+              context:
+                - build
+              command: |
+                  set -eu
+                  grep -qF 'login-interactive' /usr/share/omarchy/shell/plugins/panels/tailscale/Model.js
+
+            - check: the panel shows a connecting state
+              id: pr9894-connecting-state
+              context:
+                - build
+              command: |
+                  set -eu
+                  grep -qF 'tailscale.connecting' /usr/share/omarchy/shell/plugins/panels/tailscale/Panel.qml
+
+            - check: peers and exit nodes gate on tailscale.running
+              id: pr9894-running-gates
+              context:
+                - build
+              command: |
+                  set -eu
+                  grep -qF 'tailscale.running && tailscale.peers.length' /usr/share/omarchy/shell/plugins/panels/tailscale/Panel.qml
+                  grep -qF 'tailscale.running && (exitNodes.length' /usr/share/omarchy/shell/plugins/panels/tailscale/Panel.qml

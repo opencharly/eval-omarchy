@@ -1,0 +1,45 @@
+omarchy-suite-base-pr9921:
+    candy:
+        version: 2026.244.0000
+        description: |
+            The Tier-1 PR-injection image for omacom/omarchy#9921: the suite-base
+            image with PR #9921 applied at BUILD time via the omarchy-pr-9921 candy,
+            plus the declarative behavior checks — the charly consequence-check
+            variant of the PR's own tests. The PR adds a SUPER+A "Universal select
+            all" keybinding to the clipboard bindings, forwarding CTRL+A to the
+            focused window and skipping terminals. All checks are idempotent
+            behavior assertions with no side effects.
+        base: omarchy.omarchy-suite-base
+        build:
+            - pac
+        platform:
+            - linux/amd64
+        distro:
+            - omarchy
+            - arch
+        candy:
+            - omarchy-pr-9921
+        plan:
+            - check: the SUPER+A universal select-all binding is present
+              id: pr9921-super-a-binding
+              context:
+                - build
+              command: |
+                  set -eu
+                  grep -qF 'o.bind("SUPER + A", "Universal select all"' /usr/share/omarchy/default/hypr/bindings/clipboard.lua
+
+            - check: the binding forwards CTRL+A with the terminal skip
+              id: pr9921-select-all-shape
+              context:
+                - build
+              command: |
+                  set -eu
+                  grep -qF 'universal_clipboard_shortcut("CTRL", "A", "CTRL SHIFT", "A")' /usr/share/omarchy/default/hypr/bindings/clipboard.lua
+
+            - check: the binding is added exactly once
+              id: pr9921-binding-once
+              context:
+                - build
+              command: |
+                  set -eu
+                  [[ $(grep -cF 'SUPER + A' /usr/share/omarchy/default/hypr/bindings/clipboard.lua) -eq 1 ]]

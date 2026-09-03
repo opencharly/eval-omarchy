@@ -1,0 +1,33 @@
+omarchy-pr-9921:
+    candy:
+        version: 2026.244.0000
+        description: |
+            Applies PR #9921 (omacom/omarchy) to the omarchy system at BUILD time:
+            fetches the PR head and installs its changed files over the installed
+            tree. The PR adds a SUPER+A "Universal select all" keybinding to
+            default/hypr/bindings/clipboard.lua, forwarding CTRL+A to the focused
+            window with the same send_key_state pattern as the existing clipboard
+            bindings, skipping terminal windows (CTRL+A there is readline's
+            move-to-start-of-line). A candy's run steps are the install timeline —
+            they emit as Containerfile RUN directives (as root), so the PR's files
+            land in the image once, and the checks that follow are idempotent
+            state/behavior assertions with no side effects.
+        plan:
+            - run: fetch PR #9921's head and install its changed files
+              id: pr-apply
+              command: |
+                  set -eu
+                  rm -rf /tmp/pr-src
+                  git init -q /tmp/pr-src
+                  cd /tmp/pr-src
+                  git remote add origin https://github.com/omacom/omarchy
+                  git fetch -q --depth 1 origin pull/9921/head
+                  git checkout -q FETCH_HEAD
+                  cp default/hypr/bindings/clipboard.lua /usr/share/omarchy/default/hypr/bindings/clipboard.lua
+            - check: the PR's clipboard bindings are installed
+              id: pr-applied
+              context:
+                - build
+              file:
+                  file: /usr/share/omarchy/default/hypr/bindings/clipboard.lua
+                  exists: true
