@@ -32,12 +32,14 @@ PARTIAL/NOT-EVALUABLE — never a faked test environment.
    `eval/PR-EVAL-TEMPLATE.md`.
 3. **Assisted-by footer on every posted comment.** Every PR comment ends with
    `*Assisted-by: <Harness> <Provider Full Model Name> (<confidence>)*`.
-4. **Install missing software in the test environment.** When a check fails or a test
-   environment cannot complete because a tool/package is missing, install it (extra
-   software package / install step, or the system's own package installer) and
-   re-run BEFORE declaring "couldn't be tested". Only a genuinely impossible install
-   (package in no reachable repository) stays untested — with the exact blocker
-   documented.
+4. **Install missing software in the test environment — REQUIRED before any NO
+   VALIDATION.** When a check fails or a test environment cannot complete because a
+   tool/package is missing, the evaluator MUST install it — by creating a reusable
+   install candy (per rule 7) or an in-venue install — and re-run. NO VALIDATION is
+   ONLY valid after installation was genuinely attempted and proved impossible
+   (package in no reachable repository), with the exact blocker documented.
+   Declaring NO VALIDATION because a tool was not installed is a validation
+   failure, not a result.
 5. **Test to the maximum extent possible — on a live system.** Run every applicable
    test environment (container, virtual machine, visual, GPU when hardware is
    available), exercise the PR's own "## Verification" claims, and probe edge cases

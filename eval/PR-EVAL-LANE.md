@@ -27,12 +27,16 @@ evidence → revert.
 3. **Assisted-by footer on every posted comment.** Every PR comment ends with
    `*Assisted-by: <Harness> <Provider Full Model Name> (<confidence>)*`
    (e.g. `*Assisted-by: pi ollama-cloud/deepseek-v4-flash:0731 (fully tested and validated)*`).
-4. **Install missing software in the test environment.** When a check fails or a test
-   environment cannot complete because a tool/package is missing, install it (extra
-   software package / install step, or the system's own package installer) and re-run
-   BEFORE declaring "couldn't be tested". Only a genuinely impossible install (package
-   in no reachable repository) stays untested — with the exact blocker documented.
-   (Canonical case: pr-9332's cardwire gap — try to install it first.)
+4. **Install missing software in the test environment — REQUIRED before any NO
+   VALIDATION.** When a check fails or a test environment cannot complete because a
+   tool/package is missing, the evaluator MUST install it — by creating a reusable
+   install candy (per standing rule 7) or an in-venue install — and re-run. NO
+   VALIDATION is ONLY valid after installation was genuinely attempted and proved
+   impossible (package in no reachable repository), with the exact blocker
+   documented. Declaring NO VALIDATION because a tool was not installed is a
+   validation failure, not a result. (Canonical case: pr-9332's cardwire gap —
+   cardwire IS installable from AUR (`yay -S cardwire`); the evaluator must install
+   it, not declare NO VALIDATION.)
 5. **Test to the maximum extent possible — on a live system.** Run every applicable
    test environment (container, virtual machine, visual, GPU when hardware is
    available), exercise the PR's own "## Verification" claims, and probe edge cases
@@ -127,7 +131,11 @@ tested on a live system is never claimed to work — it is stated as "not yet
 tested on a live system", clearly, so the PR author knows exactly what still
 needs to be fixed or verified. A pod-only eval is NOT a validation: the container
 tier cannot test live system behavior, so a container run of a system-behavior PR
-proves nothing about the PR and must never be presented as a validation. If the
+proves nothing about the PR and must never be presented as a validation. Before
+declaring NO VALIDATION, the evaluator MUST have installed every missing tool
+(standing rule 4 — create the install candy, re-run) and MUST have attempted the
+live-tier testing; NO VALIDATION is only valid after both were genuinely
+attempted. If the
 validation cannot test the thing on a live system, the validation itself fails —
 the result is NO VALIDATION, and no report is produced. A container run never
 becomes a live-behavior claim, and an untested live behavior never becomes a

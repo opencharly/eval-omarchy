@@ -123,9 +123,9 @@ references them; small evidence stays committed in `eval/evidence/<pr>-<calver>/
 - **No faked test environment:** hardware-bound classes PARTIAL/NOT-EVALUABLE; every check ran on a real test environment.
 - **Evidence persisted:** `eval/evidence/<pr>-<calver>/summary.yml` + per-check log committed in-repo.
 - **Recordings:** both lanes captured and saved to `media/<pr>-<calver>/` (gitignored), referenced above.
-- **Missing software:** anything missing in the test environment was installed (extra software package /
-  install step / the system's own package installer) and the run re-done — recorded in "What I noticed";
-  only a genuinely impossible install stays NOT-EVALUABLE, with the exact blocker documented.
+- **Missing software installed (REQUIRED):** every missing tool was installed via a reusable install candy
+  or in-venue install and the run re-done — recorded in "What I noticed"; NO VALIDATION is only valid after
+  installation was genuinely attempted and proved impossible, with the exact blocker documented.
 - **Max extent:** every applicable test environment ran; the PR's own Verification claim was exercised;
   edge cases probed (idempotence, failure paths, clean-install vs upgrade).
 - **Zero warnings:** gate output has no surviving warnings (approved ones named).

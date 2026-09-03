@@ -29,9 +29,10 @@ check must fail without the PR applied. The validation's purpose: does it actual
 work? Reports answer in a friendly, first-person voice, crystal clear about what
 works and what still needs to be fixed — no binary PASS/FAIL judgments. Every
 "works" claim must be verified on a live system; a part not tested on a live
-system is never claimed to work. A system-behavior PR whose core behavior cannot
-be tested on a live system gets NO VALIDATION (the validation itself fails); a
-pod-only eval is not a validation.
+system is never claimed to work. Missing software is installed (reusable install
+candy) BEFORE any NO VALIDATION is considered; NO VALIDATION is only valid after
+installation and live-tier testing were genuinely attempted and proved impossible.
+A pod-only eval is not a validation.
 
 ## Layout
 
