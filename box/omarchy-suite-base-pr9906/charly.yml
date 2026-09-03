@@ -8,7 +8,10 @@ omarchy-suite-base-pr9906:
             variant of the PR's own shell tests. The PR lets the session see
             Flatpak's exported desktop entries: the uwsm env file sources
             /etc/profile.d/flatpak.sh so XDG_DATA_DIRS gains Flatpak's export dirs.
-            All checks are idempotent behavior assertions with no side effects.
+            Per the eval guidelines (never mock), the container tier verifies only
+            what the container's real tools can prove: the Flatpak hook is present.
+            The real session behavior requires the Tier-2 live VM. All checks are
+            idempotent behavior assertions with no side effects.
         base: omarchy.omarchy-suite-base
         build:
             - pac

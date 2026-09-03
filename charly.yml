@@ -53,9 +53,11 @@ check-omarchy-suite-pod-pr9332:
             Tier-1 PR-injection bed for omacom/omarchy#9332 (hybrid GPU
             supergfxctl→cardwire migration): builds the PR-variant image (PR
             applied at BUILD time via the omarchy-pr-9332 candy) and runs the
-            declarative behavior checks — the charly consequence-check variant
-            of the PR's own shell tests. The checks are idempotent behavior
-            assertions with no side effects.
+            declarative behavior checks with REAL tools only (never mock) — the
+            PR's files are applied and the retired supergfxd workarounds are gone.
+            The toggle's behavior with real cardwire requires the Tier-2 live VM
+            once cardwire ships in the package repository. The checks are
+            idempotent behavior assertions with no side effects.
 
 # ── Tier-1 PR-injection bed (PR #9912) ────────────────────────────────────────
 # omacom/omarchy#9912 — "Handle package groups in omarchy pkg add". The PR-variant
@@ -130,8 +132,10 @@ check-omarchy-suite-pod-pr9893:
             Tier-1 PR-injection bed for omacom/omarchy#9893 (low-space update
             snapshot explanation): builds the PR-variant image (PR applied at BUILD
             time via the omarchy-pr-9893 candy) and runs the declarative behavior
-            checks. The checks are idempotent behavior assertions with no side
-            effects.
+            checks with REAL tools only (never mock) — the snapshot message and
+            detection logic are present. The real low-disk btrfs snapshot behavior
+            requires the Tier-2 live VM. The checks are idempotent behavior
+            assertions with no side effects.
 
 # ── Tier-1 PR-injection bed (PR #9894) ────────────────────────────────────────
 # omacom/omarchy#9894 — "Fix Tailscale plugin failing to reconnect when
@@ -184,6 +188,7 @@ check-omarchy-suite-pod-pr9906:
             Tier-1 PR-injection bed for omacom/omarchy#9906 (Flatpak desktop
             entries in the session): builds the PR-variant image (PR applied at
             BUILD time via the omarchy-pr-9906 candy) and runs the declarative
-            behavior checks. The checks are idempotent behavior assertions with no
-            side effects.
+            behavior checks with REAL tools only (never mock) — the Flatpak hook
+            is present. The real session behavior requires the Tier-2 live VM. The
+            checks are idempotent behavior assertions with no side effects.
 

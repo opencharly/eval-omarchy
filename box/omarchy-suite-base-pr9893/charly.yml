@@ -7,8 +7,12 @@ omarchy-suite-base-pr9893:
             plus the declarative behavior checks — the charly consequence-check
             variant of the PR's own shell tests. The PR makes low-space update
             failures explainable: the free-space check detects a Btrfs snapshot boot
-            and tells the user to reboot into the regular Omarchy entry. All checks
-            are idempotent behavior assertions with no side effects.
+            and tells the user to reboot into the regular Omarchy entry. Per the
+            eval guidelines (never mock), the container tier verifies only what the
+            container's real tools can prove: the snapshot message and detection
+            logic are present. The real low-disk btrfs snapshot behavior requires
+            the Tier-2 live VM. All checks are idempotent behavior assertions with
+            no side effects.
         base: omarchy.omarchy-suite-base
         build:
             - pac
