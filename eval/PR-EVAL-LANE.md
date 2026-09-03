@@ -12,29 +12,41 @@ evidence → revert.
 
 ## Standing rules (every PR evaluation)
 
-1. **Test like a user, not a validator.** Reports and posted comments are first-person:
+1. **NEVER mock anything — ever.** A check that substitutes a fake tool for the real
+   one proves nothing about the PR. Every check must exercise the REAL tool, the REAL
+   system state, the REAL behavior. If a behavior cannot be tested with the real
+   tools available in the current tier (e.g. real cardwire, real btrfs snapshots, a
+   real flatpak session), it must be tested on the live VM tier (Tier-2) — or not
+   claimed at all. A mocked check is not evidence; a report built on mocks is
+   useless. This rule is first because it is the whole point: an evaluation that
+   mocks is not an evaluation.
+2. **Test like a user, not a validator.** Reports and posted comments are first-person:
    what I did, what worked, what did not, what I could not do and why. The evidence
    rigor stays (step matrix, per-check matrix, findings tied to evidence) — only the
    framing changes. Every report is rendered from `eval/PR-EVAL-TEMPLATE.md`.
-2. **Assisted-by footer on every posted comment.** Every PR comment ends with
+3. **Assisted-by footer on every posted comment.** Every PR comment ends with
    `*Assisted-by: <Harness> <Provider Full Model Name> (<confidence>)*`
    (e.g. `*Assisted-by: pi ollama-cloud/deepseek-v4-flash:0731 (fully tested and validated)*`).
-3. **Install missing software in the test environment.** When a check fails or a test
+4. **Install missing software in the test environment.** When a check fails or a test
    environment cannot complete because a tool/package is missing, install it (extra
    software package / install step, or the system's own package installer) and re-run
    BEFORE declaring "couldn't be tested". Only a genuinely impossible install (package
    in no reachable repository) stays untested — with the exact blocker documented.
    (Canonical case: pr-9332's cardwire gap — try to install it first.)
-4. **Test to the maximum extent possible.** Run every applicable test environment
-   (container, virtual machine, visual, GPU when hardware is available), exercise the
-   PR's own "## Verification" claims, and probe edge cases (idempotence/double-run,
-   failure paths, clean-install vs upgrade). Do not stop at the first green check.
-5. **Record every evaluation — both lanes.** Every PR evaluation produces a terminal
+5. **Test to the maximum extent possible — on a live system.** Run every applicable
+   test environment (container, virtual machine, visual, GPU when hardware is
+   available), exercise the PR's own "## Verification" claims, and probe edge cases
+   (idempotence/double-run, failure paths, clean-install vs upgrade). A PR whose core
+   behavior is system-level (hardware switching, filesystem/snapshot behavior, session
+   environment, network state, keybindings, service behavior) MUST be tested on a live
+   omarchy VM (Tier-2), never only in a container. Do not stop at the first green
+   check.
+6. **Record every evaluation — both lanes.** Every PR evaluation produces a terminal
    asciinema `.cast` AND a full-screen video (desktop recording or VM display
    recording), saved to the gitignored `media/<pr>-<calver>/`. Check output must be
    surfaced on the system's desktop and visible in the recording frames (the
    checks-visible-in-recordings rule below).
-6. **Create reusable software packages when software is missing.** When a PR needs
+7. **Create reusable software packages when software is missing.** When a PR needs
    software or tooling that does not exist yet, create a small reusable package for it
    — following the established rules (scaffold with the scaffolding tool; every package
    needs a description + at least one automated check; one generic package per concern,
@@ -42,7 +54,7 @@ evidence → revert.
    Candidates that fall out of the first PR evals: `omarchy-pr-apply` (generic
    PR-apply package), `omarchy-eval-record` (recording tools), `cardwire` (a
    PR-required tool the omarchy package repository does not ship yet).
-7. **Triage before authoring a validation.** Before creating a per-PR test
+8. **Triage before authoring a validation.** Before creating a per-PR test
    environment, decide whether the PR is worth evaluating at all:
    - **Is the PR useful?** Does it fix a real, user-visible problem (check the PR
      body and linked issues)? Is it a meaningful change, or trivial, duplicative,
@@ -57,6 +69,44 @@ evidence → revert.
      where the core behavior cannot be exercised on this machine are recorded as
      "couldn't be tested" with the reason — never a faked test environment, and no
      validation is authored for them.
+   - **Which tier proves the behavior?** A system-behavior PR (hardware switching,
+     filesystem/snapshot behavior, session environment, network state, keybindings,
+     services) must be routed to the live VM tier. If the live tier cannot run (no
+     base VM), the PR gets a scoped partial eval or a triage note — never a
+     container-only claim of live behavior.
+9. **Every PR-specific check must fail without the PR (the known-red fixture).** A
+   check that passes on the base image without the PR proves nothing about the PR.
+   Each PR-specific check must be red (fail) when the PR is not applied — by
+   construction (it asserts a string, file, or behavior that only exists in the PR)
+   or by verification (run the checks against the base image without the PR candy and
+   confirm they fail). General sanity checks (e.g. "bash is installed") are allowed
+   but must be labeled non-PR-specific and never counted as PR proof.
+
+## What each tier proves (honest semantics)
+
+A claim in a report is only as strong as the tier that produced it. Never claim
+live-system behavior from a container run.
+
+- **Tier-1 container (pod):** proves the PR's files are applied to the installed
+  tree, and the script-level logic with the container's REAL tools (e.g. real
+  pacman, real commands, real file state). It does NOT prove live system behavior:
+  real hardware switching, real filesystem/snapshot behavior, a real session
+  environment, real network state, real keypresses, real service behavior. No
+  mocked tools, ever — a behavior that cannot be tested with the container's real
+  tools is tested on the live VM or not claimed.
+- **Tier-2 live VM (omarchy-vm):** proves the PR's behavior on a real omarchy
+  system — real cardwire, real btrfs snapshots, real flatpak, real network, real
+  desktop. This is the tier for system-behavior claims.
+- **Tier-2 visual / L3 GPU:** desktop evidence and hardware-bound classes
+  (PARTIAL/NOT-EVALUABLE when the hardware is unavailable — never a faked bed).
+
+**Routing rule:** a PR whose core behavior is system-level (hardware switching,
+filesystem/snapshot behavior, session environment, network state, keybindings,
+service behavior) MUST be evaluated on a live VM (Tier-2), not just the container.
+The container tier alone is insufficient for these classes. If the live tier cannot
+run (no base VM), the report must say "live behavior not tested — requires the
+Tier-2 VM lane" and the verdict is capped accordingly — a container run never
+becomes a live-behavior claim.
 
 ## Mechanics (all reuse — no new tooling)
 
@@ -116,7 +166,10 @@ Bases are disposable test systems rebuilt fresh on installer/channel version bum
 every PR apply is fresh (revert + re-apply); one full fresh-install verification run
 stays per batch; lane-only evals report the "tested on a real system" level unless the
 fresh-install run happened; every report records channel + installer version + snapshot
-id — no faked freshness.
+id — no faked freshness. A report's claims are scoped to the tier that produced them:
+a container run proves script logic and file application, never live system behavior.
+A system-behavior PR whose live tier has not run is reported as "mostly works — script
+logic verified; live behavior not yet tested", never as a live-behavior pass.
 
 ## Experiment (2026-09-02 — run with a real base VM; results honest, run vs NOT-RUN)
 
