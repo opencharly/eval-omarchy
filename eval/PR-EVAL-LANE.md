@@ -259,3 +259,31 @@ Phase B is not pursued with this evidence:
   resolve, not tooling gaps.
 - Clone-based sources / a snapshot command: no measured need (the clean
   snapshot + snapshot tooling cover the lane) — not pursued.
+
+## NO VALIDATION is a LAST RESORT — never the default
+
+A report that says NO VALIDATION is an admission that the evaluation itself
+failed. Before that verdict is ever written, ALL of these must have been
+exhausted, in order:
+
+1. **Run the PR's own test suites** (`test/cli`, `test/shell`, `test/shell.d/*`)
+   on the live system — the PR's own "## Verification" claims are the first
+   thing to measure, and they are almost always runnable.
+2. **Try to install the missing software for real** (rule 4): the package
+   repository, AUR, the project's own releases. A tool that exists on AUR is
+   installable — "not in the omarchy repo" is NOT a blocker when AUR has it.
+3. **Test the real behavior with the real tools** on the live VM (Tier-2):
+   real pacman, real df/findmnt, real config trees, real services. Script-level
+   logic (detection, fallbacks, error paths, install paths) is testable even
+   when the full hardware cycle is not.
+4. **Record what WAS tested** — a PARTIAL verdict with the real evidence
+   (which suites passed, which real behaviors were measured, which branches
+   were not triggered and why) is always better than NO VALIDATION.
+
+Only a genuinely impossible test (hardware the machine does not have, a
+credential the environment does not have, a package in no reachable
+repository) stays untested — with the exact blocker documented. The canonical
+counter-example: pr-9332 was reported NO VALIDATION because "cardwire is not
+in the omarchy package repository" — but cardwire IS on AUR, the PR's own
+test suites run, and the scripts' real behavior (detection fallback,
+install-path failure) is measurable. The re-evaluation found all of it.
