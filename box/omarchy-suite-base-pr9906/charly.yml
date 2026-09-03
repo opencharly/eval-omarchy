@@ -4,14 +4,9 @@ omarchy-suite-base-pr9906:
         description: |
             The Tier-1 PR-injection image for omacom/omarchy#9906: the suite-base
             image with PR #9906 applied at BUILD time via the omarchy-pr-9906 candy,
-            plus the declarative behavior checks — the charly consequence-check
-            variant of the PR's own shell tests. The PR lets the session see
-            Flatpak's exported desktop entries: the uwsm env file sources
-            /etc/profile.d/flatpak.sh so XDG_DATA_DIRS gains Flatpak's export dirs.
-            Per the eval guidelines (never mock), the container tier verifies only
-            what the container's real tools can prove: the Flatpak hook is present.
-            The real session behavior requires the Tier-2 live VM. All checks are
-            idempotent behavior assertions with no side effects.
+            plus the declarative behavior checks — REAL tools only (never mock),
+            every PR-specific check fails without the PR (known-red). The PR lets the session see Flatpak's exported desktop entries. The container tier verifies the Flatpak hook is present (known-red content check). The real session behavior — a live session actually listing Flatpak apps — requires the Tier-2 live VM.
+            All checks are idempotent behavior assertions with no side effects.
         base: omarchy.omarchy-suite-base
         build:
             - pac
@@ -22,8 +17,11 @@ omarchy-suite-base-pr9906:
             - arch
         candy:
             - omarchy-pr-9906
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.245.1438'
+            - '@github.com/opencharly/layer-tmux:v2026.240.0202'
+            - '@github.com/opencharly/layer-asciinema:v2026.240.0119'
         plan:
-            - check: the uwsm env file sources the Flatpak profile hook
+            - check: the uwsm env file sources the Flatpak profile hook (known-red)
               id: pr9906-flatpak-hook
               context:
                 - build
@@ -31,8 +29,3 @@ omarchy-suite-base-pr9906:
                   set -eu
                   grep -qF 'flatpak.sh' /usr/share/omarchy/default/uwsm/env.d/10-omarchy
                   grep -qF 'OMARCHY_FLATPAK_PROFILE' /usr/share/omarchy/default/uwsm/env.d/10-omarchy
-
-            # The real flatpak session behavior is NOT testable in a container
-            # (no real flatpak installation, no real session) — per the eval
-            # guidelines (never mock) it is not mocked here; it requires the
-            # Tier-2 live VM.

@@ -4,13 +4,8 @@ omarchy-pr-9894:
         description: |
             Applies PR #9894 (omacom/omarchy) to the omarchy system at BUILD time:
             fetches the PR head and installs its changed files over the installed
-            tree. The PR fixes the Tailscale panel failing to reconnect when
-            accept-routes is enabled: Model.js resumes via the localapi prefs PATCH
-            (WantRunning) instead of `tailscale up` (which refuses when a saved
-            option differs from its flag defaults) and uses login-interactive for
-            authorization; Panel.qml shows a connecting state and gates peers/exit
-            nodes on tailscale.running. A candy's run steps are the install timeline
-            — they emit as Containerfile RUN directives (as root), so the PR's files
+            tree. The PR fixes the Tailscale panel failing to reconnect when accept-routes is enabled: Model.js resumes via the localapi prefs PATCH (WantRunning) instead of `tailscale up` (which refuses when a saved option differs from its flag defaults) and uses login-interactive for authorization; Panel.qml shows a connecting state and gates peers/exit nodes on tailscale.running. A candy's run steps are the install timeline —
+            they emit as Containerfile RUN directives (as root), so the PR's files
             land in the image once, and the checks that follow are idempotent
             state/behavior assertions with no side effects.
         plan:
@@ -27,10 +22,10 @@ omarchy-pr-9894:
                   cp shell/plugins/panels/tailscale/Model.js /usr/share/omarchy/shell/plugins/panels/tailscale/Model.js
                   cp shell/plugins/panels/tailscale/Panel.qml /usr/share/omarchy/shell/plugins/panels/tailscale/Panel.qml
                   cp shell/plugins/panels/tailscale/Service.qml /usr/share/omarchy/shell/plugins/panels/tailscale/Service.qml
-            - check: the PR's tailscale panel files are installed
+            - check: the PR's changed files are installed (known-red — PR-specific content present)
               id: pr-applied
               context:
                 - build
-              file:
-                  file: /usr/share/omarchy/shell/plugins/panels/tailscale/Model.js
-                  exists: true
+              command: |
+                  set -eu
+                  grep -qF 'localapi' /usr/share/omarchy/shell/plugins/panels/tailscale/Model.js

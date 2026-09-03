@@ -4,12 +4,9 @@ omarchy-suite-base-pr9912:
         description: |
             The Tier-1 PR-injection image for omacom/omarchy#9912: the suite-base
             image with PR #9912 applied at BUILD time via the omarchy-pr-9912 candy,
-            plus the declarative behavior checks — the charly consequence-check
-            variant of the PR's own shell tests. The PR makes `omarchy pkg add`
-            group-aware: omarchy-pkg-missing recognizes Arch package groups and
-            treats a group as present only when every member is installed, and
-            omarchy-pkg-add uses that check for post-install verification. All
-            checks are idempotent behavior assertions with no side effects.
+            plus the declarative behavior checks — REAL tools only (never mock),
+            every PR-specific check fails without the PR (known-red). The PR makes `omarchy pkg add` group-aware. The container tier verifies the script logic with the container's REAL pacman (never mock): the group-aware missing-detection works for installed packages, missing packages, fully-installed groups, and groups with missing members. The live `omarchy pkg add <group>` install path on a real system is not exercised here — it requires the Tier-2 live VM.
+            All checks are idempotent behavior assertions with no side effects.
         base: omarchy.omarchy-suite-base
         build:
             - pac
@@ -20,8 +17,11 @@ omarchy-suite-base-pr9912:
             - arch
         candy:
             - omarchy-pr-9912
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.245.1438'
+            - '@github.com/opencharly/layer-tmux:v2026.240.0202'
+            - '@github.com/opencharly/layer-asciinema:v2026.240.0119'
         plan:
-            - check: an installed package is not reported missing
+            - check: an installed package is not reported missing (real pacman)
               id: pr9912-installed-not-missing
               context:
                 - build
@@ -32,7 +32,7 @@ omarchy-suite-base-pr9912:
                     exit 1
                   fi
 
-            - check: a missing package is detected
+            - check: a missing package is detected (real pacman)
               id: pr9912-missing-detected
               context:
                 - build
@@ -40,32 +40,26 @@ omarchy-suite-base-pr9912:
                   set -eu
                   /usr/share/omarchy/bin/omarchy-pkg-missing definitely-not-a-real-package-xyz
 
-            - check: a fully-installed package group is not reported missing
+            - check: a fully-installed package group is not reported missing (known-red — without the PR, pacman -Q base fails and this exits 0)
               id: pr9912-group-fully-installed
               context:
                 - build
               command: |
                   set -eu
-                  # `base` is a group, not a package record: pacman -Q base fails,
-                  # so without the PR this exits 0 (missing). With the PR, the
-                  # group-aware path resolves the members and reports not-missing.
                   if /usr/share/omarchy/bin/omarchy-pkg-missing base; then
                     echo "fully-installed group 'base' reported missing" >&2
                     exit 1
                   fi
 
-            - check: a group with missing members is detected
+            - check: a group with missing members is detected (real pacman, exercises the group path)
               id: pr9912-group-missing-member
               context:
                 - build
               command: |
                   set -eu
-                  # lv2-plugins is a real Arch group (the PR's own example); its
-                  # members are not installed in the suite-base image, so the
-                  # group-aware path reports it missing.
                   /usr/share/omarchy/bin/omarchy-pkg-missing lv2-plugins
 
-            - check: pkg add uses the group-aware check for verification
+            - check: pkg add uses the group-aware check for verification (known-red — without the PR it uses pacman -Q directly)
               id: pr9912-pkg-add-uses-group-check
               context:
                 - build

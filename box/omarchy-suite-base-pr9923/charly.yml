@@ -4,13 +4,9 @@ omarchy-suite-base-pr9923:
         description: |
             The Tier-1 PR-injection image for omacom/omarchy#9923: the suite-base
             image with PR #9923 applied at BUILD time via the omarchy-pr-9923 candy,
-            plus the declarative behavior checks — the charly consequence-check
-            variant of the PR's own tests. The PR fixes the network panel's
-            split-brain (wifi route up but Quickshell's connected-network lookup
-            lagging): a wifiRebind nudge re-runs the lookup on the existing poller
-            cadence, kind stays "wifi" when the interface is up, and NOT CONNECTED
-            is only painted when there is no interface. All checks are idempotent
-            behavior assertions with no side effects.
+            plus the declarative behavior checks — REAL tools only (never mock),
+            every PR-specific check fails without the PR (known-red). The PR fixes the network panel's split-brain (wifi route up but Quickshell's connected-network lookup lagging). The container tier verifies the fix is present and correctly authored (known-red content checks). The live behavior — a real wifi link with a late NetworkManager start — requires the Tier-2 live VM with a real network.
+            All checks are idempotent behavior assertions with no side effects.
         base: omarchy.omarchy-suite-base
         build:
             - pac
@@ -21,8 +17,11 @@ omarchy-suite-base-pr9923:
             - arch
         candy:
             - omarchy-pr-9923
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.245.1438'
+            - '@github.com/opencharly/layer-tmux:v2026.240.0202'
+            - '@github.com/opencharly/layer-asciinema:v2026.240.0119'
         plan:
-            - check: the wifiRebind nudge is present in the network panel
+            - check: the wifiRebind nudge is present in the network panel (known-red)
               id: pr9923-wifi-rebind-nudge
               context:
                 - build
@@ -32,7 +31,7 @@ omarchy-suite-base-pr9923:
                   grep -qF 'onInfoChanged:' /usr/share/omarchy/shell/plugins/panels/network/Panel.qml
                   grep -qF 'wifiRebind++' /usr/share/omarchy/shell/plugins/panels/network/Panel.qml
 
-            - check: kind stays wifi when the interface is up
+            - check: kind stays wifi when the interface is up (known-red)
               id: pr9923-kind-wifi-inference
               context:
                 - build
@@ -40,7 +39,7 @@ omarchy-suite-base-pr9923:
                   set -eu
                   grep -qF 'if (info.iface && info.type === "wifi") return "wifi"' /usr/share/omarchy/shell/plugins/panels/network/Panel.qml
 
-            - check: NOT CONNECTED is only painted when there is no interface
+            - check: NOT CONNECTED is only painted when there is no interface (known-red)
               id: pr9923-not-connected-guard
               context:
                 - build

@@ -4,14 +4,10 @@ omarchy-pr-9906:
         description: |
             Applies PR #9906 (omacom/omarchy) to the omarchy system at BUILD time:
             fetches the PR head and installs its changed files over the installed
-            tree. The PR lets the session see Flatpak's exported desktop entries:
-            default/uwsm/env.d/10-omarchy now sources /etc/profile.d/flatpak.sh
-            (which prepends Flatpak's export dirs to XDG_DATA_DIRS) so the launcher
-            finds Flatpak apps; OMARCHY_FLATPAK_PROFILE is a test seam. A candy's
-            run steps are the install timeline — they emit as Containerfile RUN
-            directives (as root), so the PR's files land in the image once, and the
-            checks that follow are idempotent state/behavior assertions with no side
-            effects.
+            tree. The PR lets the session see Flatpak's exported desktop entries: default/uwsm/env.d/10-omarchy now sources /etc/profile.d/flatpak.sh (which prepends Flatpak's export dirs to XDG_DATA_DIRS) so the launcher finds Flatpak apps; OMARCHY_FLATPAK_PROFILE is a test seam. A candy's run steps are the install timeline —
+            they emit as Containerfile RUN directives (as root), so the PR's files
+            land in the image once, and the checks that follow are idempotent
+            state/behavior assertions with no side effects.
         plan:
             - run: fetch PR #9906's head and install its changed files
               id: pr-apply
@@ -24,10 +20,10 @@ omarchy-pr-9906:
                   git fetch -q --depth 1 origin pull/9906/head
                   git checkout -q FETCH_HEAD
                   cp default/uwsm/env.d/10-omarchy /usr/share/omarchy/default/uwsm/env.d/10-omarchy
-            - check: the PR's uwsm env file is installed
+            - check: the PR's changed files are installed (known-red — PR-specific content present)
               id: pr-applied
               context:
                 - build
-              file:
-                  file: /usr/share/omarchy/default/uwsm/env.d/10-omarchy
-                  exists: true
+              command: |
+                  set -eu
+                  grep -qF 'flatpak.sh' /usr/share/omarchy/default/uwsm/env.d/10-omarchy

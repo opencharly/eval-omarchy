@@ -4,13 +4,7 @@ omarchy-pr-9332:
         description: |
             Applies PR #9332 (omacom/omarchy) to the omarchy system at BUILD time:
             fetches the PR head and installs its changed files over the installed
-            tree. The PR migrates hybrid GPU switching from supergfxctl to
-            cardwire: bin/omarchy-hw-hybrid-gpu and bin/omarchy-toggle-hybrid-gpu
-            now drive cardwire (install + enable cardwired, retire a leftover
-            supergfxd, query via `cardwire get`, switch via `cardwire set`), and
-            the supergfxd-only workarounds (force-igpu sleep hook,
-            supergfxd.service.d delay-start drop-in) are dropped from the
-            installed default tree. A candy's run steps are the install timeline —
+            tree. The PR migrates hybrid GPU switching from supergfxctl to cardwire: bin/omarchy-hw-hybrid-gpu and bin/omarchy-toggle-hybrid-gpu now drive cardwire (install + enable cardwired, retire a leftover supergfxd, query via `cardwire get`, switch via `cardwire set`), and the supergfxd-only workarounds (force-igpu sleep hook, supergfxd.service.d delay-start drop-in) are dropped from the installed default tree. A candy's run steps are the install timeline —
             they emit as Containerfile RUN directives (as root), so the PR's files
             land in the image once, and the checks that follow are idempotent
             state/behavior assertions with no side effects.
@@ -29,10 +23,10 @@ omarchy-pr-9332:
                   cp bin/omarchy-toggle-hybrid-gpu /usr/share/omarchy/bin/omarchy-toggle-hybrid-gpu
                   rm -f /usr/share/omarchy/default/systemd/system-sleep/force-igpu
                   rm -rf /usr/share/omarchy/default/systemd/system/supergfxd.service.d
-            - check: the PR's cardwire-based scripts are installed
+            - check: the PR's changed files are installed (known-red — PR-specific content present)
               id: pr-applied
               context:
                 - build
-              file:
-                  file: /usr/share/omarchy/bin/omarchy-toggle-hybrid-gpu
-                  exists: true
+              command: |
+                  set -eu
+                  grep -qF 'cardwire' /usr/share/omarchy/bin/omarchy-toggle-hybrid-gpu
