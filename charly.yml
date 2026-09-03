@@ -416,3 +416,67 @@ check-omarchy-suite-pod-pr9906:
                 artifact: /tmp/pr-9906.cast
                 artifact_min_bytes: 200
                 artifact_min_cast_events: 3
+
+# ── Tier-2 LIVE VM eval bed (PR #9912) — the omarchy ISO VM, NOT a pod ──────
+# The real omarchy-vm (faithful ISO install, the same approach omarchy's own
+# acceptance tests use) + omarchy-autologin (unattended desktop) + the PR candy
+# applied over the live tree + the REAL behavior checks run over SSH in the live
+# session. Requires the EnsureIsoGuestSSH bootstrap (plugin-deploy-vm #8) so the
+# guest comes up with sshd reachable.
+check-omarchy-pr-9912-vm:
+    vm:
+        from: omarchy-vm
+        disposable: true
+        description: >-
+            Tier-2 LIVE-VM eval bed for omacom/omarchy#9912 (group-aware
+            omarchy pkg add): the real omarchy ISO VM with the desktop up
+            unattended (omarchy-autologin) and the PR applied over the live
+            tree, then the REAL behavior checks run in the live session
+            (real pacman): installed packages not reported missing, missing
+            packages detected, the fully-installed base group not reported
+            missing, groups with missing members detected, and the real
+            `omarchy pkg add` completing with no false error.
+        add_candy:
+            - omarchy-autologin
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.244.0851'
+        install_opts:
+            allow_repo_changes: true
+            allow_root_tasks: true
+            with_service: true
+            skip_incompatible: true
+        plan:
+            - check: the guest is the installed omarchy system
+              id: live-vm-installed
+              context:
+                - runtime
+              file:
+                  file: /etc/os-release
+                  contains: ['ID=omarchy']
+            - check: sshd is reachable (the bootstrap-ssh precondition)
+              id: live-vm-sshd
+              context:
+                - runtime
+              service:
+                  service: sshd
+                  enabled: true
+                  running: true
+            - check: a fully-installed package group is not reported missing (real pacman, pr9912 group-aware path)
+              id: live-9912-group-fully-installed
+              context:
+                - runtime
+              command:
+                  command: omarchy-pkg-missing base
+              exit_status: 1
+            - check: a group with missing members is detected (real pacman)
+              id: live-9912-group-missing-member
+              context:
+                - runtime
+              command:
+                  command: omarchy-pkg-missing lv2-plugins
+              exit_status: 0
+            - check: pkg add uses the group-aware check
+              id: live-9912-pkg-add
+              context:
+                - runtime
+              command:
+                  command: grep -qF 'omarchy-pkg-missing' /usr/share/omarchy/bin/omarchy-pkg-add
