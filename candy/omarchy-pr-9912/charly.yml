@@ -1,0 +1,35 @@
+omarchy-pr-9912:
+    candy:
+        version: 2026.244.0000
+        description: |
+            Applies PR #9912 (omacom/omarchy) to the omarchy system at BUILD time:
+            fetches the PR head and installs its changed files over the installed
+            tree. The PR makes `omarchy pkg add` group-aware: bin/omarchy-pkg-missing
+            now recognizes Arch package groups (pacman -Sgq) and treats a group as
+            present only when every member is installed, and bin/omarchy-pkg-add
+            uses that group-aware check for its post-install verification so a
+            successful group install (e.g. `omarchy pkg add lv2-plugins`) is not
+            reported as "Package '...' did not install". A candy's run steps are the
+            install timeline — they emit as Containerfile RUN directives (as root),
+            so the PR's files land in the image once, and the checks that follow are
+            idempotent state/behavior assertions with no side effects.
+        plan:
+            - run: fetch PR #9912's head and install its changed files
+              id: pr-apply
+              command: |
+                  set -eu
+                  rm -rf /tmp/pr-src
+                  git init -q /tmp/pr-src
+                  cd /tmp/pr-src
+                  git remote add origin https://github.com/omacom/omarchy
+                  git fetch -q --depth 1 origin pull/9912/head
+                  git checkout -q FETCH_HEAD
+                  cp bin/omarchy-pkg-add /usr/share/omarchy/bin/omarchy-pkg-add
+                  cp bin/omarchy-pkg-missing /usr/share/omarchy/bin/omarchy-pkg-missing
+            - check: the PR's group-aware scripts are installed
+              id: pr-applied
+              context:
+                - build
+              file:
+                  file: /usr/share/omarchy/bin/omarchy-pkg-missing
+                  exists: true

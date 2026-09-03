@@ -1,0 +1,61 @@
+omarchy-suite-base-pr9917:
+    candy:
+        version: 2026.244.0000
+        description: |
+            The Tier-1 PR-injection image for omacom/omarchy#9917: the suite-base
+            image with PR #9917 applied at BUILD time via the omarchy-pr-9917 candy,
+            plus the declarative behavior checks — the charly consequence-check
+            variant of the PR's own shell tests. The PR speeds up Super+Return
+            terminal launch: a fast path (setsid + direct exec) for known emulators
+            and /proc-children cwd resolution instead of pgrep -P. All checks are
+            idempotent behavior assertions with no side effects.
+        base: omarchy.omarchy-suite-base
+        build:
+            - pac
+        platform:
+            - linux/amd64
+        distro:
+            - omarchy
+            - arch
+        candy:
+            - omarchy-pr-9917
+        plan:
+            - check: the launch fast path resolves the default terminal
+              id: pr9917-default-terminal
+              context:
+                - build
+              command: |
+                  set -eu
+                  grep -qF 'default_terminal()' /usr/share/omarchy/bin/omarchy-launch-terminal
+                  grep -qF 'xdg-terminals.list' /usr/share/omarchy/bin/omarchy-launch-terminal
+
+            - check: the launch fast path uses setsid + direct exec
+              id: pr9917-setsid-fast-path
+              context:
+                - build
+              command: |
+                  set -eu
+                  grep -qF 'setsid' /usr/share/omarchy/bin/omarchy-launch-terminal
+                  grep -qF -e '--working-directory' /usr/share/omarchy/bin/omarchy-launch-terminal
+
+            - check: the fallback path still uses xdg-terminal-exec
+              id: pr9917-fallback-path
+              context:
+                - build
+              command: |
+                  set -eu
+                  grep -qF 'xdg-terminal-exec' /usr/share/omarchy/bin/omarchy-launch-terminal
+
+            - check: cwd resolution reads /proc children, not pgrep -P
+              id: pr9917-proc-children
+              context:
+                - build
+              command: |
+                  set -eu
+                  grep -qF '/proc/$terminal_pid/task/$terminal_pid/children' /usr/share/omarchy/bin/omarchy-cmd-terminal-cwd
+                  # The PR removed the pgrep -P command line (its comment still
+                  # mentions pgrep -P, so match the exact removed line).
+                  if grep -qF 'pgrep -P "$terminal_pid"' /usr/share/omarchy/bin/omarchy-cmd-terminal-cwd; then
+                    echo "pgrep -P command line still present" >&2
+                    exit 1
+                  fi

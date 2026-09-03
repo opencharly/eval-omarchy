@@ -1,0 +1,86 @@
+omarchy-suite-base-pr9906:
+    candy:
+        version: 2026.244.0000
+        description: |
+            The Tier-1 PR-injection image for omacom/omarchy#9906: the suite-base
+            image with PR #9906 applied at BUILD time via the omarchy-pr-9906 candy,
+            plus the declarative behavior checks — the charly consequence-check
+            variant of the PR's own shell tests. The PR lets the session see
+            Flatpak's exported desktop entries: the uwsm env file sources
+            /etc/profile.d/flatpak.sh so XDG_DATA_DIRS gains Flatpak's export dirs.
+            All checks are idempotent behavior assertions with no side effects.
+        base: omarchy.omarchy-suite-base
+        build:
+            - pac
+        platform:
+            - linux/amd64
+        distro:
+            - omarchy
+            - arch
+        candy:
+            - omarchy-pr-9906
+        plan:
+            - check: the uwsm env file sources the Flatpak profile hook
+              id: pr9906-flatpak-hook
+              context:
+                - build
+              command: |
+                  set -eu
+                  grep -qF 'flatpak.sh' /usr/share/omarchy/default/uwsm/env.d/10-omarchy
+                  grep -qF 'OMARCHY_FLATPAK_PROFILE' /usr/share/omarchy/default/uwsm/env.d/10-omarchy
+
+            - check: the session env picks up Flatpak's export dirs
+              id: pr9906-behavior-flatpak-dirs
+              context:
+                - build
+              command: |
+                  set -eu
+                  tmp=$(mktemp -d)
+                  cat >"$tmp/flatpak.sh" <<'PROFILE'
+                  if command -v flatpak >/dev/null; then
+                    for share_path in "/root/.local/share/flatpak/exports/share" /var/lib/flatpak/exports/share; do
+                      case ":$XDG_DATA_DIRS:" in
+                      *":$share_path:"*) ;;
+                      *) XDG_DATA_DIRS="$share_path:$XDG_DATA_DIRS" ;;
+                      esac
+                    done
+                    export XDG_DATA_DIRS
+                  fi
+                  PROFILE
+                  mkdir -p "$tmp/bin"
+                  printf '#!/bin/sh\nexit 0\n' >"$tmp/bin/flatpak"
+                  chmod +x "$tmp/bin/flatpak"
+                  out=$(HOME=/root XDG_DATA_HOME=/root/.local/share XDG_DATA_DIRS=/usr/local/share:/usr/share \
+                    OMARCHY_FLATPAK_PROFILE="$tmp/flatpak.sh" PATH="$tmp/bin:$PATH" bash -c \
+                    'source /usr/share/omarchy/default/uwsm/env.d/10-omarchy; printf "%s" "$XDG_DATA_DIRS"')
+                  grep -qF '/var/lib/flatpak/exports/share' <<<"$out"
+                  grep -qF '/root/.local/share/flatpak/exports/share' <<<"$out"
+                  /bin/rm -rf "$tmp"
+
+            - check: the session env is unchanged when Flatpak is absent
+              id: pr9906-behavior-no-flatpak
+              context:
+                - build
+              command: |
+                  set -eu
+                  tmp=$(mktemp -d)
+                  cat >"$tmp/flatpak.sh" <<'PROFILE'
+                  if command -v flatpak >/dev/null; then
+                    for share_path in "/root/.local/share/flatpak/exports/share" /var/lib/flatpak/exports/share; do
+                      case ":$XDG_DATA_DIRS:" in
+                      *":$share_path:"*) ;;
+                      *) XDG_DATA_DIRS="$share_path:$XDG_DATA_DIRS" ;;
+                      esac
+                    done
+                    export XDG_DATA_DIRS
+                  fi
+                  PROFILE
+                  mkdir -p "$tmp/empty"
+                  out=$(HOME=/root XDG_DATA_HOME=/root/.local/share XDG_DATA_DIRS=/usr/local/share:/usr/share \
+                    OMARCHY_FLATPAK_PROFILE="$tmp/flatpak.sh" PATH="$tmp/empty:$PATH" bash -c \
+                    'source /usr/share/omarchy/default/uwsm/env.d/10-omarchy; printf "%s" "$XDG_DATA_DIRS"')
+                  [[ $out == "/usr/local/share:/usr/share" ]] || {
+                    echo "XDG_DATA_DIRS changed without flatpak: $out" >&2
+                    exit 1
+                  }
+                  /bin/rm -rf "$tmp"

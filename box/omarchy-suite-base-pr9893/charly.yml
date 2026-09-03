@@ -1,0 +1,89 @@
+omarchy-suite-base-pr9893:
+    candy:
+        version: 2026.244.0000
+        description: |
+            The Tier-1 PR-injection image for omacom/omarchy#9893: the suite-base
+            image with PR #9893 applied at BUILD time via the omarchy-pr-9893 candy,
+            plus the declarative behavior checks — the charly consequence-check
+            variant of the PR's own shell tests. The PR makes low-space update
+            failures explainable: the free-space check detects a Btrfs snapshot boot
+            and tells the user to reboot into the regular Omarchy entry. All checks
+            are idempotent behavior assertions with no side effects.
+        base: omarchy.omarchy-suite-base
+        build:
+            - pac
+        platform:
+            - linux/amd64
+        distro:
+            - omarchy
+            - arch
+        candy:
+            - omarchy-pr-9893
+        plan:
+            - check: the snapshot-boot message is present in the free-space script
+              id: pr9893-snapshot-message
+              context:
+                - build
+              command: |
+                  set -eu
+                  grep -qF 'booted from a Btrfs snapshot' /usr/share/omarchy/bin/omarchy-update-requires-free-space
+
+            - check: the snapshot detection uses findmnt on the root mount
+              id: pr9893-snapshot-detection
+              context:
+                - build
+              command: |
+                  set -eu
+                  grep -qF 'findmnt -no OPTIONS /' /usr/share/omarchy/bin/omarchy-update-requires-free-space
+                  grep -qF '.snapshots/.*/snapshot' /usr/share/omarchy/bin/omarchy-update-requires-free-space
+
+            - check: a low-space snapshot boot explains the cause and fails
+              id: pr9893-behavior-snapshot-low-space
+              context:
+                - build
+              command: |
+                  set -eu
+                  fake=$(mktemp -d)
+                  cat >"$fake/df" <<'STUB'
+                  #!/bin/bash
+                  printf 'Avail\n5000000\n'
+                  STUB
+                  cat >"$fake/findmnt" <<'STUB'
+                  #!/bin/bash
+                  printf 'rw,noatime,subvol=/@/.snapshots/8/snapshot\n'
+                  STUB
+                  chmod +x "$fake"/*
+                  out=$(PATH="$fake:$PATH" /usr/share/omarchy/bin/omarchy-update-requires-free-space 2>&1) && {
+                    echo "expected the low-space check to fail" >&2
+                    exit 1
+                  }
+                  grep -qF 'You need at least 10 GiB free' <<<"$out"
+                  grep -qF 'booted from a Btrfs snapshot' <<<"$out"
+                  /bin/rm -rf "$fake"
+
+            - check: a low-space normal boot keeps the plain warning
+              id: pr9893-behavior-low-space-plain
+              context:
+                - build
+              command: |
+                  set -eu
+                  fake=$(mktemp -d)
+                  cat >"$fake/df" <<'STUB'
+                  #!/bin/bash
+                  printf 'Avail\n5000000\n'
+                  STUB
+                  cat >"$fake/findmnt" <<'STUB'
+                  #!/bin/bash
+                  printf 'rw,noatime,subvol=/@\n'
+                  STUB
+                  chmod +x "$fake"/*
+                  out=$(PATH="$fake:$PATH" /usr/share/omarchy/bin/omarchy-update-requires-free-space 2>&1) && {
+                    echo "expected the low-space check to fail" >&2
+                    exit 1
+                  }
+                  grep -qF 'You need at least 10 GiB free' <<<"$out"
+                  if grep -qF 'booted from a Btrfs snapshot' <<<"$out"; then
+                    echo "snapshot message on a non-snapshot boot" >&2
+                    exit 1
+                  fi
+                  /bin/rm -rf "$fake"

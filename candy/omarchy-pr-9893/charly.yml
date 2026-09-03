@@ -1,0 +1,33 @@
+omarchy-pr-9893:
+    candy:
+        version: 2026.244.0000
+        description: |
+            Applies PR #9893 (omacom/omarchy) to the omarchy system at BUILD time:
+            fetches the PR head and installs its changed files over the installed
+            tree. The PR makes low-space update failures explainable: when the
+            update's free-space check fails, bin/omarchy-update-requires-free-space
+            now detects a Btrfs snapshot boot (findmnt subvol under .snapshots) and
+            tells the user to reboot into the regular Omarchy entry before updating.
+            A candy's run steps are the install timeline — they emit as Containerfile
+            RUN directives (as root), so the PR's files land in the image once, and
+            the checks that follow are idempotent state/behavior assertions with no
+            side effects.
+        plan:
+            - run: fetch PR #9893's head and install its changed files
+              id: pr-apply
+              command: |
+                  set -eu
+                  rm -rf /tmp/pr-src
+                  git init -q /tmp/pr-src
+                  cd /tmp/pr-src
+                  git remote add origin https://github.com/omacom/omarchy
+                  git fetch -q --depth 1 origin pull/9893/head
+                  git checkout -q FETCH_HEAD
+                  cp bin/omarchy-update-requires-free-space /usr/share/omarchy/bin/omarchy-update-requires-free-space
+            - check: the PR's free-space script is installed
+              id: pr-applied
+              context:
+                - build
+              file:
+                  file: /usr/share/omarchy/bin/omarchy-update-requires-free-space
+                  exists: true

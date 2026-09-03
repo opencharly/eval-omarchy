@@ -56,3 +56,134 @@ check-omarchy-suite-pod-pr9332:
             declarative behavior checks — the charly consequence-check variant
             of the PR's own shell tests. The checks are idempotent behavior
             assertions with no side effects.
+
+# ── Tier-1 PR-injection bed (PR #9912) ────────────────────────────────────────
+# omacom/omarchy#9912 — "Handle package groups in omarchy pkg add". The PR-variant
+# image (omarchy-suite-base-pr9912) applies the PR's files at BUILD time via the
+# omarchy-pr-9912 candy and runs the declarative behavior checks: omarchy-pkg-missing
+# recognizes Arch package groups (pacman -Sgq) and treats a group as present only when
+# every member is installed, and omarchy-pkg-add uses that group-aware check for its
+# post-install verification. The checks pass ONLY with the PR applied — the injection
+# proof.
+check-omarchy-suite-pod-pr9912:
+    pod:
+        image: omarchy-suite-base-pr9912
+        disposable: true
+        lifecycle: dev
+        description: >-
+            Tier-1 PR-injection bed for omacom/omarchy#9912 (group-aware
+            `omarchy pkg add`): builds the PR-variant image (PR applied at BUILD
+            time via the omarchy-pr-9912 candy) and runs the declarative behavior
+            checks — the charly consequence-check variant of the PR's own shell
+            tests. The checks are idempotent behavior assertions with no side
+            effects.
+
+# ── Tier-1 PR-injection bed (PR #9923) ────────────────────────────────────────
+# omacom/omarchy#9923 — "Network panel: don't paint NOT CONNECTED when the wifi
+# route is up". The PR-variant image (omarchy-suite-base-pr9923) applies the PR's
+# files at BUILD time via the omarchy-pr-9923 candy and runs the declarative behavior
+# checks: the wifiRebind nudge re-runs the connected-network lookup on the existing
+# poller cadence, kind stays "wifi" when the interface is up, and NOT CONNECTED is
+# only painted when there is no interface. The checks pass ONLY with the PR applied.
+check-omarchy-suite-pod-pr9923:
+    pod:
+        image: omarchy-suite-base-pr9923
+        disposable: true
+        lifecycle: dev
+        description: >-
+            Tier-1 PR-injection bed for omacom/omarchy#9923 (network panel
+            NOT-CONNECTED split-brain fix): builds the PR-variant image (PR applied
+            at BUILD time via the omarchy-pr-9923 candy) and runs the declarative
+            behavior checks. The checks are idempotent behavior assertions with no
+            side effects.
+
+# ── Tier-1 PR-injection bed (PR #9921) ────────────────────────────────────────
+# omacom/omarchy#9921 — "Add SUPER+A universal select all keybinding". The PR-variant
+# image (omarchy-suite-base-pr9921) applies the PR's files at BUILD time via the
+# omarchy-pr-9921 candy and runs the declarative behavior checks: the clipboard
+# bindings contain the SUPER+A universal select-all binding forwarding CTRL+A with
+# the terminal skip. The checks pass ONLY with the PR applied.
+check-omarchy-suite-pod-pr9921:
+    pod:
+        image: omarchy-suite-base-pr9921
+        disposable: true
+        lifecycle: dev
+        description: >-
+            Tier-1 PR-injection bed for omacom/omarchy#9921 (SUPER+A universal
+            select-all keybinding): builds the PR-variant image (PR applied at BUILD
+            time via the omarchy-pr-9921 candy) and runs the declarative behavior
+            checks. The checks are idempotent behavior assertions with no side
+            effects.
+
+# ── Tier-1 PR-injection bed (PR #9893) ────────────────────────────────────────
+# omacom/omarchy#9893 — "Explain low-space update failures from snapshots". The
+# PR-variant image (omarchy-suite-base-pr9893) applies the PR's files at BUILD time
+# via the omarchy-pr-9893 candy and runs the declarative behavior checks: the
+# free-space check detects a Btrfs snapshot boot and tells the user to reboot into
+# the regular Omarchy entry. The checks pass ONLY with the PR applied.
+check-omarchy-suite-pod-pr9893:
+    pod:
+        image: omarchy-suite-base-pr9893
+        disposable: true
+        lifecycle: dev
+        description: >-
+            Tier-1 PR-injection bed for omacom/omarchy#9893 (low-space update
+            snapshot explanation): builds the PR-variant image (PR applied at BUILD
+            time via the omarchy-pr-9893 candy) and runs the declarative behavior
+            checks. The checks are idempotent behavior assertions with no side
+            effects.
+
+# ── Tier-1 PR-injection bed (PR #9894) ────────────────────────────────────────
+# omacom/omarchy#9894 — "Fix Tailscale plugin failing to reconnect when
+# accept-routes is enabled". The PR-variant image (omarchy-suite-base-pr9894)
+# applies the PR's files at BUILD time via the omarchy-pr-9894 candy and runs the
+# declarative behavior checks: the reconnect path resumes via the localapi prefs
+# PATCH, authorization uses login-interactive, and the panel shows a connecting
+# state. The checks pass ONLY with the PR applied.
+check-omarchy-suite-pod-pr9894:
+    pod:
+        image: omarchy-suite-base-pr9894
+        disposable: true
+        lifecycle: dev
+        description: >-
+            Tier-1 PR-injection bed for omacom/omarchy#9894 (Tailscale reconnect
+            fix): builds the PR-variant image (PR applied at BUILD time via the
+            omarchy-pr-9894 candy) and runs the declarative behavior checks. The
+            checks are idempotent behavior assertions with no side effects.
+
+# ── Tier-1 PR-injection bed (PR #9917) ────────────────────────────────────────
+# omacom/omarchy#9917 — "Speed up Super+Return terminal launch". The PR-variant
+# image (omarchy-suite-base-pr9917) applies the PR's files at BUILD time via the
+# omarchy-pr-9917 candy and runs the declarative behavior checks: the launch fast
+# path resolves the default terminal and uses setsid + direct exec, the fallback
+# path keeps xdg-terminal-exec, and cwd resolution reads /proc children. The checks
+# pass ONLY with the PR applied.
+check-omarchy-suite-pod-pr9917:
+    pod:
+        image: omarchy-suite-base-pr9917
+        disposable: true
+        lifecycle: dev
+        description: >-
+            Tier-1 PR-injection bed for omacom/omarchy#9917 (fast terminal launch):
+            builds the PR-variant image (PR applied at BUILD time via the
+            omarchy-pr-9917 candy) and runs the declarative behavior checks. The
+            checks are idempotent behavior assertions with no side effects.
+
+# ── Tier-1 PR-injection bed (PR #9906) ────────────────────────────────────────
+# omacom/omarchy#9906 — "Let the session see Flatpak's exported desktop entries".
+# The PR-variant image (omarchy-suite-base-pr9906) applies the PR's files at BUILD
+# time via the omarchy-pr-9906 candy and runs the declarative behavior checks: the
+# uwsm env file sources the Flatpak profile hook so XDG_DATA_DIRS gains Flatpak's
+# export dirs. The checks pass ONLY with the PR applied.
+check-omarchy-suite-pod-pr9906:
+    pod:
+        image: omarchy-suite-base-pr9906
+        disposable: true
+        lifecycle: dev
+        description: >-
+            Tier-1 PR-injection bed for omacom/omarchy#9906 (Flatpak desktop
+            entries in the session): builds the PR-variant image (PR applied at
+            BUILD time via the omarchy-pr-9906 candy) and runs the declarative
+            behavior checks. The checks are idempotent behavior assertions with no
+            side effects.
+
