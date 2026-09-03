@@ -111,6 +111,11 @@ to the Tier-2 live VM, never mocked.
   NON-AUTHORITATIVE disclaimer verbatim and the Assisted-by footer.
 - Claims are scoped to the tier that produced them; untested live behavior is stated
   explicitly ("requires the Tier-2 VM lane").
+- Every evaluation result is validated by a **cold reader** against the criteria before
+  it is finalized or posted — a fresh reader who did not author the evaluation checks
+  never-mock, known-red, tier compliance, scoped claims, non-empty recordings, the
+  Assisted-by footer, the disclaimer, and triage. A report that fails the cold read
+  is fixed, not posted.
 - Reports are **plain language** — understandable to an average user and to an agent
   that knows nothing about opencharly. No charly-internal jargon (R-numbers, ADE,
   RDD, NestedExecutor, keeper, spike, bed, venue, allowlist, etc.). Real config keys
