@@ -24,7 +24,11 @@ empty section is not a valid answer). Delete the "Render instructions" block bef
 
 ## How it went
 
-**Overall:** PASS (verified working on a live system) / FAIL (verified not working on a live system) / **NO VALIDATION — the validation itself failed: the PR's core behavior could not be tested on a live system, so the question "does it work?" is unanswered and no report is produced**. "it works" / "mostly works" / "might work" framings for behavior NOT verified on a live system are STRICTLY FORBIDDEN — they fake success for something the validation could not test.
+**How it went:** <a friendly, first-person summary — like another user who tried the PR. NO binary PASS/FAIL judgment.>
+
+**What works (verified on a live system):** <each part that was actually tested on a live system and works — with the evidence.>
+
+**What still needs to be fixed or verified:** <each part that does not work (verified on a live system) or is NOT yet tested on a live system — stated clearly, so the PR author knows exactly what to fix. A part that was not tested on a live system is never claimed to work.>
 
 **What I did:** <one first-person paragraph — I applied the PR to a fresh omarchy
 install, ran the checks, and here is what happened. What worked, what did not, what I
