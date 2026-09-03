@@ -82,6 +82,15 @@ evidence → revert.
    or by verification (run the checks against the base image without the PR candy and
    confirm they fail). General sanity checks (e.g. "bash is installed") are allowed
    but must be labeled non-PR-specific and never counted as PR proof.
+10. **Every evaluation result is validated by a cold reader against the criteria.**
+    Before a report is finalized or a comment is posted, a fresh reader who did NOT
+    author the evaluation validates the report against the validation criteria:
+    never mock (no mocked checks), known-red (every PR-specific check fails without
+    the PR), tier compliance (system-behavior PRs tested on the live VM; wrong-tier =
+    FAIL), claims scoped to the tier (no live-behavior claims from container runs),
+    recordings non-empty and showing the actual commands, Assisted-by footer present,
+    disclaimer verbatim, triage applied. The cold reader's verdict is recorded in the
+    report; a report that fails the cold read is fixed, not posted.
 
 ## What each tier proves (honest semantics)
 

@@ -111,6 +111,9 @@ references them; small evidence stays committed in `eval/evidence/<pr>-<calver>/
   counted as PR proof.
 - **Claims scoped to the tier:** no live-system behavior is claimed from a container
   run; untested live behavior is stated explicitly ("requires the Tier-2 VM lane").
+- **Cold-read validated:** a fresh reader who did not author the evaluation validated
+  the report against the criteria (never mock, known-red, tier compliance, claims
+  scoped, recordings non-empty, footer, disclaimer, triage) — verdict recorded.
 - **Template-conform:** rendered from `eval/PR-EVAL-TEMPLATE.md`; no empty sections.
 - **Disclaimer:** EXTERNAL, NON-AUTHORITATIVE header present verbatim here AND in any posted comment.
 - **No faked test environment:** hardware-bound classes PARTIAL/NOT-EVALUABLE; every check ran on a real test environment.
@@ -151,3 +154,10 @@ references them; small evidence stays committed in `eval/evidence/<pr>-<calver>/
 6. Result cache: unchanged heads are skipped, not re-run (`scripts/omarchy-rollup.py`).
 7. Mark the report FINAL only after evidence is committed to `eval/evidence/<pr>-<calver>/`
    and recordings to `media/<pr>-<calver>/`.
+8. **Cold-read validation (mandatory):** before finalizing or posting, a fresh reader
+   who did NOT author the evaluation validates the report against the criteria —
+   never mock, known-red, tier compliance (system-behavior PRs on the live VM;
+   wrong-tier = FAIL), claims scoped to the tier, recordings non-empty and showing the
+   actual commands, Assisted-by footer, disclaimer verbatim, triage applied. Record
+   the cold reader's verdict in the report; a report that fails the cold read is
+   fixed, not posted.

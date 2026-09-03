@@ -63,4 +63,5 @@ what was tested (channel, base provenance, the PR's own Verification claim), how
 run log), the per-check verdict matrix, the recordings (both lanes, saved to the
 gitignored `media/`), and what was noticed (findings tied to evidence, including
 hardware-bound classes that are PARTIAL/NOT-EVALUABLE, never faked). Every posted PR
-comment ends with the `*Assisted-by: …*` footer.
+comment ends with the `*Assisted-by: …*` footer. Every evaluation result is
+validated by a cold reader against the criteria before it is finalized or posted.
