@@ -1,6 +1,6 @@
 # PR-eval lane — per-channel snapshot bases
 
-**Status:** DESIGNED — declared in the plan (plan/omarchy-pr-eval-alignment.md rev 3); VM bases and the experiment are **pending** and land with the channel-base cutover (distro-omarchy). Nothing here is claimed as run.
+**Status:** PARTIALLY OPERATIONAL — the **stable** and **dev** golden bases are provisioned and the per-channel revert → apply → check → evidence → revert loop is live for them (measured: stable via the anchored bed's fresh lane, dev via the dev keeper lane). The **rc/edge** bases are BLOCKED on a channel-bootstrap finding: the channel switch does not stick (the `omarchy-channel-current` reader reports `stable` after the channel-set + update bootstrap) — tracked as a named follow-up (the keeper beds' channel bootstrap needs upstream omarchy investigation).
 
 ## Goal
 
