@@ -42,6 +42,21 @@ evidence → revert.
    Candidates that fall out of the first PR evals: `omarchy-pr-apply` (generic
    PR-apply package), `omarchy-eval-record` (recording tools), `cardwire` (a
    PR-required tool the omarchy package repository does not ship yet).
+7. **Triage before authoring a validation.** Before creating a per-PR test
+   environment, decide whether the PR is worth evaluating at all:
+   - **Is the PR useful?** Does it fix a real, user-visible problem (check the PR
+     body and linked issues)? Is it a meaningful change, or trivial, duplicative,
+     superseded, or marked WIP / "do not merge"? A PR that is not useful gets a
+     short triage note, not a validation.
+   - **Would the evaluation add new insights?** Would the checks tell us something
+     we do not already know? If the PR is trivial or its behavior is already fully
+     covered by its own tests with nothing new to measure, the evaluation adds no
+     insight — skip it (or keep it to a minimal check).
+   - **Can the PR be tested on the available hardware?** Hardware-bound classes
+     (GPU passthrough, specific laptop hardware, fingerprint readers, and similar)
+     where the core behavior cannot be exercised on this machine are recorded as
+     "couldn't be tested" with the reason — never a faked test environment, and no
+     validation is authored for them.
 
 ## Mechanics (all reuse — no new tooling)
 

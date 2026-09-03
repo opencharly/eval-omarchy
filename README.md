@@ -50,7 +50,9 @@ fresh update → teardown) runs unattended.
 ## Eval results
 
 Every evaluation report is rendered from **`eval/PR-EVAL-TEMPLATE.md`** and carries
-its EXTERNAL, NON-AUTHORITATIVE disclaimer verbatim. Each `eval/pr-<N>.md` records:
+its EXTERNAL, NON-AUTHORITATIVE disclaimer verbatim. PRs are triaged before a
+validation is authored: a PR that is not useful, adds no new insight, or cannot be
+tested on the available hardware gets a short triage note instead of a full report. Each `eval/pr-<N>.md` records:
 what was tested (channel, base provenance, the PR's own Verification claim), how it went
 (the overall result + first-person justification), what was run (check-run summary +
 run log), the per-check verdict matrix, the recordings (both lanes, saved to the

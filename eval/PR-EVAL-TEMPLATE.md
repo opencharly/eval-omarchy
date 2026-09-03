@@ -97,6 +97,9 @@ references them; small evidence stays committed in `eval/evidence/<pr>-<calver>/
 
 ## What I checked
 
+- **Triage:** the PR is useful, the evaluation adds new insight, and the core behavior
+  is testable on the available hardware — or the reason it is not (a PR that fails
+  triage gets a short triage note, not a full report).
 - **Template-conform:** rendered from `eval/PR-EVAL-TEMPLATE.md`; no empty sections.
 - **Disclaimer:** EXTERNAL, NON-AUTHORITATIVE header present verbatim here AND in any posted comment.
 - **No faked test environment:** hardware-bound classes PARTIAL/NOT-EVALUABLE; every check ran on a real test environment.
@@ -123,14 +126,17 @@ references them; small evidence stays committed in `eval/evidence/<pr>-<calver>/
 
 ## Render instructions (delete before saving)
 
-1. Copy this file to `eval/pr-<N>.md` and fill every section with EVIDENCE, not promises.
-2. Render the PR comment from "How it went" + "What I noticed" + "What I ran" (overall line +
+1. Triage first (lane standing rule 7): if the PR is not useful, adds no new insight,
+   or cannot be tested on the available hardware, do NOT render a report — record a short
+   triage note instead. Only PRs that pass triage get a full report.
+2. Copy this file to `eval/pr-<N>.md` and fill every section with EVIDENCE, not promises.
+3. Render the PR comment from "How it went" + "What I noticed" + "What I ran" (overall line +
    per-check matrix first), disclaimer header verbatim on top. Write it the way a user who
    tried the PR would — first person, what worked, what did not, what I could not do.
-3. End EVERY posted comment with the Assisted-by footer:
+4. End EVERY posted comment with the Assisted-by footer:
    `*Assisted-by: <Harness> <Provider Full Model Name> (<confidence>)*`
    (e.g. `*Assisted-by: pi ollama-cloud/deepseek-v4-flash:0731 (fully tested and validated)*`).
-4. POST the comment **only after a human approves** — never unapproved.
-5. Result cache: unchanged heads are skipped, not re-run (`scripts/omarchy-rollup.py`).
-6. Mark the report FINAL only after evidence is committed to `eval/evidence/<pr>-<calver>/`
+5. POST the comment **only after a human approves** — never unapproved.
+6. Result cache: unchanged heads are skipped, not re-run (`scripts/omarchy-rollup.py`).
+7. Mark the report FINAL only after evidence is committed to `eval/evidence/<pr>-<calver>/`
    and recordings to `media/<pr>-<calver>/`.
