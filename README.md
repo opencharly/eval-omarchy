@@ -22,6 +22,10 @@ variant of the PR's own shell tests, strictly stronger than upstream's simulated
 Every evaluation is written the way **another user who tried the PR** would report it —
 first person, what worked, what did not, what could not be done and why — while keeping
 the full evidence rigor (step matrix, per-check matrix, findings tied to evidence).
+Claims are scoped to the tier that produced them: a container run proves script logic
+and file application with REAL tools, never live system behavior and never with mocked
+tools — system-behavior PRs are tested on a live omarchy VM, and every PR-specific
+check must fail without the PR applied.
 
 ## Layout
 

@@ -53,9 +53,39 @@ check-omarchy-suite-pod-pr9332:
             Tier-1 PR-injection bed for omacom/omarchy#9332 (hybrid GPU
             supergfxctl→cardwire migration): builds the PR-variant image (PR
             applied at BUILD time via the omarchy-pr-9332 candy) and runs the
-            declarative behavior checks — the charly consequence-check variant
-            of the PR's own shell tests. The checks are idempotent behavior
-            assertions with no side effects.
+            declarative behavior checks with REAL tools only (never mock) — the
+            PR's files are applied and the retired supergfxd workarounds are gone.
+            The toggle's behavior with real cardwire requires the Tier-2 live VM
+            once cardwire ships in the package repository. The checks are
+            idempotent behavior assertions with no side effects.
+
+        plan:
+            - check: the terminal recording starts
+              id: rec-start
+              context:
+                - runtime
+              record:
+                method: start
+                record_name: pr-flow
+                record_mode: terminal
+            - check: the PR's key command runs inside the recording
+              id: rec-drive
+              context:
+                - runtime
+              record:
+                method: cmd
+                record_name: pr-flow
+                text: "grep -n cardwire /usr/share/omarchy/bin/omarchy-toggle-hybrid-gpu; echo toggle-check-done; ls /usr/share/omarchy/default/systemd/system-sleep/ 2>/dev/null; echo retired-check-done"
+            - check: the recording stops and is captured
+              id: rec-stop
+              context:
+                - runtime
+              record:
+                method: stop
+                record_name: pr-flow
+                artifact: /tmp/pr-9332.cast
+                artifact_min_bytes: 200
+                artifact_min_cast_events: 3
 
 # ── Tier-1 PR-injection bed (PR #9912) ────────────────────────────────────────
 # omacom/omarchy#9912 — "Handle package groups in omarchy pkg add". The PR-variant
@@ -78,6 +108,34 @@ check-omarchy-suite-pod-pr9912:
             tests. The checks are idempotent behavior assertions with no side
             effects.
 
+        plan:
+            - check: the terminal recording starts
+              id: rec-start
+              context:
+                - runtime
+              record:
+                method: start
+                record_name: pr-flow
+                record_mode: terminal
+            - check: the PR's key command runs inside the recording
+              id: rec-drive
+              context:
+                - runtime
+              record:
+                method: cmd
+                record_name: pr-flow
+                text: "omarchy-pkg-missing base; echo group-check-exit=$?; omarchy-pkg-missing lv2-plugins; echo group-missing-exit=$?"
+            - check: the recording stops and is captured
+              id: rec-stop
+              context:
+                - runtime
+              record:
+                method: stop
+                record_name: pr-flow
+                artifact: /tmp/pr-9912.cast
+                artifact_min_bytes: 200
+                artifact_min_cast_events: 3
+
 # ── Tier-1 PR-injection bed (PR #9923) ────────────────────────────────────────
 # omacom/omarchy#9923 — "Network panel: don't paint NOT CONNECTED when the wifi
 # route is up". The PR-variant image (omarchy-suite-base-pr9923) applies the PR's
@@ -97,6 +155,34 @@ check-omarchy-suite-pod-pr9923:
             behavior checks. The checks are idempotent behavior assertions with no
             side effects.
 
+        plan:
+            - check: the terminal recording starts
+              id: rec-start
+              context:
+                - runtime
+              record:
+                method: start
+                record_name: pr-flow
+                record_mode: terminal
+            - check: the PR's key command runs inside the recording
+              id: rec-drive
+              context:
+                - runtime
+              record:
+                method: cmd
+                record_name: pr-flow
+                text: "grep -n wifiRebind /usr/share/omarchy/shell/plugins/panels/network/Panel.qml; echo panel-check-done"
+            - check: the recording stops and is captured
+              id: rec-stop
+              context:
+                - runtime
+              record:
+                method: stop
+                record_name: pr-flow
+                artifact: /tmp/pr-9923.cast
+                artifact_min_bytes: 200
+                artifact_min_cast_events: 3
+
 # ── Tier-1 PR-injection bed (PR #9921) ────────────────────────────────────────
 # omacom/omarchy#9921 — "Add SUPER+A universal select all keybinding". The PR-variant
 # image (omarchy-suite-base-pr9921) applies the PR's files at BUILD time via the
@@ -115,6 +201,34 @@ check-omarchy-suite-pod-pr9921:
             checks. The checks are idempotent behavior assertions with no side
             effects.
 
+        plan:
+            - check: the terminal recording starts
+              id: rec-start
+              context:
+                - runtime
+              record:
+                method: start
+                record_name: pr-flow
+                record_mode: terminal
+            - check: the PR's key command runs inside the recording
+              id: rec-drive
+              context:
+                - runtime
+              record:
+                method: cmd
+                record_name: pr-flow
+                text: "grep -n 'SUPER + A' /usr/share/omarchy/default/hypr/bindings/clipboard.lua; echo binding-check-done"
+            - check: the recording stops and is captured
+              id: rec-stop
+              context:
+                - runtime
+              record:
+                method: stop
+                record_name: pr-flow
+                artifact: /tmp/pr-9921.cast
+                artifact_min_bytes: 200
+                artifact_min_cast_events: 3
+
 # ── Tier-1 PR-injection bed (PR #9893) ────────────────────────────────────────
 # omacom/omarchy#9893 — "Explain low-space update failures from snapshots". The
 # PR-variant image (omarchy-suite-base-pr9893) applies the PR's files at BUILD time
@@ -130,8 +244,38 @@ check-omarchy-suite-pod-pr9893:
             Tier-1 PR-injection bed for omacom/omarchy#9893 (low-space update
             snapshot explanation): builds the PR-variant image (PR applied at BUILD
             time via the omarchy-pr-9893 candy) and runs the declarative behavior
-            checks. The checks are idempotent behavior assertions with no side
-            effects.
+            checks with REAL tools only (never mock) — the snapshot message and
+            detection logic are present. The real low-disk btrfs snapshot behavior
+            requires the Tier-2 live VM. The checks are idempotent behavior
+            assertions with no side effects.
+
+        plan:
+            - check: the terminal recording starts
+              id: rec-start
+              context:
+                - runtime
+              record:
+                method: start
+                record_name: pr-flow
+                record_mode: terminal
+            - check: the PR's key command runs inside the recording
+              id: rec-drive
+              context:
+                - runtime
+              record:
+                method: cmd
+                record_name: pr-flow
+                text: "grep -n 'Btrfs snapshot' /usr/share/omarchy/bin/omarchy-update-requires-free-space; echo snapshot-check-done"
+            - check: the recording stops and is captured
+              id: rec-stop
+              context:
+                - runtime
+              record:
+                method: stop
+                record_name: pr-flow
+                artifact: /tmp/pr-9893.cast
+                artifact_min_bytes: 200
+                artifact_min_cast_events: 3
 
 # ── Tier-1 PR-injection bed (PR #9894) ────────────────────────────────────────
 # omacom/omarchy#9894 — "Fix Tailscale plugin failing to reconnect when
@@ -151,6 +295,34 @@ check-omarchy-suite-pod-pr9894:
             omarchy-pr-9894 candy) and runs the declarative behavior checks. The
             checks are idempotent behavior assertions with no side effects.
 
+        plan:
+            - check: the terminal recording starts
+              id: rec-start
+              context:
+                - runtime
+              record:
+                method: start
+                record_name: pr-flow
+                record_mode: terminal
+            - check: the PR's key command runs inside the recording
+              id: rec-drive
+              context:
+                - runtime
+              record:
+                method: cmd
+                record_name: pr-flow
+                text: "grep -n localapi /usr/share/omarchy/shell/plugins/panels/tailscale/Model.js; echo tailscale-check-done"
+            - check: the recording stops and is captured
+              id: rec-stop
+              context:
+                - runtime
+              record:
+                method: stop
+                record_name: pr-flow
+                artifact: /tmp/pr-9894.cast
+                artifact_min_bytes: 200
+                artifact_min_cast_events: 3
+
 # ── Tier-1 PR-injection bed (PR #9917) ────────────────────────────────────────
 # omacom/omarchy#9917 — "Speed up Super+Return terminal launch". The PR-variant
 # image (omarchy-suite-base-pr9917) applies the PR's files at BUILD time via the
@@ -169,6 +341,34 @@ check-omarchy-suite-pod-pr9917:
             omarchy-pr-9917 candy) and runs the declarative behavior checks. The
             checks are idempotent behavior assertions with no side effects.
 
+        plan:
+            - check: the terminal recording starts
+              id: rec-start
+              context:
+                - runtime
+              record:
+                method: start
+                record_name: pr-flow
+                record_mode: terminal
+            - check: the PR's key command runs inside the recording
+              id: rec-drive
+              context:
+                - runtime
+              record:
+                method: cmd
+                record_name: pr-flow
+                text: "grep -n default_terminal /usr/share/omarchy/bin/omarchy-launch-terminal; echo launch-check-done"
+            - check: the recording stops and is captured
+              id: rec-stop
+              context:
+                - runtime
+              record:
+                method: stop
+                record_name: pr-flow
+                artifact: /tmp/pr-9917.cast
+                artifact_min_bytes: 200
+                artifact_min_cast_events: 3
+
 # ── Tier-1 PR-injection bed (PR #9906) ────────────────────────────────────────
 # omacom/omarchy#9906 — "Let the session see Flatpak's exported desktop entries".
 # The PR-variant image (omarchy-suite-base-pr9906) applies the PR's files at BUILD
@@ -184,6 +384,35 @@ check-omarchy-suite-pod-pr9906:
             Tier-1 PR-injection bed for omacom/omarchy#9906 (Flatpak desktop
             entries in the session): builds the PR-variant image (PR applied at
             BUILD time via the omarchy-pr-9906 candy) and runs the declarative
-            behavior checks. The checks are idempotent behavior assertions with no
-            side effects.
+            behavior checks with REAL tools only (never mock) — the Flatpak hook
+            is present. The real session behavior requires the Tier-2 live VM. The
+            checks are idempotent behavior assertions with no side effects.
 
+
+        plan:
+            - check: the terminal recording starts
+              id: rec-start
+              context:
+                - runtime
+              record:
+                method: start
+                record_name: pr-flow
+                record_mode: terminal
+            - check: the PR's key command runs inside the recording
+              id: rec-drive
+              context:
+                - runtime
+              record:
+                method: cmd
+                record_name: pr-flow
+                text: "grep -n flatpak.sh /usr/share/omarchy/default/uwsm/env.d/10-omarchy; echo flatpak-check-done"
+            - check: the recording stops and is captured
+              id: rec-stop
+              context:
+                - runtime
+              record:
+                method: stop
+                record_name: pr-flow
+                artifact: /tmp/pr-9906.cast
+                artifact_min_bytes: 200
+                artifact_min_cast_events: 3

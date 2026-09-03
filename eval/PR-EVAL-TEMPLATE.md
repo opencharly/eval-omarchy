@@ -28,7 +28,10 @@ empty section is not a valid answer). Delete the "Render instructions" block bef
 
 **What I did:** <one first-person paragraph — I applied the PR to a fresh omarchy
 install, ran the checks, and here is what happened. What worked, what did not, what I
-could not do and why.>
+could not do and why. Scope every claim to the tier that produced it: a container run
+proves script logic and file application with REAL tools, never live system behavior
+and never with mocked tools. If the live behavior was not tested, say so explicitly
+("the live behavior is not yet tested — requires the Tier-2 VM lane").>
 
 **Head tested:** <sha> — **results can go STALE**: compare with the PR's current head
 before acting or posting; a stale result is re-run, never re-certified.
@@ -100,6 +103,14 @@ references them; small evidence stays committed in `eval/evidence/<pr>-<calver>/
 - **Triage:** the PR is useful, the evaluation adds new insight, and the core behavior
   is testable on the available hardware — or the reason it is not (a PR that fails
   triage gets a short triage note, not a full report).
+- **No mocks:** every check exercised the REAL tool and REAL system state; no fake
+  tools were substituted (a behavior that could not be tested with real tools was
+  tested on the live VM or not claimed).
+- **Known-red fixture:** every PR-specific check fails without the PR applied (verified
+  or by construction); general sanity checks are labeled non-PR-specific and never
+  counted as PR proof.
+- **Claims scoped to the tier:** no live-system behavior is claimed from a container
+  run; untested live behavior is stated explicitly ("requires the Tier-2 VM lane").
 - **Template-conform:** rendered from `eval/PR-EVAL-TEMPLATE.md`; no empty sections.
 - **Disclaimer:** EXTERNAL, NON-AUTHORITATIVE header present verbatim here AND in any posted comment.
 - **No faked test environment:** hardware-bound classes PARTIAL/NOT-EVALUABLE; every check ran on a real test environment.

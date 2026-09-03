@@ -4,14 +4,10 @@ omarchy-pr-9917:
         description: |
             Applies PR #9917 (omacom/omarchy) to the omarchy system at BUILD time:
             fetches the PR head and installs its changed files over the installed
-            tree. The PR speeds up Super+Return terminal launch: omarchy-launch-terminal
-            fast-paths known emulators (setsid + direct exec with --working-directory,
-            ghostty D-Bus new-window) instead of the uwsm-app → xdg-terminal-exec
-            wrapper chain, and omarchy-cmd-terminal-cwd reads /proc children instead
-            of pgrep -P. A candy's run steps are the install timeline — they emit as
-            Containerfile RUN directives (as root), so the PR's files land in the
-            image once, and the checks that follow are idempotent state/behavior
-            assertions with no side effects.
+            tree. The PR speeds up Super+Return terminal launch: omarchy-launch-terminal fast-paths known emulators (setsid + direct exec with --working-directory, ghostty D-Bus new-window) instead of the uwsm-app → xdg-terminal-exec wrapper chain, and omarchy-cmd-terminal-cwd reads /proc children instead of pgrep -P. A candy's run steps are the install timeline —
+            they emit as Containerfile RUN directives (as root), so the PR's files
+            land in the image once, and the checks that follow are idempotent
+            state/behavior assertions with no side effects.
         plan:
             - run: fetch PR #9917's head and install its changed files
               id: pr-apply
@@ -25,10 +21,10 @@ omarchy-pr-9917:
                   git checkout -q FETCH_HEAD
                   cp bin/omarchy-cmd-terminal-cwd /usr/share/omarchy/bin/omarchy-cmd-terminal-cwd
                   cp bin/omarchy-launch-terminal /usr/share/omarchy/bin/omarchy-launch-terminal
-            - check: the PR's terminal scripts are installed
+            - check: the PR's changed files are installed (known-red — PR-specific content present)
               id: pr-applied
               context:
                 - build
-              file:
-                  file: /usr/share/omarchy/bin/omarchy-launch-terminal
-                  exists: true
+              command: |
+                  set -eu
+                  grep -qF 'default_terminal()' /usr/share/omarchy/bin/omarchy-launch-terminal
