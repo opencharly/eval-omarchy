@@ -3,13 +3,18 @@
 
 Reads the .check/<bed>/<calver>/summary.yml files (the charly check-run
 artifacts) and builds a per-PR verdict table. SHA-keyed skip logic: a bed whose
-result is already in the cache (keyed by bed+calver) is reported as CACHED and
-not re-run by the caller.
+result is already in the cache (keyed by bed+calver+golden-sha256) is reported
+as CACHED and not re-run by the caller.
 
 Report shape (frozen):
   bed | calver | verdict | secs | cached | failing
 
-Usage: omarchy-rollup.py <check-root> [--cache FILE]
+Usage: omarchy-rollup.py <check-root> [--cache FILE] [--golden-sha256 FILE]
+
+The --golden-sha256 sidecar (a JSON map of channel -> golden snapshot sha256,
+written by the golden-base provisioning) folds the golden identity into the
+cache key: a golden re-provision invalidates every cached verdict against the
+old base (they went STALE).
 """
 import argparse
 import hashlib
@@ -29,12 +34,19 @@ def main():
     ap.add_argument("check_root", help="the .check/ directory")
     ap.add_argument("--cache", default=".rollup-cache.json",
                     help="SHA-keyed result cache (skip logic)")
+    ap.add_argument("--golden-sha256", default=None,
+                    help="JSON map of channel -> golden snapshot sha256 (stale-verdict invalidation)")
     args = ap.parse_args()
 
     cache = {}
     if os.path.exists(args.cache):
         with open(args.cache) as f:
             cache = json.load(f)
+
+    golden = {}
+    if args.golden_sha256 and os.path.exists(args.golden_sha256):
+        with open(args.golden_sha256) as f:
+            golden = json.load(f)
 
     rows = []
     for bed in sorted(os.listdir(args.check_root)):
@@ -47,7 +59,10 @@ def main():
                 continue
             s = load_summary(summary_path)
             failing = [st["name"] for st in s.get("steps", []) if not st.get("ok")]
-            key = hashlib.sha256(f"{bed}:{calver}".encode()).hexdigest()[:12]
+            # The golden identity folds into the cache key: a re-provisioned
+            # golden invalidates every verdict against the old base.
+            gsha = golden.get(bed, "")
+            key = hashlib.sha256(f"{bed}:{calver}:{gsha}".encode()).hexdigest()[:12]
             rows.append({
                 "bed": bed,
                 "calver": calver,
@@ -58,9 +73,9 @@ def main():
                 "cached": key in cache,
             })
 
-    # Persist the cache: every evaluated bed+calver is recorded, so a later run
-    # reports it as CACHED (the skip logic — the caller does not re-run a cached
-    # bed). The cache is keyed by bed+calver (the SHA of the pair).
+    # Persist the cache: every evaluated bed+calver+golden is recorded, so a
+    # later run reports it as CACHED (the skip logic — the caller does not
+    # re-run a cached bed). The cache is keyed by bed+calver+golden-sha256.
     for r in rows:
         cache[r["cache_key"]] = {"bed": r["bed"], "calver": r["calver"], "verdict": r["verdict"]}
     with open(args.cache, "w") as f:
