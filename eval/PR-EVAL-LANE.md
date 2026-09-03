@@ -141,6 +141,21 @@ the result is NO VALIDATION, and no report is produced. A container run never
 becomes a live-behavior claim, and an untested live behavior never becomes a
 "works" claim.
 
+## Live-VM SSH contract (use the existing charly machinery)
+
+SSH on an omarchy VM is established by the DEPLOY flow: the seed's authorized_keys
+enables sshd + the firewall during the installer (per the omarchy manual), and the
+deploy's prepare-venue (EnsureIsoGuestSudo in plugin-deploy-vm) establishes passwordless
+sudo via the seed credential. A BARE `charly vm create` + `charly vm start` does NOT
+run the deploy and does NOT guarantee sshd.
+
+- ALWAYS stand up a live eval base via the existing keeper bed
+  (`charly check run check-charly-omarchy-vm` — omarchy-vm + snapshot golden +
+  omarchy-autologin + layer-charly) or `charly fleet add`, never a bare vm create.
+- Verify SSH with `charly vm ssh` (the managed ssh_config alias) — never raw ssh.
+- The keeper beds' SSH-backed checks fail loudly when sshd is down; a guest without
+  SSH is a bed failure, not a debugging session.
+
 ## Mechanics (all reuse — no new tooling)
 
 - **Base:** build the omarchy VM from the latest omarchy installer + create/start +

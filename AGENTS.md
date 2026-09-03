@@ -101,6 +101,15 @@ proves nothing about the PR and must never be presented as a validation. If the
 validation cannot test the thing on a live system, the validation itself fails —
 the result is NO VALIDATION, and no report is produced.
 
+## Live-VM SSH contract
+
+SSH on an omarchy VM is established by the DEPLOY flow (seed authorized_keys → sshd +
+firewall at install; EnsureIsoGuestSudo → passwordless sudo). A bare `charly vm
+create` + `start` does NOT run the deploy and does NOT guarantee sshd. ALWAYS stand up
+a live eval base via the existing keeper bed (`charly check run check-charly-omarchy-vm`)
+or `charly fleet add`, and verify with `charly vm ssh` — never bare vm create, never
+raw ssh, never send-key typing.
+
 ## The per-PR artifact pattern
 
 Every evaluated PR gets three artifacts, following the established pattern:
