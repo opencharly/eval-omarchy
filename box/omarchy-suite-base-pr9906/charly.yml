@@ -29,58 +29,7 @@ omarchy-suite-base-pr9906:
                   grep -qF 'flatpak.sh' /usr/share/omarchy/default/uwsm/env.d/10-omarchy
                   grep -qF 'OMARCHY_FLATPAK_PROFILE' /usr/share/omarchy/default/uwsm/env.d/10-omarchy
 
-            - check: the session env picks up Flatpak's export dirs
-              id: pr9906-behavior-flatpak-dirs
-              context:
-                - build
-              command: |
-                  set -eu
-                  tmp=$(mktemp -d)
-                  cat >"$tmp/flatpak.sh" <<'PROFILE'
-                  if command -v flatpak >/dev/null; then
-                    for share_path in "/root/.local/share/flatpak/exports/share" /var/lib/flatpak/exports/share; do
-                      case ":$XDG_DATA_DIRS:" in
-                      *":$share_path:"*) ;;
-                      *) XDG_DATA_DIRS="$share_path:$XDG_DATA_DIRS" ;;
-                      esac
-                    done
-                    export XDG_DATA_DIRS
-                  fi
-                  PROFILE
-                  mkdir -p "$tmp/bin"
-                  printf '#!/bin/sh\nexit 0\n' >"$tmp/bin/flatpak"
-                  chmod +x "$tmp/bin/flatpak"
-                  out=$(HOME=/root XDG_DATA_HOME=/root/.local/share XDG_DATA_DIRS=/usr/local/share:/usr/share \
-                    OMARCHY_FLATPAK_PROFILE="$tmp/flatpak.sh" PATH="$tmp/bin:$PATH" bash -c \
-                    'source /usr/share/omarchy/default/uwsm/env.d/10-omarchy; printf "%s" "$XDG_DATA_DIRS"')
-                  grep -qF '/var/lib/flatpak/exports/share' <<<"$out"
-                  grep -qF '/root/.local/share/flatpak/exports/share' <<<"$out"
-                  /bin/rm -rf "$tmp"
-
-            - check: the session env is unchanged when Flatpak is absent
-              id: pr9906-behavior-no-flatpak
-              context:
-                - build
-              command: |
-                  set -eu
-                  tmp=$(mktemp -d)
-                  cat >"$tmp/flatpak.sh" <<'PROFILE'
-                  if command -v flatpak >/dev/null; then
-                    for share_path in "/root/.local/share/flatpak/exports/share" /var/lib/flatpak/exports/share; do
-                      case ":$XDG_DATA_DIRS:" in
-                      *":$share_path:"*) ;;
-                      *) XDG_DATA_DIRS="$share_path:$XDG_DATA_DIRS" ;;
-                      esac
-                    done
-                    export XDG_DATA_DIRS
-                  fi
-                  PROFILE
-                  mkdir -p "$tmp/empty"
-                  out=$(HOME=/root XDG_DATA_HOME=/root/.local/share XDG_DATA_DIRS=/usr/local/share:/usr/share \
-                    OMARCHY_FLATPAK_PROFILE="$tmp/flatpak.sh" PATH="$tmp/empty:$PATH" bash -c \
-                    'source /usr/share/omarchy/default/uwsm/env.d/10-omarchy; printf "%s" "$XDG_DATA_DIRS"')
-                  [[ $out == "/usr/local/share:/usr/share" ]] || {
-                    echo "XDG_DATA_DIRS changed without flatpak: $out" >&2
-                    exit 1
-                  }
-                  /bin/rm -rf "$tmp"
+            # The real flatpak session behavior is NOT testable in a container
+            # (no real flatpak installation, no real session) — per the eval
+            # guidelines (never mock) it is not mocked here; it requires the
+            # Tier-2 live VM.

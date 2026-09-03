@@ -37,53 +37,7 @@ omarchy-suite-base-pr9893:
                   grep -qF 'findmnt -no OPTIONS /' /usr/share/omarchy/bin/omarchy-update-requires-free-space
                   grep -qF '.snapshots/.*/snapshot' /usr/share/omarchy/bin/omarchy-update-requires-free-space
 
-            - check: a low-space snapshot boot explains the cause and fails
-              id: pr9893-behavior-snapshot-low-space
-              context:
-                - build
-              command: |
-                  set -eu
-                  fake=$(mktemp -d)
-                  cat >"$fake/df" <<'STUB'
-                  #!/bin/bash
-                  printf 'Avail\n5000000\n'
-                  STUB
-                  cat >"$fake/findmnt" <<'STUB'
-                  #!/bin/bash
-                  printf 'rw,noatime,subvol=/@/.snapshots/8/snapshot\n'
-                  STUB
-                  chmod +x "$fake"/*
-                  out=$(PATH="$fake:$PATH" /usr/share/omarchy/bin/omarchy-update-requires-free-space 2>&1) && {
-                    echo "expected the low-space check to fail" >&2
-                    exit 1
-                  }
-                  grep -qF 'You need at least 10 GiB free' <<<"$out"
-                  grep -qF 'booted from a Btrfs snapshot' <<<"$out"
-                  /bin/rm -rf "$fake"
-
-            - check: a low-space normal boot keeps the plain warning
-              id: pr9893-behavior-low-space-plain
-              context:
-                - build
-              command: |
-                  set -eu
-                  fake=$(mktemp -d)
-                  cat >"$fake/df" <<'STUB'
-                  #!/bin/bash
-                  printf 'Avail\n5000000\n'
-                  STUB
-                  cat >"$fake/findmnt" <<'STUB'
-                  #!/bin/bash
-                  printf 'rw,noatime,subvol=/@\n'
-                  STUB
-                  chmod +x "$fake"/*
-                  out=$(PATH="$fake:$PATH" /usr/share/omarchy/bin/omarchy-update-requires-free-space 2>&1) && {
-                    echo "expected the low-space check to fail" >&2
-                    exit 1
-                  }
-                  grep -qF 'You need at least 10 GiB free' <<<"$out"
-                  if grep -qF 'booted from a Btrfs snapshot' <<<"$out"; then
-                    echo "snapshot message on a non-snapshot boot" >&2
-                    exit 1
-                  fi
-                  /bin/rm -rf "$fake"
+            # The real low-disk btrfs snapshot behavior is NOT testable in a
+            # container (no real btrfs snapshot boot, no real low-disk system) —
+            # per the eval guidelines (never mock) it is not mocked here; it
+            # requires the Tier-2 live VM.
