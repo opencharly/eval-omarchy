@@ -36,7 +36,7 @@ omarchy-suite-base-pr9917:
               command: |
                   set -eu
                   grep -qF 'setsid' /usr/share/omarchy/bin/omarchy-launch-terminal
-                  grep -qF '--working-directory' /usr/share/omarchy/bin/omarchy-launch-terminal
+                  grep -qF -e '--working-directory' /usr/share/omarchy/bin/omarchy-launch-terminal
 
             - check: the fallback path still uses xdg-terminal-exec
               id: pr9917-fallback-path
@@ -53,7 +53,9 @@ omarchy-suite-base-pr9917:
               command: |
                   set -eu
                   grep -qF '/proc/$terminal_pid/task/$terminal_pid/children' /usr/share/omarchy/bin/omarchy-cmd-terminal-cwd
-                  if grep -qF 'pgrep -P' /usr/share/omarchy/bin/omarchy-cmd-terminal-cwd; then
-                    echo "pgrep -P still present" >&2
+                  # The PR removed the pgrep -P command line (its comment still
+                  # mentions pgrep -P, so match the exact removed line).
+                  if grep -qF 'pgrep -P "$terminal_pid"' /usr/share/omarchy/bin/omarchy-cmd-terminal-cwd; then
+                    echo "pgrep -P command line still present" >&2
                     exit 1
                   fi
