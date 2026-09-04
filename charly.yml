@@ -86,7 +86,7 @@ check-omarchy-eval-base:
             mode: external
             keep_venue: true
         add_candy:
-            - '@github.com/opencharly/layer-charly:v2026.241.1407'
+            - '@github.com/opencharly/layer-charly:v2026.243.0408'
         plan:
             - check: the omarchy guest reports its hostname
               id: ocb-hostname
@@ -156,6 +156,10 @@ check-omarchy-eval-base-inst:
               id: inst-full-upgrade
             - run: pacman -Scc --noconfirm >/dev/null 2>&1; rm -rf /var/cache/pacman/pkg/* 2>/dev/null; true
               id: inst-clean-cache
+            - run: warm the guest charly resolution cache (bakes the git metadata for the eval's deploy + pr-apply refs — removes the guest-side first-run fetch from every deploy-add)
+              id: inst-warm-charly-cache
+              command: 'charly box list >/dev/null 2>&1; charly box validate /root >/dev/null 2>&1 || true; find /root/.cache/charly -type f 2>/dev/null | head -1'
+              context: [runtime]
             - check: the instrumented golden reaches the desktop
               id: inst-autologin
               context: [runtime]
