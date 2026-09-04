@@ -792,3 +792,51 @@ check-omarchy-suite-pod-pr9906:
                 artifact: /tmp/pr-9906.cast
                 artifact_min_bytes: 200
                 artifact_min_cast_events: 3
+
+# ── the INSTRUMENTED base bed (linked-disk wave): the stable golden PLUS the full
+# eval-tooling payload (charly, autologin, record tools, pr-apply helper, record/spice
+# plugins, acpid for fast ACPI shutdown) captured as its own golden. Per-PR evals clone
+# from THIS golden with an EMPTY add_candy — deploy-add ≈ 0 s, the R10 update gate has
+# nothing to reinstall, and teardown is fast (acpid). Provision it once: run the FRESH
+# lane (no --anchor). Capture is a golden-building event (T4), amortized to zero per eval.
+check-omarchy-eval-base-inst:
+    vm:
+        from: omarchy-vm-clone
+        disposable: true
+        lifecycle: dev
+        snapshot:
+            on_finalize: golden
+            mode: external
+            keep_venue: true
+        add_candy:
+            - '@github.com/opencharly/layer-charly:v2026.241.1407'
+            - omarchy-autologin
+            - omarchy-eval-record
+            - omarchy-pr-apply
+            - '@github.com/opencharly/layer-asciinema:v2026.246.1622'
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+        install_opts:
+            allow_repo_changes: true
+            allow_root_tasks: true
+            with_service: true
+            skip_incompatible: true
+        plan:
+            - check: the instrumented golden reaches the desktop
+              id: inst-autologin
+              context: [runtime]
+              command: 'pgrep -fx quickshell >/dev/null || pgrep -f hyprland >/dev/null'
+              eventually: 240s
+              retry_interval: 10s
+            - check: acpid is enabled (fast ACPI shutdown for teardown)
+              id: inst-acpid
+              context: [runtime]
+              service:
+                  service: acpid
+                  enabled: true
+            - check: the pr-apply helper is present
+              id: inst-pr-apply
+              context: [runtime]
+              file:
+                  file: /usr/local/bin/pr-apply
+                  exists: true

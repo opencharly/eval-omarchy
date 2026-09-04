@@ -176,12 +176,8 @@ chosen:
 - **Parallel batch (lean PRs):** launch the lean evals CONCURRENTLY (one per PR, each
   its own .check lock + domain + COW overlay); the only host limits are RAM (4G/VM) and
   vCPU (4/VM). The GPU eval runs alone.
-- **Media (every run):** `scripts/save-media.sh <pr> <calver>` renders the exit-trimmed
-  GIF (cast-render.sh/cast-trim-end.py — the record: stop types `exit`, so a naive
-  render ends on the exit/blank screen; the trimmed GIF ends on the last test output),
-  saves the raw .cast + the SPICE frames + the SPICE video into the gitignored
-  `media/<pr>-<calver>/` (eval rule 6: every evaluation produces a terminal .cast AND a
-  screen recording).
+- **Media (every run):** the record: and spice: check steps pull every artifact onto the
+  host (`.cast`, `.gif` via the record plugin's gif method, SPICE frames/video); the EVAL RUNNER agent then assembles them into the gitignored `media/<pr>-<calver>/` (pi file tools — no scripts) and the COLD READER grades them (vision_ask on the frames + the deterministic .cast text). Eval rule 6: every evaluation produces a terminal .cast AND a screen recording.
 
 ### The apply seam — a local software template on the snapshot VM
 
@@ -219,8 +215,7 @@ check-omarchy-pr-<N>-vm:
 - **Prove it first:** this apply step is the lane's named high-risk unknown — prove it
   on a real base VM (a time-boxed experiment) before claiming the lane.
 
-- **Batch:** result cache in `scripts/omarchy-rollup.py` (unchanged heads skipped);
-  reports rendered from `eval/PR-EVAL-TEMPLATE.md` with channel + base provenance.
+- **Batch:** the SUPERVISOR agent maintains the verdict ledger (the `.check/` summaries ARE the data; the golden sha256 sidecar keys staleness — a re-provisioned golden invalidates every older verdict). Unchanged heads are skipped by the supervisor's ledger; reports render from `eval/PR-EVAL-TEMPLATE.md` with channel + base provenance. No scripts — the agents read the native artifacts directly.
 
 ## Honesty about testing
 
@@ -288,10 +283,10 @@ Phase B is not pursued with this evidence:
   VM deployment's snapshot capability — no new commands needed for the lane.
 - Per-PR apply: the per-PR package seam (build-time + deploy-time) is the ONE apply
   mechanism (no duplication) — no second mechanism added.
-- Batch orchestration: scripts/omarchy-rollup.py (result cache) covers the
-  batch loop; the per-channel base VMs cover the bases. A dedicated
-  orchestration tool remains a candidate ONLY if batch throughput is measured
-  insufficient later — not the case today.
+- Batch orchestration: the supervisor agent's ledger + the per-channel base VMs
+  cover the batch loop (the SHA-keyed skip now lives in the agent's ledger, keyed
+  bed+calver+golden-sha256). A dedicated orchestration tool remains a candidate
+  ONLY if batch throughput is measured insufficient later — not the case today.
 - Host mechanics (measured): the VM-lane fresh-rebuild tail does
   not conclude on this host (a host issue with the development build) and
   VM lanes must serialize on the GPU-passthrough host — those are HOST issues to
