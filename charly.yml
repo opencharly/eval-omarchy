@@ -184,10 +184,22 @@ check-omarchy-pr-9332-vm-anchored:
               id: rec-gif
               context: [runtime]
               record: {method: gif, record_name: pr-9332, artifact: /tmp/pr-9332.gif, artifact_min_bytes: 100}
-            - check: capture the VM display via SPICE (the hypervisor-level screen evidence)
-              id: rec-screen-spice
+            - check: capture the VM display via SPICE (frame 1 — the hypervisor-level screen evidence)
+              id: rec-screen-spice-1
               context: [runtime]
-              spice: {method: screenshot, artifact: /tmp/pr-9332-screen.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+              spice: {method: screenshot, artifact: /tmp/pr-9332-screen-1.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: drive the second terminal command (more screen content for the video)
+              id: rec-drive-2
+              context: [runtime]
+              record: {method: run, record_name: pr-9332, text: 'ls -la /usr/share/omarchy/bin/omarchy-hw-hybrid-gpu; echo hw-check-done', settle_ms: 1000}
+            - check: capture the VM display via SPICE (frame 2)
+              id: rec-screen-spice-2
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/pr-9332-screen-2.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: capture the VM display via SPICE (frame 3)
+              id: rec-screen-spice-3
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/pr-9332-screen-3.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
         description: >-
             Tier-2 anchored PR eval for omacom/omarchy#9332 (hybrid GPU
             supergfxctl→cardwire migration): the omarchy-vm template with the
