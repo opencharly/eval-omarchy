@@ -407,3 +407,7 @@ Every eval lane produces ALL THREE artifacts — no exceptions:
 - **ALWAYS** read the `.cast` (the terminal-lane truth: exact commands, exit codes, timestamps).
 - **MP4 review ON DEMAND only**: review the `screen.mp4` (frames via ffmpeg + vision_ask) ONLY when the plan's `visual:` flag is true (the PR's diff touches the desktop UI — panels, notifications, themes, overlays, animations) or the diff clearly implies visual change. A non-visual PR (config/scripts/docs) never needs the mp4 — the .cast + check results suffice.
 - Every material vision claim is corroborated by a deterministic source (the .cast/wl/spice text) — the GNOME-mislabel trap applies to mp4 frames too.
+
+
+### Head-freshness rule (RCA 2026-09-04: PR 10147's branch was force-pushed upstream — the pinned head became orphaned and pr-apply failed with `unable to read tree`)
+The plan's headSha must equal the LIVE PR head (gh api repos/omacom/omarchy/pulls/<N>) — checked BEFORE any run. On drift (the branch was rebased/force-pushed), REGENERATE the plan + bed to the live head FIRST (verify the marker is still in the new head's added lines via the diff), never run a stale pin. A fetch-by-PR-ref only brings the live head's objects — an orphaned pinned commit's tree is unreachable in the guest. The oracle re-validates head freshness at authoring; the runner re-checks the triple (plan ↔ bed ↔ live head) at launch.
