@@ -1,0 +1,59 @@
+{
+  "pr": 10222,
+  "title": "Add power source change hook",
+  "headSha": "2f44cf431c58fb7e796e6f54e8dfac2c14bb2a52",
+  "class": "qml-config-hook",
+  "channel": "stable",
+  "tier": "vm",
+  "entity": {
+    "kind": "clone",
+    "from_vm": "check-omarchy-eval-base-inst",
+    "from_snapshot": "golden",
+    "ram": "4G",
+    "cpu": 4,
+    "disk_size": "40G"
+  },
+  "changedFiles": [
+    "config/omarchy/hooks/power-source-change.d/show-power-source-notification.sample",
+    "default/agents/skills/omarchy/hooks.md",
+    "manual/31-dotfiles.md",
+    "shell/plugins/services/battery/Service.qml",
+    "test/shell.d/powerprofiles-set-test.sh"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "what": "the battery service dispatches the power source hook on UPower onBattery changes",
+      "file": "/usr/share/omarchy/shell/plugins/services/battery/Service.qml",
+      "token": "dispatchPowerSourceHook",
+      "assertion": "grep -qiF dispatchPowerSourceHook /usr/share/omarchy/shell/plugins/services/battery/Service.qml"
+    },
+    {
+      "id": "pr-behavior-2",
+      "what": "the power-source-change hook example ships under config/omarchy/hooks",
+      "file": "/usr/share/omarchy/config/omarchy/hooks/power-source-change.d/show-power-source-notification.sample",
+      "token": "power-source-change",
+      "assertion": "grep -qiF power-source-change /usr/share/omarchy/config/omarchy/hooks/power-source-change.d/show-power-source-notification.sample"
+    }
+  ],
+  "knownRed": "by-construction: dispatchPowerSourceHook and the whole power-source-change.d sample file are ADDED lines (diff +18 and a NEW file); the base battery Service.qml has no dispatch function and no power-source-change.d, so both probe greps exit 2 on the golden.",
+  "markerRule": {
+    "verified": "marker token(s) confirmed present in the ADDED lines of the PR diff via gh api repos/omacom/omarchy/pulls/10222/files",
+    "probeExpected": "probe bed (same checks, NO pr-apply) must FAIL with exit 2 on the golden; a green probe = RED-PROBE-BROKEN (process block, S7)"
+  },
+  "record": {
+    "cast": true,
+    "gif": true,
+    "spiceMjpeg": true,
+    "screenMp4": true,
+    "visual": false,
+    "mediaNote": "three-artifact contract: record start→drive→stop (.cast, artifact_min_bytes 200), record gif render (.gif), spice record action start (fps 5) → drive → stop (/tmp/pr-10222.mjpeg, artifact_min_bytes 10000, artifact_not_uniform true) + ONE run: ffmpeg transcode to /tmp/pr-10222-screen.mp4. NOTE: the spice MJPEG is written HOST-side by the SPICE-wire plugin; the in-venue run: ffmpeg step reports when the guest copy is absent and the host runner performs the container transcode (lane: EVAL RUNNER assembles media/<pr>-<calver>/).",
+    "drive": "grep -n dispatchPowerSourceHook /usr/share/omarchy/shell/plugins/services/battery/Service.qml; echo pr-10222-done"
+  },
+  "expectedPhaseSeconds": {
+    "probe": 60,
+    "eval": 240,
+    "apply": 30,
+    "media": 45
+  }
+}

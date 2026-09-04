@@ -1,0 +1,51 @@
+{
+  "pr": 10228,
+  "title": "Leave a process killed with kill(2) out of crash notifications",
+  "headSha": "f0bc41fb263362cdf8fcdb3b14ea9ac024c17a32",
+  "class": "script-system-behavior",
+  "channel": "stable",
+  "tier": "vm",
+  "entity": {
+    "kind": "clone",
+    "from_vm": "check-omarchy-eval-base-inst",
+    "from_snapshot": "golden",
+    "ram": "4G",
+    "cpu": 4,
+    "disk_size": "40G"
+  },
+  "changedFiles": [
+    "bin/omarchy-crash-watch",
+    "docs/notifications.md",
+    "manual/17-ai.md",
+    "test/shell.d/crash-capture-test.sh"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "what": "omarchy-crash-watch reads COREDUMP_CODE and skips SI_USER kill(2) deaths",
+      "file": "/usr/share/omarchy/bin/omarchy-crash-watch",
+      "token": "COREDUMP_CODE",
+      "assertion": "grep -qiF COREDUMP_CODE /usr/share/omarchy/bin/omarchy-crash-watch"
+    }
+  ],
+  "knownRed": "by-construction: COREDUMP_CODE is ADDED to the jq @tsv field list (diff +14/−2); the base reads only UID/COMM/PID/EXE/SIGNAL_NAME, so the probe grep exits 2 on the golden.",
+  "markerRule": {
+    "verified": "marker token(s) confirmed present in the ADDED lines of the PR diff via gh api repos/omacom/omarchy/pulls/10228/files",
+    "probeExpected": "probe bed (same checks, NO pr-apply) must FAIL with exit 2 on the golden; a green probe = RED-PROBE-BROKEN (process block, S7)"
+  },
+  "record": {
+    "cast": true,
+    "gif": true,
+    "spiceMjpeg": true,
+    "screenMp4": true,
+    "visual": false,
+    "mediaNote": "three-artifact contract: record start→drive→stop (.cast, artifact_min_bytes 200), record gif render (.gif), spice record action start (fps 5) → drive → stop (/tmp/pr-10228.mjpeg, artifact_min_bytes 10000, artifact_not_uniform true) + ONE run: ffmpeg transcode to /tmp/pr-10228-screen.mp4. NOTE: the spice MJPEG is written HOST-side by the SPICE-wire plugin; the in-venue run: ffmpeg step reports when the guest copy is absent and the host runner performs the container transcode (lane: EVAL RUNNER assembles media/<pr>-<calver>/).",
+    "drive": "grep -n COREDUMP_CODE /usr/share/omarchy/bin/omarchy-crash-watch; echo pr-10228-done"
+  },
+  "expectedPhaseSeconds": {
+    "probe": 60,
+    "eval": 240,
+    "apply": 30,
+    "media": 45
+  }
+}
