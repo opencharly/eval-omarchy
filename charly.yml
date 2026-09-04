@@ -95,6 +95,30 @@ check-omarchy-eval-base:
               retry_interval: 10s
               context: [runtime]
 
+omarchy-vm-clone-9332:
+    vm:
+        source:
+            kind: clone
+            from_vm: check-omarchy-eval-base
+            from_snapshot: golden
+        disk_size: 40G
+        ram: 4G
+        cpu: 4
+        machine: q35
+        firmware: uefi-insecure
+        network: {mode: user}
+        ssh: {user: user, port_auto: true, key_source: generate}
+        backend: libvirt
+        libvirt:
+            devices:
+                channels: [{type: spicevmc, name: com.redhat.spice.0}]
+                graphics: [{type: spice, listen: [{type: socket}]}]
+                video: [{model: virtio, vram: 65536, heads: 1, accel3d: false}]
+                rng: [{model: virtio, backend: /dev/urandom}]
+                memballoon: {model: virtio}
+            snippets:
+                - "<channel type='unix'><target type='virtio' name='org.qemu.guest_agent.0'/></channel>"
+
 omarchy-vm-clone:
     vm:
         source:
@@ -131,7 +155,7 @@ omarchy-vm-clone:
 # so a batch of PR evals shares ONE golden base per channel.
 check-omarchy-pr-9332-vm-anchored:
     vm:
-        from: omarchy-vm-clone
+        from: omarchy-vm-clone-9332
         disposable: true
         requires_exclusive: [nvidia-gpu]
         snapshot:
