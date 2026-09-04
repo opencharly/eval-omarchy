@@ -14,7 +14,7 @@
     {
       "id": "pr-behavior",
       "file": "/usr/share/omarchy/shell/plugins/lock/Service.qml",
-      "token": "reblank"
+      "token": "blankArmed"
     }
   ],
   "knownRed": "by-construction: reblank only lands with PR 10130"

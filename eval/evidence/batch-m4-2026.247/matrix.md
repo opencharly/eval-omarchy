@@ -1,7 +1,7 @@
 # M4 batch matrix (16-lane, 2026-09-04 — FINAL: 16/16 evals PASS)
 | PR | class/marker (diff-added) | probe (known-red) | eval | total_s |
 |---|---|---|---|---|
-| 10115 | notifications `showCountdown` | FAIL 5 | PASS | 137 |
+| 10115 | notifications `showCountdown` | FAIL 5 | PASS | 83 |
 | 10116 | network `adapter` | FAIL 5 | PASS | 163 |
 | 10123 | docs `tile` | FAIL 5 | PASS | 166 |
 | 10125 | screenrecording `encoder` | FAIL 5 | PASS | 171 |
