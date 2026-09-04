@@ -28,6 +28,7 @@ check-omarchy-pr-10212-vm:
         from: omarchy-vm-clone-10212
         disposable: true
         lifecycle: dev
+        update_gate: restart-only
         add_candy:
             - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
             - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
