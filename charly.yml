@@ -55,7 +55,7 @@ omarchy-vm:
                 disk: /dev/vda
                 encrypt: false
         disk_size: 40G
-        ram: 8G
+        ram: 4G
         cpu: 4
         machine: q35
         firmware: uefi-insecure
@@ -100,7 +100,7 @@ omarchy-vm-clone:
             from_vm: check-omarchy-eval-base
             from_snapshot: golden
         disk_size: 40G
-        ram: 8G
+        ram: 4G
         cpu: 4
         machine: q35
         firmware: uefi-insecure
@@ -140,7 +140,7 @@ check-omarchy-pr-9332-vm-anchored:
             - omarchy-eval-record
             - '@github.com/opencharly/layer-asciinema:v2026.246.1622'
             - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
-            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.244.1401'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
         install_opts:
             allow_repo_changes: true
             allow_root_tasks: true
