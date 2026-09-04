@@ -447,3 +447,10 @@ Whatever is suspected MUST show up in the per-eval stats:
 - Every hypothesis declares its STATS SIGNATURE before testing (e.g. 'the media steps are the cost' ⇒ the stats' media-window rows must sum large; 'the deploy machinery serializes' ⇒ deploy-add grows with the concurrent lane count in the A/B; 'the update recreate is the cost' ⇒ the update+rebuild rows dominate).
 - The stats files carry BOTH the phase rows (summary.yml) AND the media-window rows (artifact mtimes — currently the only precise inner-step timing source) until the charly enhancement lands (summary.yml gains the check-live inner step durations — queued in the plugin-check pipeline).
 - A hypothesis without its signature in the stats is NOT a finding.
+
+
+### Measured speed findings (2026-09-05, 16/32-lane waves + the RCA chain)
+1. **The 16-lane ceiling is the host's real max**: a 32-lane wave measured the early slots at 94-201s but the LATE slots at 518-632s (the vm-store/libvirt queue at >16 concurrent VM lifecycles) — evals/min went DOWN at 32 (≈3.75 vs ≈4.6-5.5 at 16). Tune lanes ≤16 unless the per-lane cost shrinks further.
+2. **Launch detachment is MANDATORY for long lanes**: `setsid <cmd> </dev/null > log 2>&1 &` — a plain nohup inside a tool-call session gets killed when the caller's call is cancelled (every long batch before this either stalled or vanished mid-phase).
+3. **The 16-lane stall root causes (both fixed)**: (a) the unlocked shared ssh-fragment save dropped per-lane aliases (sdk #205 — the lock + fresh per-alias merge); (b) `ResolveRefTTL=5m` re-probed GitHub mid-batch — 152 concurrent ls-remotes = throttling (spec #92 — DefaultRefsCacheTTL=1h + the BypassCache operator surface + `charly cache` + `--no-git-cache`, charly #539).
+4. **The update/rebuild recreate phases are the last per-lane floor** (48s of the ~95s) AND the fail class (10129 update 66s, 10141 rebuild 9s under the wave) — the `update_gate: restart-only` change-class (spec merged, plugin-check #20 in flight) removes them.
