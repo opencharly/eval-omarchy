@@ -152,15 +152,10 @@ check-omarchy-eval-base-inst:
             with_service: true
             skip_incompatible: true
         plan:
-            - run: bring every package to the current channel state before the golden capture
+            - run: pacman -Syu --noconfirm && omarchy-channel-update 2>/dev/null || true
               id: inst-full-upgrade
-              context: [runtime]
-              command: 'pacman -Syu --noconfirm && omarchy-channel-update 2>/dev/null || true'
-              settle_ms: 0
-            - run: clean the package cache after the upgrade (smaller golden)
+            - run: pacman -Scc --noconfirm >/dev/null 2>&1; rm -rf /var/cache/pacman/pkg/* 2>/dev/null; true
               id: inst-clean-cache
-              context: [runtime]
-              command: 'pacman -Scc --noconfirm 2>/dev/null || true; rm -rf /var/cache/pacman/pkg/* 2>/dev/null || true'
             - check: the instrumented golden reaches the desktop
               id: inst-autologin
               context: [runtime]
