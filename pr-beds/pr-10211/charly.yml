@@ -7,7 +7,7 @@ omarchy-vm-clone-10211:
             from_snapshot: golden
         disk_size: 40G
         ram: 2G
-        cpu: 2
+        cpu: 1
         machine: q35
         firmware: uefi-insecure
         network: {mode: user}
