@@ -1,0 +1,21 @@
+10139	total_seconds: 236	ok: true	vm-build=6 vm-create=21 deploy-add=91 bring-up-members=0 check-live=38 gate-restart-stop=12 gate-restart-start=10 check-live-rebuild=44 cleanup=14 cleanup-members=0	FAILSTEPS:
+10141	total_seconds: 235	ok: true	vm-build=6 vm-create=24 deploy-add=90 bring-up-members=0 check-live=37 gate-restart-stop=12 gate-restart-start=9 check-live-rebuild=44 cleanup=14 cleanup-members=0	FAILSTEPS:
+10146	total_seconds: 231	ok: true	vm-build=6 vm-create=22 deploy-add=88 bring-up-members=0 check-live=51 gate-restart-stop=9 gate-restart-start=6 check-live-rebuild=40 cleanup=7 cleanup-members=0	FAILSTEPS:
+10147	total_seconds: 234	ok: true	vm-build=5 vm-create=25 deploy-add=86 bring-up-members=0 check-live=39 gate-restart-stop=13 gate-restart-start=10 check-live-rebuild=43 cleanup=13 cleanup-members=0	FAILSTEPS:
+10148	total_seconds: 229	ok: true	vm-build=6 vm-create=22 deploy-add=85 bring-up-members=0 check-live=40 gate-restart-stop=6 gate-restart-start=11 check-live-rebuild=43 cleanup=16 cleanup-members=0	FAILSTEPS:
+10199	total_seconds: 230	ok: true	vm-build=6 vm-create=24 deploy-add=88 bring-up-members=0 check-live=42 gate-restart-stop=12 gate-restart-start=8 check-live-rebuild=41 cleanup=9 cleanup-members=0	FAILSTEPS:
+10200	total_seconds: 228	ok: true	vm-build=7 vm-create=24 deploy-add=88 bring-up-members=0 check-live=40 gate-restart-stop=11 gate-restart-start=8 check-live-rebuild=41 cleanup=10 cleanup-members=0	FAILSTEPS:
+10202	total_seconds: 239	ok: true	vm-build=6 vm-create=22 deploy-add=86 bring-up-members=0 check-live=42 gate-restart-stop=10 gate-restart-start=11 check-live-rebuild=47 cleanup=14 cleanup-members=0	FAILSTEPS:
+10205	total_seconds: 236	ok: true	vm-build=6 vm-create=22 deploy-add=88 bring-up-members=0 check-live=38 gate-restart-stop=9 gate-restart-start=11 check-live-rebuild=46 cleanup=15 cleanup-members=0	FAILSTEPS:
+10208	total_seconds: 233	ok: true	vm-build=5 vm-create=22 deploy-add=89 bring-up-members=0 check-live=51 gate-restart-stop=11 gate-restart-start=7 check-live-rebuild=38 cleanup=9 cleanup-members=0	FAILSTEPS:
+10210	total_seconds: 235	ok: true	vm-build=6 vm-create=21 deploy-add=89 bring-up-members=0 check-live=39 gate-restart-stop=7 gate-restart-start=13 check-live-rebuild=42 cleanup=17 cleanup-members=0	FAILSTEPS:
+10211	total_seconds: 236	ok: true	vm-build=6 vm-create=22 deploy-add=88 bring-up-members=0 check-live=40 gate-restart-stop=9 gate-restart-start=12 check-live-rebuild=45 cleanup=15 cleanup-members=0	FAILSTEPS:
+10212	total_seconds: 230	ok: true	vm-build=6 vm-create=21 deploy-add=86 bring-up-members=0 check-live=50 gate-restart-stop=11 gate-restart-start=7 check-live-rebuild=41 cleanup=8 cleanup-members=0	FAILSTEPS:
+10215	total_seconds: 146	ok: false	vm-build=6 vm-create=24 deploy-add=80 bring-up-members=0 check-live=36	FAILSTEPS:check-live,
+10217	total_seconds: 228	ok: true	vm-build=6 vm-create=22 deploy-add=92 bring-up-members=0 check-live=37 gate-restart-stop=12 gate-restart-start=9 check-live-rebuild=41 cleanup=9 cleanup-members=0	FAILSTEPS:
+10219	total_seconds: 239	ok: true	vm-build=6 vm-create=22 deploy-add=89 bring-up-members=0 check-live=40 gate-restart-stop=11 gate-restart-start=11 check-live-rebuild=45 cleanup=15 cleanup-members=0	FAILSTEPS:
+10222	total_seconds: 144	ok: false	vm-build=7 vm-create=23 deploy-add=78 bring-up-members=0 check-live=36	FAILSTEPS:check-live,
+10224	total_seconds: 232	ok: true	vm-build=6 vm-create=21 deploy-add=87 bring-up-members=0 check-live=40 gate-restart-stop=13 gate-restart-start=9 check-live-rebuild=44 cleanup=12 cleanup-members=0	FAILSTEPS:
+10225	total_seconds: 231	ok: true	vm-build=7 vm-create=22 deploy-add=83 bring-up-members=0 check-live=40 gate-restart-stop=7 gate-restart-start=11 check-live-rebuild=44 cleanup=18 cleanup-members=0	FAILSTEPS:
+10228	total_seconds: 168	ok: false	vm-build=6 vm-create=24 deploy-add=87 bring-up-members=0 check-live=51	FAILSTEPS:check-live,
+10229	total_seconds: 238	ok: true	vm-build=6 vm-create=21 deploy-add=90 bring-up-members=0 check-live=42 gate-restart-stop=12 gate-restart-start=9 check-live-rebuild=44 cleanup=14 cleanup-members=0	FAILSTEPS:
