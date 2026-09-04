@@ -36,7 +36,7 @@ check-omarchy-pr-10228-vm:
             - check: apply PR #10228 via the single apply seam
               id: pr-apply
               context: [runtime]
-              command: 'pr-apply 10228 f0bc41fb263362cdf8fcdb3b14ea9ac024c17a32 bin/omarchy-crash-watch docs/notifications.md manual/17-ai.md test/shell.d/crash-capture-test.sh'
+              command: 'pr-apply 10228 cce3fd6427a60d16b3f6bfc29fd3ebfab82da94f bin/omarchy-crash-watch docs/notifications.md manual/17-ai.md test/shell.d/crash-capture-test.sh'
             - check: omarchy-crash-watch reads COREDUMP_CODE and skips SI_USER kill(2) deaths
               id: pr-behavior
               context: [runtime]

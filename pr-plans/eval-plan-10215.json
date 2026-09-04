@@ -1,7 +1,7 @@
 {
   "pr": 10215,
   "title": "Add native calendar planning",
-  "headSha": "6ebb7e1b319a9f477d8242d02fefa62e886339bb",
+  "headSha": "52952db276936a94b0be3ea289b6315c331930cc",
   "class": "qml-desktop-ui-cli",
   "channel": "stable",
   "tier": "vm",
