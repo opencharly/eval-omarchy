@@ -1,0 +1,55 @@
+{
+  "pr": 10199,
+  "title": "Workspaces.qml: Add global workspace sync for multi-monitor setups",
+  "headSha": "b9f53d4bbdd64900cb0f66a3ac0d4eac36811bc2",
+  "class": "qml-desktop-ui",
+  "channel": "stable",
+  "tier": "vm",
+  "entity": {
+    "kind": "clone",
+    "from_vm": "check-omarchy-eval-base-inst",
+    "from_snapshot": "golden",
+    "ram": "4G",
+    "cpu": 4,
+    "disk_size": "40G"
+  },
+  "changedFiles": [
+    "shell/plugins/bar/widgets/Workspaces.qml"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "what": "the bar workspaces widget implements the AW-slot model (global mode 5 stable slots)",
+      "file": "/usr/share/omarchy/shell/plugins/bar/widgets/Workspaces.qml",
+      "token": "awSlots",
+      "assertion": "grep -qiF awSlots /usr/share/omarchy/shell/plugins/bar/widgets/Workspaces.qml"
+    },
+    {
+      "id": "pr-behavior-2",
+      "what": "global-mode slot clicks dispatch through omarchy-hyprland-workspace-global-switch",
+      "file": "/usr/share/omarchy/shell/plugins/bar/widgets/Workspaces.qml",
+      "token": "omarchy-hyprland-workspace-global-switch",
+      "assertion": "grep -qiF omarchy-hyprland-workspace-global-switch /usr/share/omarchy/shell/plugins/bar/widgets/Workspaces.qml"
+    }
+  ],
+  "knownRed": "by-construction: both markers are ADDED lines (diff +177/−19): the base widget implements workspaceById/workspaceIds/focusWorkspace — no awSlots, no global-switch call (verified absent against ref 493067741), so both probe greps exit 2 on the golden.",
+  "markerRule": {
+    "verified": "marker token(s) confirmed present in the ADDED lines of the PR diff via gh api repos/omacom/omarchy/pulls/10199/files AND absent from the base-branch files (ref 493067741)",
+    "probeExpected": "probe bed (same checks, NO pr-apply) must FAIL with exit 2 on the golden; a green probe = RED-PROBE-BROKEN (process block, S7)"
+  },
+  "record": {
+    "cast": true,
+    "gif": true,
+    "spiceMjpeg": true,
+    "screenMp4": true,
+    "visual": true,
+    "mediaNote": "three-artifact contract: record start→drive→stop (.cast, artifact_min_bytes 200), record gif render (.gif), spice record action start (fps 5) → drive → stop (/tmp/pr-10199.mjpeg, artifact_min_bytes 10000, artifact_not_uniform true) + ONE run: ffmpeg transcode to /tmp/pr-10199-screen.mp4. NOTE: the spice MJPEG is written HOST-side by the SPICE-wire plugin; the in-venue run: ffmpeg step reports when the guest copy is absent and the host runner performs the container transcode (lane: EVAL RUNNER assembles media/<pr>-<calver>/).",
+    "drive": "grep -nF awSlots /usr/share/omarchy/shell/plugins/bar/widgets/Workspaces.qml; echo pr-10199-done"
+  },
+  "expectedPhaseSeconds": {
+    "probe": 60,
+    "eval": 240,
+    "apply": 30,
+    "media": 45
+  }
+}

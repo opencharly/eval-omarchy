@@ -1,0 +1,57 @@
+{
+  "pr": 10202,
+  "title": "Harden updatedb configuration migration",
+  "headSha": "ecb69659d9d66cb56ec2b8a5a1f9bf846e8ebe2d",
+  "class": "script-security",
+  "channel": "stable",
+  "tier": "vm",
+  "entity": {
+    "kind": "clone",
+    "from_vm": "check-omarchy-eval-base-inst",
+    "from_snapshot": "golden",
+    "ram": "4G",
+    "cpu": 4,
+    "disk_size": "40G"
+  },
+  "changedFiles": [
+    "install/config/locate.sh",
+    "migrations/1784809451.sh",
+    "test/shell.d/locate-test.sh"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "what": "locate.sh hardens PRUNEPATHS rewriting through the fixed awk program (data-as-data, no sed interpolation)",
+      "file": "/usr/share/omarchy/install/config/locate.sh",
+      "token": "rewrite_updatedb_prunepaths",
+      "assertion": "grep -qiF rewrite_updatedb_prunepaths /usr/share/omarchy/install/config/locate.sh"
+    },
+    {
+      "id": "pr-behavior-2",
+      "what": "the migration pins UPDATEDB_CONF_PATH to /etc/updatedb.conf (env override removed)",
+      "file": "/usr/share/omarchy/migrations/1784809451.sh",
+      "token": "UPDATEDB_CONF_PATH=/etc/updatedb.conf",
+      "assertion": "grep -qiF UPDATEDB_CONF_PATH=/etc/updatedb.conf /usr/share/omarchy/migrations/1784809451.sh"
+    }
+  ],
+  "knownRed": "by-construction: both markers are ADDED lines (locate.sh +28/−2, migration +2/−2): the base locate.sh has no rewrite_updatedb_prunepaths function, and the base migration declares `UPDATEDB_CONF_PATH=\"${OMARCHY_UPDATEDB_CONF_PATH:-/etc/updatedb.conf}\"` — the bare `UPDATEDB_CONF_PATH=/etc/updatedb.conf` string is absent in both base files (verified against ref 493067741), so both probe greps exit 2 on the golden.",
+  "markerRule": {
+    "verified": "marker token(s) confirmed present in the ADDED lines of the PR diff via gh api repos/omacom/omarchy/pulls/10202/files AND absent from the base-branch files (ref 493067741)",
+    "probeExpected": "probe bed (same checks, NO pr-apply) must FAIL with exit 2 on the golden; a green probe = RED-PROBE-BROKEN (process block, S7)"
+  },
+  "record": {
+    "cast": true,
+    "gif": true,
+    "spiceMjpeg": true,
+    "screenMp4": true,
+    "visual": false,
+    "mediaNote": "three-artifact contract: record start→drive→stop (.cast, artifact_min_bytes 200), record gif render (.gif), spice record action start (fps 5) → drive → stop (/tmp/pr-10202.mjpeg, artifact_min_bytes 10000, artifact_not_uniform true) + ONE run: ffmpeg transcode to /tmp/pr-10202-screen.mp4. NOTE: the spice MJPEG is written HOST-side by the SPICE-wire plugin; the in-venue run: ffmpeg step reports when the guest copy is absent and the host runner performs the container transcode (lane: EVAL RUNNER assembles media/<pr>-<calver>/).",
+    "drive": "grep -nF rewrite_updatedb_prunepaths /usr/share/omarchy/install/config/locate.sh; echo pr-10202-done"
+  },
+  "expectedPhaseSeconds": {
+    "probe": 60,
+    "eval": 240,
+    "apply": 30,
+    "media": 45
+  }
+}

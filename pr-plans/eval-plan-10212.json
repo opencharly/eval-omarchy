@@ -1,0 +1,56 @@
+{
+  "pr": 10212,
+  "title": "Fix keybindings menu hang when user configs iterate hl accessors",
+  "headSha": "5245d3f78e077e1efd3d0a662900f0f921ab08ad",
+  "class": "script-system-behavior",
+  "channel": "stable",
+  "tier": "vm",
+  "entity": {
+    "kind": "clone",
+    "from_vm": "check-omarchy-eval-base-inst",
+    "from_snapshot": "golden",
+    "ram": "4G",
+    "cpu": 4,
+    "disk_size": "40G"
+  },
+  "changedFiles": [
+    "bin/omarchy-menu-keybindings",
+    "test/shell.d/keybindings-menu-test.sh"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "what": "the keybindings scan noop metatable takes a key parameter (numeric keys yield nil — ipairs terminates)",
+      "file": "/usr/share/omarchy/bin/omarchy-menu-keybindings",
+      "token": "__index = function(_, key)",
+      "assertion": "grep -qiF \"__index = function(_, key)\" /usr/share/omarchy/bin/omarchy-menu-keybindings"
+    },
+    {
+      "id": "pr-behavior-2",
+      "what": "the new noop comment documents the hl.get_loaded_plugins iteration case (the added regression reproducer)",
+      "file": "/usr/share/omarchy/bin/omarchy-menu-keybindings",
+      "token": "get_loaded_plugins",
+      "assertion": "grep -qiF get_loaded_plugins /usr/share/omarchy/bin/omarchy-menu-keybindings"
+    }
+  ],
+  "knownRed": "by-construction: both markers are ADDED lines (diff +9/−1): the base noop is `__index = function()` with no key parameter, and the base file contains NEITHER `__index = function(_, key)` NOR `get_loaded_plugins` (verified against ref 493067741 — the base only has the unrelated `type(key) == \"number\" and key >= 1 ...` expression on line 122), so both probe greps exit 2 on the golden.",
+  "markerRule": {
+    "verified": "marker token(s) confirmed present in the ADDED lines of the PR diff via gh api repos/omacom/omarchy/pulls/10212/files AND absent from the base-branch files (ref 493067741)",
+    "probeExpected": "probe bed (same checks, NO pr-apply) must FAIL with exit 2 on the golden; a green probe = RED-PROBE-BROKEN (process block, S7)"
+  },
+  "record": {
+    "cast": true,
+    "gif": true,
+    "spiceMjpeg": true,
+    "screenMp4": true,
+    "visual": true,
+    "mediaNote": "three-artifact contract: record start→drive→stop (.cast, artifact_min_bytes 200), record gif render (.gif), spice record action start (fps 5) → drive → stop (/tmp/pr-10212.mjpeg, artifact_min_bytes 10000, artifact_not_uniform true) + ONE run: ffmpeg transcode to /tmp/pr-10212-screen.mp4. NOTE: the spice MJPEG is written HOST-side by the SPICE-wire plugin; the in-venue run: ffmpeg step reports when the guest copy is absent and the host runner performs the container transcode (lane: EVAL RUNNER assembles media/<pr>-<calver>/).",
+    "drive": "grep -nF \"__index = function(_, key)\" /usr/share/omarchy/bin/omarchy-menu-keybindings; echo pr-10212-done"
+  },
+  "expectedPhaseSeconds": {
+    "probe": 60,
+    "eval": 240,
+    "apply": 30,
+    "media": 45
+  }
+}

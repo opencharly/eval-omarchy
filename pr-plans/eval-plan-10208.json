@@ -1,0 +1,56 @@
+{
+  "pr": 10208,
+  "title": "fix: pull Broadcom Wi-Fi from broadcom-wl-dkms",
+  "headSha": "e523d5da1699c5d2fc6adec2c628c9f34ae0ce0d",
+  "class": "install-script-hardware",
+  "channel": "stable",
+  "tier": "vm",
+  "entity": {
+    "kind": "clone",
+    "from_vm": "check-omarchy-eval-base-inst",
+    "from_snapshot": "golden",
+    "ram": "4G",
+    "cpu": 4,
+    "disk_size": "40G"
+  },
+  "changedFiles": [
+    "install/hardware/fix-bcm43xx.sh",
+    "install/omarchy-other.packages"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "what": "the BCM4360/4331 hardware fix pulls broadcom-wl-dkms (the Arch extra replacement)",
+      "file": "/usr/share/omarchy/install/hardware/fix-bcm43xx.sh",
+      "token": "broadcom-wl-dkms",
+      "assertion": "grep -qiF broadcom-wl-dkms /usr/share/omarchy/install/hardware/fix-bcm43xx.sh"
+    },
+    {
+      "id": "pr-behavior-2",
+      "what": "the offline package list carries broadcom-wl-dkms instead of the dropped broadcom-wl",
+      "file": "/usr/share/omarchy/install/omarchy-other.packages",
+      "token": "broadcom-wl-dkms",
+      "assertion": "grep -qiF broadcom-wl-dkms /usr/share/omarchy/install/omarchy-other.packages"
+    }
+  ],
+  "knownRed": "by-construction: both markers are ADDED lines (diff +1/−1 each): the base files say `broadcom-wl` (no -dkms), so the literal `broadcom-wl-dkms` is absent in both base files (verified against ref 493067741) — both probe greps exit 2 on the golden. Landing per docs/file-layout.md: install/** ships to /usr/share/omarchy/install/.",
+  "markerRule": {
+    "verified": "marker token(s) confirmed present in the ADDED lines of the PR diff via gh api repos/omacom/omarchy/pulls/10208/files AND absent from the base-branch files (ref 493067741)",
+    "probeExpected": "probe bed (same checks, NO pr-apply) must FAIL with exit 2 on the golden; a green probe = RED-PROBE-BROKEN (process block, S7)"
+  },
+  "record": {
+    "cast": true,
+    "gif": true,
+    "spiceMjpeg": true,
+    "screenMp4": true,
+    "visual": false,
+    "mediaNote": "three-artifact contract: record start→drive→stop (.cast, artifact_min_bytes 200), record gif render (.gif), spice record action start (fps 5) → drive → stop (/tmp/pr-10208.mjpeg, artifact_min_bytes 10000, artifact_not_uniform true) + ONE run: ffmpeg transcode to /tmp/pr-10208-screen.mp4. NOTE: the spice MJPEG is written HOST-side by the SPICE-wire plugin; the in-venue run: ffmpeg step reports when the guest copy is absent and the host runner performs the container transcode (lane: EVAL RUNNER assembles media/<pr>-<calver>/).",
+    "drive": "grep -nF broadcom-wl-dkms /usr/share/omarchy/install/hardware/fix-bcm43xx.sh; grep -nF broadcom-wl-dkms /usr/share/omarchy/install/omarchy-other.packages; echo pr-10208-done"
+  },
+  "expectedPhaseSeconds": {
+    "probe": 60,
+    "eval": 240,
+    "apply": 30,
+    "media": 45
+  }
+}
