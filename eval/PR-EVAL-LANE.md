@@ -372,3 +372,9 @@ A FAILED probe leaves the VM running "for debugging"; `charly check stop` releas
 
 ### Measured speed profile (folded into the hill-climb baseline)
 - update 61 s → 28 s (payload baked; var.), cleanup 182 s → 4–8 s (acpid), evals avg ≈ 150 s (was 437 s); 10134 @ 82 s with the trimmed media (settle_ms 300, single frame). Remaining levers: update-gate change-class (operator decision), deploy-add resolver+staging (~30 s), boot floor.
+
+
+## The ONE eval lane — golden-backed VM (mandatory, R5)
+
+- **The ONLY PR eval lane is the golden-backed VM**: a linked-disk clone of the channel INSTRUMENTED golden (or the eval-base-inst golden), with the PR applied at runtime via the single pr-apply seam + the record/spice evidence loop. GPU passthrough is added ONLY for GPU-class PRs (requires_exclusive: [nvidia-gpu], serial). Everything else is cut: no fresh ISO installs per PR (S6), no pod-only evals for system-behavior PRs. A system-behavior PR without the live VM lane gets NO VALIDATION, never a container-claimed pass.
+- Base provenance is the GOLDEN SNAPSHOT (channel + snapshot id/sha256), not the installer version — the template's "Who ran this" reflects it (see PR-EVAL-TEMPLATE.md).

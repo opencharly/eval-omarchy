@@ -20,7 +20,7 @@ empty section is not a valid answer). Delete the "Render instructions" block bef
 - **Update channel tested:** `stable` | `rc` | `edge` | `dev` — <why this channel>
 - **Test environment(s):** <one per line> · **Run date:** <YYYY.DDD.HHMM>
 - **Testing tool version:** <ver> · **Tested on:** <YYYY-MM-DD>
-- **What the test system was based on:** base VM <name> · installer version <ver> · clean snapshot <id/date>
+- **What the test system was based on:** golden VM lane only — channel <ch> instrumented golden snapshot <id/sha256> (linked-disk clone; GPU passthrough only for GPU-class PRs)
 
 ## How it went
 
@@ -131,8 +131,7 @@ references them; small evidence stays committed in `eval/evidence/<pr>-<calver>/
 
 ## Who ran this
 
-*Tested by opencharly.ai (opencharly/eval-omarchy) · testing tool <ver> · channel <ch> · base
-<installer version>/snapshot <id> · <date> · tested head <sha>*
+*Tested by opencharly.ai (opencharly/eval-omarchy) · testing tool <ver> · channel <ch> · base: <golden snapshot id/sha256> · <date> · tested head <sha>*
 
 *Assisted-by: <Harness> <Provider Full Model Name> (<confidence>)*
 

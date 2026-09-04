@@ -39,7 +39,7 @@ check-omarchy-pr-10134-vm:
             - check: the PR behaviour is present (vscode in bin/omarchy-theme-set-vscode)
               id: pr-behavior
               context: [runtime]
-              command: 'grep -qi GENERATED_THEME /usr/share/omarchy/bin/omarchy-theme-set-vscode'
+              command: 'grep -qi _watch /usr/share/omarchy/bin/omarchy-theme-set-vscode'
             - check: start a terminal recording
               id: rec-start
               context: [runtime]
@@ -47,7 +47,7 @@ check-omarchy-pr-10134-vm:
             - check: drive the PR key command inside the recording
               id: rec-drive
               context: [runtime]
-              record: {method: run, record_name: pr-10134, text: 'grep -n GENERATED_THEME /usr/share/omarchy/bin/omarchy-theme-set-vscode; echo pr-10134-done', settle_ms: 1000}
+              record: {method: run, record_name: pr-10134, text: 'grep -n _watch /usr/share/omarchy/bin/omarchy-theme-set-vscode; echo pr-10134-done', settle_ms: 1000}
             - check: capture the VM display via SPICE
               id: rec-screen-spice
               context: [runtime]
@@ -70,8 +70,10 @@ check-omarchy-pr-10134-vm-probe:
         add_candy:
             - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
             - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+        description: >-
+            RED-PROBE twin for omacom/omarchy#10134 — the pr-behavior check must FAIL on the golden (known-red, S7).
         plan:
             - check: the PR behaviour is present (vscode in bin/omarchy-theme-set-vscode)
               id: pr-behavior
               context: [runtime]
-              command: 'grep -qi GENERATED_THEME /usr/share/omarchy/bin/omarchy-theme-set-vscode'
+              command: 'grep -qi _watch /usr/share/omarchy/bin/omarchy-theme-set-vscode'
