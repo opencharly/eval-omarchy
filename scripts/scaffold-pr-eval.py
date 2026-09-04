@@ -8,7 +8,7 @@ the diff between any two scaffolded beds is a template/dat a diff only (S8).
 
 Usage: scaffold-pr-eval.py <plan.json> [--diff] [--self-test]
 """
-import json, pathlib, sys, yaml
+import difflib, json, pathlib, sys
 
 TMPL_ENTITY = """omarchy-vm-clone-{pr}:
     vm:
@@ -135,6 +135,9 @@ def main():
         return 0
     if len(sys.argv) < 2:
         print(__doc__); return 2
+    do_diff = '--diff' in sys.argv
+    if do_diff:
+        sys.argv.remove('--diff')
     src = pathlib.Path(sys.argv[1])
     plan = json.loads(src.read_text())
     pr = plan['pr']; title = plan['title']; sha = plan['headSha']
@@ -148,6 +151,13 @@ def main():
     yml += TMPL_EVAL.format(pr=pr, title=title, sha=sha, files=' '.join(files), checks=''.join(checks), record_text=rec_text)
     probe_checks = ''.join(check_block(c) for c in plan['checks'])
     yml += TMPL_PROBE.format(pr=pr, checks=probe_checks)
+    if do_diff:
+        old = dest.read_text() if dest.exists() else ''
+        if old == yml:
+            print(f"--diff: {dest} unchanged (S8: template/dat a diff only)")
+            return 0
+        sys.stdout.writelines(difflib.unified_diff(old.splitlines(), yml.splitlines(), fromfile=str(dest), tofile='generated', lineterm=''))
+        return 1
     dest.write_text(yml)
     print(f"scaffolded {dest} ({len(yml)} chars): entity + eval bed + probe bed")
     print(f"known-red: {plan.get('knownRed', '(unstated)')}")
