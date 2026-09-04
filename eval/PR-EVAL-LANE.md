@@ -411,3 +411,10 @@ Every eval lane produces ALL THREE artifacts — no exceptions:
 
 ### Head-freshness rule (RCA 2026-09-04: PR 10147's branch was force-pushed upstream — the pinned head became orphaned and pr-apply failed with `unable to read tree`)
 The plan's headSha must equal the LIVE PR head (gh api repos/omacom/omarchy/pulls/<N>) — checked BEFORE any run. On drift (the branch was rebased/force-pushed), REGENERATE the plan + bed to the live head FIRST (verify the marker is still in the new head's added lines via the diff), never run a stale pin. A fetch-by-PR-ref only brings the live head's objects — an orphaned pinned commit's tree is unreachable in the guest. The oracle re-validates head freshness at authoring; the runner re-checks the triple (plan ↔ bed ↔ live head) at launch.
+
+
+### Golden keeper-run protocol (RCA 2026-09-04 22:17: the refresh run 2013 left its VM running — it holds a WRITE LOCK on the fresh golden; destroying that VM also removes the external-snapshot golden — only meta.json survives). OBLIGATORY after any golden refresh:
+1. Verify the capture: snapshots/golden/disk.qcow2 EXISTS with a nonzero size.
+2. THEN `charly check stop` + destroy the base-inst VM (the external goldens are re-capturable: a re-provision recreates them capture-declared, ~2 min).
+3. BATCH PREFLIGHT: before ANY batch, verify the golden disk's presence — a missing golden fails every clone's vm-create at ~4.6s with 'Failed to get shared write lock' (measured twice).
+4. Never destroy a VM while it holds the only external golden without re-capturing first.
