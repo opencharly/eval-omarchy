@@ -1,20 +1,25 @@
 # pr-10136 eval stats (exact timings)
 
-bed: check-omarchy-pr-10136-vm | run calver: 2026.247.2043
-verdict ok: True | total_seconds: 536
+run calver: 2026.247.2233
+verdict ok: true
+total_seconds: 193
 
 | phase | seconds | ok |
 |---|---|---|
-| vm-build | 9 | True |
-| vm-create | 34 | True |
-| deploy-add | 117 | True |
-| bring-up-members | 0 | True |
-| check-live | 50 | True |
-| update | 257 | True |
-| check-live-rebuild | 52 | True |
-| cleanup | 18 | True |
-| cleanup-members | 0 | True |
-
-## media window (inner-step evidence, artifact-mtime) ##
-spice-record→gif window: 3s (mjpeg 1788556605 → gif 1788556608)
-cast: 23:16:47 904B
+vm-build
+--
+vm-create
+--
+deploy-add
+--
+bring-up-members
+--
+check-live
+--
+update
+--
+check-live-rebuild
+--
+cleanup
+--
+cleanup-members
