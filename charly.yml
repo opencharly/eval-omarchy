@@ -34,6 +34,8 @@ discover:
       recursive: true
     - path: candy
       recursive: true
+    - path: pr-beds
+      recursive: true
 
 # ── the omarchy VM template (local copy — the import does not expose the entity) ──
 omarchy-vm:
