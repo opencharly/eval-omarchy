@@ -140,9 +140,16 @@ live behavior never becomes a pass or a fail — it becomes nothing.
   run the update; the dev base additionally hosts the `~/omarchy` source checkout (the
   channel binds the OS to it) — the PRIMARY upstream-code lane: a PR is applied by
   checking out its head there.
-- **Per PR (serial):** restore the clean snapshot → apply the PR at the channel seam →
-  run the checks on the live system → persist evidence (`eval/evidence/<pr>-<calver>/`)
-  → restore the clean snapshot again.
+- **Per PR (serial):** `charly check run check-omarchy-pr-<N>-vm-anchored --anchor golden --keep-venue`
+  — the CLONE-based eval (a COW overlay on the provisioned golden, vm-create ≈ 3s vs the fresh
+  ISO install ≈ 20-30 min): revert the golden → apply the PR at the channel seam (the runtime
+  apply check) → run the checks on the live system (record:gif terminal evidence + the SPICE
+  screen capture — no guest Wayland session dependency) → save the media →
+  restore the golden again.
+- **Media (every run):** `scripts/save-media.sh <pr> <calver>` copies the run's artifacts
+  (`/tmp/<pr>.cast`, `/tmp/<pr>.gif`, `/tmp/<pr>-screen.png`) into the gitignored
+  `media/<pr>-<calver>/` (eval rule 6: every evaluation produces a terminal .cast AND a
+  screen recording).
 
 ### The apply seam — a local software template on the snapshot VM
 
