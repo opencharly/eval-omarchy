@@ -5,6 +5,7 @@
   "class": "software",
   "channel": "stable",
   "tier": "vm",
+  "visual": false,
   "changedFiles": [
     "default/firmware/apple/brcmfmac43602-pcie-mbp133.txt",
     "default/firmware/apple/brcmfmac43602-pcie.txt",

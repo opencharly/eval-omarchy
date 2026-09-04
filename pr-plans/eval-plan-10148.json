@@ -5,6 +5,7 @@
   "class": "software",
   "channel": "stable",
   "tier": "vm",
+  "visual": false,
   "changedFiles": [
     "config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf",
     "migrations/1788513270.sh",

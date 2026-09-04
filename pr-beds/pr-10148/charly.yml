@@ -44,6 +44,10 @@ check-omarchy-pr-10148-vm:
               id: rec-start
               context: [runtime]
               record: {method: start, record_mode: terminal, record_name: pr-10148}
+            - check: start the SPICE display video capture
+              id: rec-spice-start
+              context: [runtime]
+              spice: {method: record, action: start, record_name: pr-10148, fps: 5}
             - check: drive the PR key command inside the recording
               id: rec-drive
               context: [runtime]
@@ -52,6 +56,10 @@ check-omarchy-pr-10148-vm:
               id: rec-screen-spice
               context: [runtime]
               spice: {method: screenshot, artifact: /tmp/pr-10148-screen.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the SPICE capture and pull the MJPEG stream
+              id: rec-spice-stop
+              context: [runtime]
+              spice: {method: record, action: stop, record_name: pr-10148, artifact: /tmp/pr-10148.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
             - check: stop the recording and pull the .cast
               id: rec-stop
               context: [runtime]
@@ -60,6 +68,10 @@ check-omarchy-pr-10148-vm:
               id: rec-gif
               context: [runtime]
               record: {method: gif, record_name: pr-10148, artifact: /tmp/pr-10148.gif, artifact_min_bytes: 100}
+            - run: transcode the SPICE MJPEG capture to MP4 (screen.mp4)
+              id: rec-mp4
+              context: [runtime]
+              command: 'if [ -s /tmp/pr-10148.mjpeg ]; then ffmpeg -y -loglevel error -i /tmp/pr-10148.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/pr-10148-screen.mp4 && echo "pr-10148-screen.mp4 transcoded in venue"; else echo "pr-10148: MJPEG is host-side (SPICE capture) — the host runner performs the container transcode into media/ (lane runner assembly)" >&2; fi'
 
 
 check-omarchy-pr-10148-vm-probe:
@@ -77,3 +89,36 @@ check-omarchy-pr-10148-vm-probe:
               id: pr-behavior
               context: [runtime]
               command: 'grep -qi audient /usr/share/omarchy/config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf'
+            - check: start a terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: pr-10148}
+            - check: start the SPICE display video capture
+              id: rec-spice-start
+              context: [runtime]
+              spice: {method: record, action: start, record_name: pr-10148, fps: 5}
+            - check: drive the PR key command inside the recording
+              id: rec-drive
+              context: [runtime]
+              record: {method: run, record_name: pr-10148, text: 'grep -n audient /usr/share/omarchy/config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf; echo pr-10148-done', settle_ms: 1000}
+            - check: capture the VM display via SPICE
+              id: rec-screen-spice
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/pr-10148-screen.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the SPICE capture and pull the MJPEG stream
+              id: rec-spice-stop
+              context: [runtime]
+              spice: {method: record, action: stop, record_name: pr-10148, artifact: /tmp/pr-10148.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+            - check: stop the recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: pr-10148, artifact: /tmp/pr-10148.cast, artifact_min_bytes: 200}
+            - check: render the .cast to an animated GIF
+              id: rec-gif
+              context: [runtime]
+              record: {method: gif, record_name: pr-10148, artifact: /tmp/pr-10148.gif, artifact_min_bytes: 100}
+            - run: transcode the SPICE MJPEG capture to MP4 (screen.mp4)
+              id: rec-mp4
+              context: [runtime]
+              command: 'if [ -s /tmp/pr-10148.mjpeg ]; then ffmpeg -y -loglevel error -i /tmp/pr-10148.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/pr-10148-screen.mp4 && echo "pr-10148-screen.mp4 transcoded in venue"; else echo "pr-10148: MJPEG is host-side (SPICE capture) — the host runner performs the container transcode into media/ (lane runner assembly)" >&2; fi'
+

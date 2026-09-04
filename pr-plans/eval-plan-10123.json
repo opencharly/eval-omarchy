@@ -5,6 +5,7 @@
   "class": "software",
   "channel": "stable",
   "tier": "vm",
+  "visual": false,
   "changedFiles": [
     "manual/42-common-tweaks.md"
   ],

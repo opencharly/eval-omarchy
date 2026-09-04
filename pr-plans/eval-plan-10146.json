@@ -5,6 +5,7 @@
   "class": "software",
   "channel": "stable",
   "tier": "vm",
+  "visual": true,
   "changedFiles": [
     "docs/notifications.md",
     "shell/plugins/notifications/NotificationLogic.js",

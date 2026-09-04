@@ -5,6 +5,7 @@
   "class": "software",
   "channel": "stable",
   "tier": "vm",
+  "visual": true,
   "changedFiles": [
     "default/omarchy/omarchy-menu.jsonc",
     "test/shell.d/menu-test.sh"

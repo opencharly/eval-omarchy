@@ -5,6 +5,7 @@
   "class": "software",
   "channel": "stable",
   "tier": "vm",
+  "visual": false,
   "changedFiles": [
     "bin/omarchy-capture-screenrecording",
     "test/shell.d/screenrecording-encoder-test.sh"

@@ -5,6 +5,7 @@
   "class": "software",
   "channel": "stable",
   "tier": "vm",
+  "visual": true,
   "changedFiles": [
     "shell/plugins/notifications/Service.qml",
     "shell/plugins/notifications/components/NotificationCard.qml",

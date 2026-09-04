@@ -5,6 +5,7 @@
   "class": "software",
   "channel": "stable",
   "tier": "vm",
+  "visual": true,
   "changedFiles": [
     "bin/omarchy-remove-launcher-entry",
     "bin/omarchy-rename-launcher-entry",

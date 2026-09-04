@@ -5,6 +5,7 @@
   "class": "software",
   "channel": "stable",
   "tier": "vm",
+  "visual": false,
   "changedFiles": [
     "bin/omarchy-upgrade-to-quattro",
     "etc/limine-entry-tool.d/omarchy-defaults.conf",

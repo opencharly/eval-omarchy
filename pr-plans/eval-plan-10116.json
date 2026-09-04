@@ -5,6 +5,7 @@
   "class": "software",
   "channel": "stable",
   "tier": "vm",
+  "visual": true,
   "changedFiles": [
     "shell/plugins/panels/network/Model.js",
     "shell/plugins/panels/network/Panel.qml",

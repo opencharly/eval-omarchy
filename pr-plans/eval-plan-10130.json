@@ -5,6 +5,7 @@
   "class": "software",
   "channel": "stable",
   "tier": "vm",
+  "visual": true,
   "changedFiles": [
     "shell/plugins/lock/Service.qml",
     "test/shell.d/fixtures/lock-activity-reblank/shell.qml",

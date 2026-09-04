@@ -5,6 +5,7 @@
   "class": "software",
   "channel": "stable",
   "tier": "vm",
+  "visual": false,
   "changedFiles": [
     "bin/omarchy-cmd-apple-sd-reader",
     "bin/omarchy-hw-apple-sd-reader",
