@@ -13,11 +13,11 @@ omarchy-eval-record:
             recording tools by default); the omarchy-suite-base already
             composes layer-tmux + layer-asciinema.
         plan:
-            - run: install the recording tools (tmux + asciinema + wf-recorder)
+            - run: install the recording tools (tmux + asciinema)
               id: eval-record-install
               command: |
                   set -eu
-                  pacman -S --needed --noconfirm tmux asciinema wf-recorder
+                  pacman -S --needed --noconfirm tmux asciinema
             - check: tmux is installed
               id: eval-record-tmux
               context:
@@ -28,8 +28,3 @@ omarchy-eval-record:
               context:
                 - build
               command: asciinema --version
-            - check: wf-recorder is installed (the desktop screen recorder)
-              id: eval-record-wf-recorder
-              context:
-                - build
-              command: wf-recorder --help
