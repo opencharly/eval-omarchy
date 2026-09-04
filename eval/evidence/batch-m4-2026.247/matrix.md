@@ -7,7 +7,7 @@
 | 10125 | screenrecording `encoder` | FAIL 5 | PASS | 171 |
 | 10129 | presentation `presentation` | FAIL 5 | PASS | 166 |
 | 10130 | lock `blankArmed` | FAIL 5 | PASS | revalidated |
-| 10134 | vscode-theme `GENERATED_THEME` | FAIL 5 | PASS | 82 |
+| 10134 | vscode-theme `_watch` | FAIL 5 red (fresh 1938, exit 2) | PASS 9st 79s (fresh 1940) | 79 |
 | 10136 | zed `zed` | FAIL 5 | PASS | 164 |
 | 10138 | clock `Wallclock` | FAIL 5 | PASS | 170 |
 | 10139 | apple-sd `apple` | FAIL 5 | PASS | 107 |

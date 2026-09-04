@@ -358,7 +358,7 @@ install-path failure) is measurable. The re-evaluation found all of it.
 ## M4 findings — permanent guidance (16-lane batch, 2026-09-04)
 
 ### The ORACLE marker rule (mandatory)
-A PR-specific check marker MUST be a **diff-ADDED token** (a string in the PR's added lines, never a word that pre-exists in the base). Verified against the base before the bed ships: a probe that does NOT fail (exit 2) on the golden = **RED-PROBE-BROKEN = a PROCESS block — no eval is valid from that bed** (S7). Caught live: 10115 `countdown` (base theme token), 10130 `reblank` (the PR uses re-arm/rearmed), 10134 `vscode` (base `VS_CODE_THEME_DESCRIPTOR`) — all fixed with diff-added tokens (`showCountdown`, `blankArmed`, `GENERATED_THEME`).
+A PR-specific check marker MUST be a **diff-ADDED token** (a string in the PR's added lines, never a word that pre-exists in the base). Verified against the base before the bed ships: a probe that does NOT fail (exit 2) on the golden = **RED-PROBE-BROKEN = a PROCESS block — no eval is valid from that bed** (S7). Caught live: 10115 `countdown` (base theme token), 10130 `reblank` (the PR uses re-arm/rearmed), 10134 `vscode` (base `VS_CODE_THEME_DESCRIPTOR`) — all fixed with diff-added tokens (`showCountdown`, `blankArmed`, `_watch`).
 
 ### The ORACLE path rule (mandatory)
 A check path must be from a PROVEN-LANDING class (`bin/`, `shell/`, `migrations/` — verified by pr-apply) or verified against the post-apply tree. `etc/` (10140) failed to land at `/usr/share/omarchy/etc/...` — the check path was wrong by construction.
