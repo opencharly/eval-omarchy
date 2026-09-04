@@ -73,11 +73,31 @@ omarchy-vm:
                 - "<channel type='unix'><target type='virtio' name='org.qemu.guest_agent.0'/></channel>"
 
 # ── the linked-disk clone (fast VM — a COW overlay on the golden) ─────────────
+# The base bed: provisions the omarchy VM and captures the golden (the clone's
+# from_vm must reference the BED — the golden is domain-keyed).
+check-omarchy-eval-base:
+    vm:
+        from: omarchy-vm
+        disposable: true
+        snapshot:
+            on_finalize: golden
+            mode: external
+            keep_venue: true
+        plan:
+            - check: the omarchy guest reports its hostname
+              id: ocb-hostname
+              command: "uname -n"
+              stdout:
+                matches: ".+"
+              eventually: 300s
+              retry_interval: 10s
+              context: [runtime]
+
 omarchy-vm-clone:
     vm:
         source:
             kind: clone
-            from_vm: omarchy-vm
+            from_vm: check-omarchy-eval-base
             from_snapshot: golden
         disk_size: 40G
         ram: 8G
