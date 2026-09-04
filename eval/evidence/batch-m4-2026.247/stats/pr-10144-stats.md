@@ -1,22 +1,16 @@
-# pr-10144 eval stats
-run: 2026.247.2043
--   - name: vm-build
--     duration_seconds: 9
--   - name: vm-create
--     duration_seconds: 32
--   - name: deploy-add
--     duration_seconds: 118
--   - name: bring-up-members
--     duration_seconds: 0
--   - name: check-live
--     duration_seconds: 51
--   - name: update
--     duration_seconds: 235
--   - name: check-live-rebuild
--     duration_seconds: 67
--   - name: cleanup
--     duration_seconds: 23
--   - name: cleanup-members
--     duration_seconds: 0
-- total_seconds: 535
-- ok: true
+# pr-10144 eval stats (exact timings)
+
+bed: check-omarchy-pr-10144-vm | run calver: 2026.247.2043
+verdict ok: True | total_seconds: 535
+
+| phase | seconds | ok |
+|---|---|---|
+| vm-build | 9 | True |
+| vm-create | 32 | True |
+| deploy-add | 118 | True |
+| bring-up-members | 0 | True |
+| check-live | 51 | True |
+| update | 235 | True |
+| check-live-rebuild | 67 | True |
+| cleanup | 23 | True |
+| cleanup-members | 0 | True |

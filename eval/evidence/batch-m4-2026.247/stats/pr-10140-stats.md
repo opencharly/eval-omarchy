@@ -1,22 +1,16 @@
-# pr-10140 eval stats
-run: 2026.247.2043
--   - name: vm-build
--     duration_seconds: 9
--   - name: vm-create
--     duration_seconds: 34
--   - name: deploy-add
--     duration_seconds: 116
--   - name: bring-up-members
--     duration_seconds: 0
--   - name: check-live
--     duration_seconds: 53
--   - name: update
--     duration_seconds: 233
--   - name: check-live-rebuild
--     duration_seconds: 69
--   - name: cleanup
--     duration_seconds: 22
--   - name: cleanup-members
--     duration_seconds: 0
-- total_seconds: 535
-- ok: true
+# pr-10140 eval stats (exact timings)
+
+bed: check-omarchy-pr-10140-vm | run calver: 2026.247.2043
+verdict ok: True | total_seconds: 535
+
+| phase | seconds | ok |
+|---|---|---|
+| vm-build | 9 | True |
+| vm-create | 34 | True |
+| deploy-add | 116 | True |
+| bring-up-members | 0 | True |
+| check-live | 53 | True |
+| update | 233 | True |
+| check-live-rebuild | 69 | True |
+| cleanup | 22 | True |
+| cleanup-members | 0 | True |

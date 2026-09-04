@@ -1,22 +1,16 @@
-# pr-10129 eval stats
-run: 2026.247.2043
--   - name: vm-build
--     duration_seconds: 9
--   - name: vm-create
--     duration_seconds: 35
--   - name: deploy-add
--     duration_seconds: 103
--   - name: bring-up-members
--     duration_seconds: 0
--   - name: check-live
--     duration_seconds: 50
--   - name: update
--     duration_seconds: 260
--   - name: check-live-rebuild
--     duration_seconds: 55
--   - name: cleanup
--     duration_seconds: 16
--   - name: cleanup-members
--     duration_seconds: 0
-- total_seconds: 527
-- ok: true
+# pr-10129 eval stats (exact timings)
+
+bed: check-omarchy-pr-10129-vm | run calver: 2026.247.2043
+verdict ok: True | total_seconds: 527
+
+| phase | seconds | ok |
+|---|---|---|
+| vm-build | 9 | True |
+| vm-create | 35 | True |
+| deploy-add | 103 | True |
+| bring-up-members | 0 | True |
+| check-live | 50 | True |
+| update | 260 | True |
+| check-live-rebuild | 55 | True |
+| cleanup | 16 | True |
+| cleanup-members | 0 | True |

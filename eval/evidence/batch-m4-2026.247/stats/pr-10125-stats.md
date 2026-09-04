@@ -1,18 +1,14 @@
-# pr-10125 eval stats
-run: 2026.247.2043
--   - name: vm-build
--     duration_seconds: 9
--   - name: vm-create
--     duration_seconds: 34
--   - name: deploy-add
--     duration_seconds: 103
--   - name: bring-up-members
--     duration_seconds: 0
--   - name: check-live
--     duration_seconds: 50
--   - name: update
--     duration_seconds: 262
--   - name: check-live-rebuild
--     duration_seconds: 44
-- total_seconds: 503
-- ok: false
+# pr-10125 eval stats (exact timings)
+
+bed: check-omarchy-pr-10125-vm | run calver: 2026.247.2043
+verdict ok: False | total_seconds: 503
+
+| phase | seconds | ok |
+|---|---|---|
+| vm-build | 9 | True |
+| vm-create | 34 | True |
+| deploy-add | 103 | True |
+| bring-up-members | 0 | True |
+| check-live | 50 | True |
+| update | 262 | True |
+| check-live-rebuild | 44 | False |
