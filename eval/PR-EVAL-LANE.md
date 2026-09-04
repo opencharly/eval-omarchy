@@ -418,3 +418,12 @@ The plan's headSha must equal the LIVE PR head (gh api repos/omacom/omarchy/pull
 2. THEN `charly check stop` + destroy the base-inst VM (the external goldens are re-capturable: a re-provision recreates them capture-declared, ~2 min).
 3. BATCH PREFLIGHT: before ANY batch, verify the golden disk's presence — a missing golden fails every clone's vm-create at ~4.6s with 'Failed to get shared write lock' (measured twice).
 4. Never destroy a VM while it holds the only external golden without re-capturing first.
+
+
+### HARD lane-sequencing gate (RCA 2026-09-04 22:49-22:57: the 32-lane batch ran against in-flight lanes — golden-refresh VM, warm-repeat, ugate evidence + the sibling's anchored VMs → RAM 110/123G, load 75/16, probes ballooned past 3 min, ALL measurements invalidated. Corrective — a batch may launch ONLY when ALL hold):
+1. ZERO live batch VMs (`ps aux | grep qemu-system | grep -oE 'guest=charly-check-omarchy-pr-[0-9]+-vm'` = empty; the anchored 9893/9912/snap-probe residents are expected and budgeted).
+2. ZERO in-flight `charly check run` processes for the batch beds.
+3. The golden disk EXISTS (nonzero) and NO base-inst VM holds its lock.
+4. RAM budget: lanes × 2G + residents (anchored ~10G) + OS (~10G) ≤ ~110G usable; load1 < 20 before launch.
+5. Between a stop and a relaunch: `charly check stop` each leftover run, THEN destroy each VM (domstate check), THEN verify the count is zero.
+6. The ugate/evidence or keeper-run VM must conclude before a measurement batch (shared golden + shared host).
