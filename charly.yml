@@ -140,6 +140,10 @@ check-omarchy-pr-9332-vm-anchored:
               id: rec-screen-start
               context: [runtime]
               record: {method: start, record_mode: desktop, record_name: pr-9332-screen, record_env: {XDG_RUNTIME_DIR: /run/user/1000, WAYLAND_DISPLAY: wayland-1}}
+            - check: let the screen recording capture the desktop (5s)
+              id: rec-screen-settle
+              context: [runtime]
+              command: sleep 5
             - check: stop the screen recording and pull the .mp4
               id: rec-screen-stop
               context: [runtime]
