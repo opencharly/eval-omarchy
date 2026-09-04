@@ -76,7 +76,11 @@ and "Recordings" sections), then referenced here:
 - **Terminal lane (asciinema):** `.cast` of the flow — `record: start` → `record: run|cmd` →
   `record: stop` with `artifact:` + `artifact_min_bytes`/`artifact_min_cast_events`; playback on
   the host with `asciinema play` / `asciinema convert -f raw <file>.cast -`.
-- **Full-screen lane:** desktop video via `record: {record_mode: desktop}`
+- **Full-screen lane:** the SPICE output as video via the shipped `spice: record`
+  method (plugin-spice v2026.245.1508+): `spice: {method: record, action: start, fps: 5}`
+  → drive → `spice: {method: record, action: stop, artifact: …/pr-<N>.mjpeg}`
+  (MJPEG capture at fps, honest-failing artifact validators) + ONE ffmpeg transcode
+  step → `screen.mp4`. Mandatory (mp4 + mjpeg + cast + gif).
   (pixelflux/wf-recorder) on desktop systems, or SPICE video of the VM display —
   `spice: {method: record, action: start, fps}` → drive steps → `spice: {method: record,
   action: stop, artifact:}`; reality-check with `ffprobe` + a frame extract

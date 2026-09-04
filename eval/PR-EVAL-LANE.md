@@ -395,3 +395,15 @@ Feed the reader deliberately MISLABELED frames (e.g., a real GNOME-desktop scree
 
 ### Calibration (one past-report re-audit)
 Re-audit one previously finalized eval (from eval/) with the current rubric; the audit's verdict (PASS/FAIL-of-process) is recorded in the findings ledger as the calibration baseline.
+
+
+### The THREE-artifact media contract (mandatory, every eval)
+Every eval lane produces ALL THREE artifacts — no exceptions:
+1. **`.cast`** — the ascii screencast of the checks: `record: {method: start, record_mode: terminal, record_name: <pr>}` → the drive step → `record: {method: stop, artifact: …/pr-<N>.cast, artifact_min_bytes: 200}`.
+2. **`.gif`** — the screencast rendered to an animated GIF (the record verb render method).
+3. **`screen.mp4`** — the SPICE OUTPUT as video via the shipped `spice: record` method (plugin-spice v2026.245.1508+: the host-side MJPEG capture polls the display at fps, default 5): `spice: {method: record, action: start, fps: 5}` BEFORE the drive, the drive steps, then `spice: {method: record, action: stop, artifact: /tmp/pr-<N>.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}` (an empty/static stream honest-fails the validators). ONE `run:` step transcodes the MJPEG to MP4 (`ffmpeg -y -loglevel error -i /tmp/pr-<N>.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/pr-<N>-screen.mp4`). Charly-native: no frame-assembly workarounds — the capture IS the spice video stream; the ffmpeg step only relabels containers.
+
+### The judge rule (cold-reader)
+- **ALWAYS** read the `.cast` (the terminal-lane truth: exact commands, exit codes, timestamps).
+- **MP4 review ON DEMAND only**: review the `screen.mp4` (frames via ffmpeg + vision_ask) ONLY when the plan's `visual:` flag is true (the PR's diff touches the desktop UI — panels, notifications, themes, overlays, animations) or the diff clearly implies visual change. A non-visual PR (config/scripts/docs) never needs the mp4 — the .cast + check results suffice.
+- Every material vision claim is corroborated by a deterministic source (the .cast/wl/spice text) — the GNOME-mislabel trap applies to mp4 frames too.
