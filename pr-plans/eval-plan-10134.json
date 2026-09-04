@@ -1,0 +1,19 @@
+{
+  "pr": 10134,
+  "title": "vscode",
+  "headSha": "977e0fcdc2ca46b2fbf7dbeab6bd5b29b49b1398",
+  "class": "software",
+  "channel": "stable",
+  "tier": "vm",
+  "changedFiles": [
+    "bin/omarchy-theme-set-vscode"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "file": "/usr/share/omarchy/bin/omarchy-theme-set-vscode",
+      "token": "vscode"
+    }
+  ],
+  "knownRed": "by-construction: vscode only lands with PR 10134"
+}

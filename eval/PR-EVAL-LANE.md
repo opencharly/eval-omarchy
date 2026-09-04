@@ -353,3 +353,22 @@ counter-example: pr-9332 was reported NO VALIDATION because "cardwire is not
 in the omarchy package repository" — but cardwire IS on AUR, the PR's own
 test suites run, and the scripts' real behavior (detection fallback,
 install-path failure) is measurable. The re-evaluation found all of it.
+
+
+## M4 findings — permanent guidance (16-lane batch, 2026-09-04)
+
+### The ORACLE marker rule (mandatory)
+A PR-specific check marker MUST be a **diff-ADDED token** (a string in the PR's added lines, never a word that pre-exists in the base). Verified against the base before the bed ships: a probe that does NOT fail (exit 2) on the golden = **RED-PROBE-BROKEN = a PROCESS block — no eval is valid from that bed** (S7). Caught live: 10115 `countdown` (base theme token), 10130 `reblank` (the PR uses re-arm/rearmed), 10134 `vscode` (base `VS_CODE_THEME_DESCRIPTOR`) — all fixed with diff-added tokens (`showCountdown`, `blankArmed`, `GENERATED_THEME`).
+
+### The ORACLE path rule (mandatory)
+A check path must be from a PROVEN-LANDING class (`bin/`, `shell/`, `migrations/` — verified by pr-apply) or verified against the post-apply tree. `etc/` (10140) failed to land at `/usr/share/omarchy/etc/...` — the check path was wrong by construction.
+
+### The RUNNER orphan-sequencing rule (mandatory)
+A FAILED probe leaves the VM running "for debugging"; `charly check stop` releases the flock but does NOT destroy the VM — the eval's clone vm-build collides on the overlay write-lock (caught: 10116/10125/10129 eval-attempt-1). Sequence: probe verdict → `charly check stop` → `charly vm destroy <entity> --domain <bed>` → eval.
+
+### Concurrency guidance (16-lane)
+- Golden-lock: NEVER start a batch while a golden-provisioning run is active (the 21:00 attempts crashed on the held golden).
+- The shared `~/.config/charly/ssh_config` rewrite across 16 parallel lanes raced (10134 deploy-add "Could not resolve hostname") — a charly shared-state observation; the lane retry after the config settled succeeded. Recorded as an upstream candidate.
+
+### Measured speed profile (folded into the hill-climb baseline)
+- update 61 s → 28 s (payload baked; var.), cleanup 182 s → 4–8 s (acpid), evals avg ≈ 150 s (was 437 s); 10134 @ 82 s with the trimmed media (settle_ms 300, single frame). Remaining levers: update-gate change-class (operator decision), deploy-add resolver+staging (~30 s), boot floor.

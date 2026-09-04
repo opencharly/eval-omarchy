@@ -1,0 +1,23 @@
+{
+  "pr": 10140,
+  "title": "autosuspend",
+  "headSha": "d06853a760955a09ef5a014a4f28584c6d1f0ec9",
+  "class": "software",
+  "channel": "stable",
+  "tier": "vm",
+  "changedFiles": [
+    "bin/omarchy-upgrade-to-quattro",
+    "etc/limine-entry-tool.d/omarchy-defaults.conf",
+    "etc/modprobe.d/omarchy-usb-autosuspend.conf",
+    "migrations/1788507775.sh",
+    "test/shell.d/usb-autosuspend-test.sh"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "file": "/usr/share/omarchy/etc/modprobe.d/omarchy-usb-autosuspend.conf",
+      "token": "autosuspend"
+    }
+  ],
+  "knownRed": "by-construction: autosuspend only lands with PR 10140"
+}

@@ -1,0 +1,21 @@
+{
+  "pr": 10130,
+  "title": "reblank",
+  "headSha": "21992f03f72c2b15bdeb135e9ae8e8bb21274e95",
+  "class": "software",
+  "channel": "stable",
+  "tier": "vm",
+  "changedFiles": [
+    "shell/plugins/lock/Service.qml",
+    "test/shell.d/fixtures/lock-activity-reblank/shell.qml",
+    "test/shell.d/lock-activity-reblank-test.sh"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "file": "/usr/share/omarchy/shell/plugins/lock/Service.qml",
+      "token": "reblank"
+    }
+  ],
+  "knownRed": "by-construction: reblank only lands with PR 10130"
+}

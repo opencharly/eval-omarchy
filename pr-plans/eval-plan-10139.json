@@ -1,0 +1,25 @@
+{
+  "pr": 10139,
+  "title": "apple",
+  "headSha": "38c07810ee3d06e22eaa069c630d7a33fbbf3475",
+  "class": "software",
+  "channel": "stable",
+  "tier": "vm",
+  "changedFiles": [
+    "bin/omarchy-cmd-apple-sd-reader",
+    "bin/omarchy-hw-apple-sd-reader",
+    "install/hardware/all.sh",
+    "install/hardware/apple/fix-sd-card-reader.sh",
+    "manual/44-mac-support.md",
+    "migrations/1788508170.sh",
+    "test/shell.d/apple-sd-reader-test.sh"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "file": "/usr/share/omarchy/bin/omarchy-hw-apple-sd-reader",
+      "token": "apple"
+    }
+  ],
+  "knownRed": "by-construction: apple only lands with PR 10139"
+}

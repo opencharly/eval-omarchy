@@ -1,0 +1,21 @@
+{
+  "pr": 10115,
+  "title": "countdown",
+  "headSha": "16a6ede2687255e198281a11969152a33d1d337a",
+  "class": "software",
+  "channel": "stable",
+  "tier": "vm",
+  "changedFiles": [
+    "shell/plugins/notifications/Service.qml",
+    "shell/plugins/notifications/components/NotificationCard.qml",
+    "test/shell.d/notifications-test.sh"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "file": "/usr/share/omarchy/shell/plugins/notifications/components/NotificationCard.qml",
+      "token": "countdown"
+    }
+  ],
+  "knownRed": "by-construction: countdown only lands with PR 10115"
+}

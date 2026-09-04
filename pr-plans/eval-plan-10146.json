@@ -1,0 +1,22 @@
+{
+  "pr": 10146,
+  "title": "group",
+  "headSha": "a3e951158dcac624ced50d4df9b0a33e68539468",
+  "class": "software",
+  "channel": "stable",
+  "tier": "vm",
+  "changedFiles": [
+    "docs/notifications.md",
+    "shell/plugins/notifications/NotificationLogic.js",
+    "shell/plugins/notifications/Service.qml",
+    "test/shell.d/notifications-test.sh"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "file": "/usr/share/omarchy/shell/plugins/notifications/NotificationLogic.js",
+      "token": "group"
+    }
+  ],
+  "knownRed": "by-construction: group only lands with PR 10146"
+}

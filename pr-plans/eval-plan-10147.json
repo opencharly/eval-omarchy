@@ -1,0 +1,20 @@
+{
+  "pr": 10147,
+  "title": "VibeCAD",
+  "headSha": "1c964b6571fd2e9cfae7a28b1ea7ff332aa39ce2",
+  "class": "software",
+  "channel": "stable",
+  "tier": "vm",
+  "changedFiles": [
+    "default/omarchy/omarchy-menu.jsonc",
+    "test/shell.d/menu-test.sh"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "file": "/usr/share/omarchy/default/omarchy/omarchy-menu.jsonc",
+      "token": "VibeCAD"
+    }
+  ],
+  "knownRed": "by-construction: VibeCAD only lands with PR 10147"
+}

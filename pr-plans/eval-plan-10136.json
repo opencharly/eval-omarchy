@@ -1,0 +1,23 @@
+{
+  "pr": 10136,
+  "title": "zed",
+  "headSha": "4e022c0940ab2630e8d0ac46c597dc94b2981ce8",
+  "class": "software",
+  "channel": "stable",
+  "tier": "vm",
+  "changedFiles": [
+    "bin/omarchy-theme-set",
+    "bin/omarchy-theme-set-zed",
+    "default/themed/zed-theme.json.tpl",
+    "docs/theming.md",
+    "test/shell.d/theme-staging-test.sh"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "file": "/usr/share/omarchy/bin/omarchy-theme-set-zed",
+      "token": "zed"
+    }
+  ],
+  "knownRed": "by-construction: zed only lands with PR 10136"
+}
