@@ -6,8 +6,8 @@ omarchy-vm-clone-10147:
             from_vm: check-omarchy-eval-base-inst
             from_snapshot: golden
         disk_size: 40G
-        ram: 4G
-        cpu: 4
+        ram: 2G
+        cpu: 2
         machine: q35
         firmware: uefi-insecure
         network: {mode: user}
@@ -35,7 +35,7 @@ check-omarchy-pr-10147-vm:
             - check: apply PR #10147 via the single apply seam
               id: pr-apply
               context: [runtime]
-              command: 'pr-apply 10147 1c964b6571fd2e9cfae7a28b1ea7ff332aa39ce2 default/omarchy/omarchy-menu.jsonc test/shell.d/menu-test.sh'
+              command: 'pr-apply 10147 65fa55975f6e54757d3a087534f107b28005077b default/omarchy/omarchy-menu.jsonc test/shell.d/menu-test.sh'
             - check: the PR behaviour is present (VibeCAD in default/omarchy/omarchy-menu.jsonc)
               id: pr-behavior
               context: [runtime]
@@ -66,6 +66,8 @@ check-omarchy-pr-10147-vm-probe:
         add_candy:
             - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
             - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+        description: >-
+            RED-PROBE twin for omacom/omarchy#10147 — the pr-behavior check must FAIL on the golden (known-red, S7).
         plan:
             - check: the PR behaviour is present (VibeCAD in default/omarchy/omarchy-menu.jsonc)
               id: pr-behavior
