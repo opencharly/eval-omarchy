@@ -218,9 +218,33 @@ check-omarchy-pr-9332-vm-anchored:
 # golden (omarchy-vm-clone — the linked disk), NO GPU passthrough, 4G RAM each,
 # so the host runs MANY evals concurrently (≈ 16 on a 64G host). The anchored
 # lane (--anchor golden --keep-venue) reverts the golden per PR (≈ seconds).
+omarchy-vm-clone-9893:
+    vm:
+        source:
+            kind: clone
+            from_vm: check-omarchy-eval-base
+            from_snapshot: golden
+        disk_size: 40G
+        ram: 4G
+        cpu: 4
+        machine: q35
+        firmware: uefi-insecure
+        network: {mode: user}
+        ssh: {user: user, port_auto: true, key_source: generate}
+        backend: libvirt
+        libvirt:
+            devices:
+                channels: [{type: spicevmc, name: com.redhat.spice.0}]
+                graphics: [{type: spice, listen: [{type: socket}]}]
+                video: [{model: virtio, vram: 65536, heads: 1, accel3d: false}]
+                rng: [{model: virtio, backend: /dev/urandom}]
+                memballoon: {model: virtio}
+            snippets:
+                - "<channel type='unix'><target type='virtio' name='org.qemu.guest_agent.0'/></channel>"
+
 check-omarchy-pr-9893-vm-anchored:
     vm:
-        from: omarchy-vm-clone
+        from: omarchy-vm-clone-9893
         disposable: true
         snapshot:
             on_finalize: golden
@@ -277,9 +301,33 @@ check-omarchy-pr-9893-vm-anchored:
               context: [runtime]
               spice: {method: screenshot, artifact: /tmp/pr-9893-screen.png, artifact_min_bytes: 1000}
 
+omarchy-vm-clone-9912:
+    vm:
+        source:
+            kind: clone
+            from_vm: check-omarchy-eval-base
+            from_snapshot: golden
+        disk_size: 40G
+        ram: 4G
+        cpu: 4
+        machine: q35
+        firmware: uefi-insecure
+        network: {mode: user}
+        ssh: {user: user, port_auto: true, key_source: generate}
+        backend: libvirt
+        libvirt:
+            devices:
+                channels: [{type: spicevmc, name: com.redhat.spice.0}]
+                graphics: [{type: spice, listen: [{type: socket}]}]
+                video: [{model: virtio, vram: 65536, heads: 1, accel3d: false}]
+                rng: [{model: virtio, backend: /dev/urandom}]
+                memballoon: {model: virtio}
+            snippets:
+                - "<channel type='unix'><target type='virtio' name='org.qemu.guest_agent.0'/></channel>"
+
 check-omarchy-pr-9912-vm-anchored:
     vm:
-        from: omarchy-vm-clone
+        from: omarchy-vm-clone-9912
         disposable: true
         snapshot:
             on_finalize: golden
