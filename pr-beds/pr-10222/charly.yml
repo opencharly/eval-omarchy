@@ -36,7 +36,7 @@ check-omarchy-pr-10222-vm:
             - check: apply PR #10222 via the single apply seam
               id: pr-apply
               context: [runtime]
-              command: 'pr-apply 10222 2f44cf431c58fb7e796e6f54e8dfac2c14bb2a52 config/omarchy/hooks/power-source-change.d/show-power-source-notification.sample default/agents/skills/omarchy/hooks.md manual/31-dotfiles.md shell/plugins/services/battery/Service.qml test/shell.d/powerprofiles-set-test.sh'
+              command: 'pr-apply 10222 2f44cf431c58fb7e796e6f54e8dfac2c14bb2a52 config/omarchy/hooks/omarchy-notification-send.d/show-power-source-notification.sample default/agents/skills/omarchy/hooks.md manual/31-dotfiles.md shell/plugins/services/battery/Service.qml test/shell.d/powerprofiles-set-test.sh'
             - check: the battery service dispatches the power source hook on UPower onBattery changes
               id: pr-behavior
               context: [runtime]
