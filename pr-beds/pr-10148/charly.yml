@@ -6,7 +6,7 @@ omarchy-vm-clone-10148:
             from_vm: check-omarchy-eval-base-inst
             from_snapshot: golden
         disk_size: 40G
-        ram: 4G
+        ram: 2G
         cpu: 2
         machine: q35
         firmware: uefi-insecure
