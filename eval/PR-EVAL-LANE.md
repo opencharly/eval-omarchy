@@ -465,3 +465,10 @@ Whatever is suspected MUST show up in the per-eval stats:
 - `target: local` deploy inside a VM: the guest = an SSHExecutor target (`ssh user@127.0.0.1:37xxx`); `host: local` = the ShellExecutor (direct shell on that machine). The install plan walks via the shared out-of-process walk; the steps the deploy:local plugin cannot render (`BuilderStep`/`LocalPkgInstallStep`/`SystemPackagesStep`/`OpStep`/… ) marshal to the charly on the host over the EXECUTOR REVERSE CHANNEL.
 - The loader already routes the merged-tree materialization to the host (`ResolveMergedDeployTreeViaExecutor` → the executor `HostBuild` seam) — the guest does NOT re-unify per child in-guest; the HOST re-materializes the 43-repo CUE unify PER CHILD (no cache) — the 32-lane burn sits host-side per subcommand child.
 - The root fix = the host materialized-tree cache at the executor seam (the sdk/ladervia-executor PR) — the wave's later children reuse one unify. ANY future 'why is the guest slow' RCA must first check the marshaling layer: which step runs where (guest vs host) + whether the host-side op is cached.
+
+
+### Launch sequencing (RCA 2026-09-05: the vc1 wave lost 19 lanes to `refusing a concurrent run (bed lock)` — a leftover wave still held them)
+A wave launches ONLY after the lock table is verified clean:
+1. `ps aux | grep -cE '/charly/bin/charly check run'` == 0 (no live run procs).
+2. No bed `.check/check-omarchy-pr-<N>-vm/.lock` is HELD (the flock, not just the file — a stale file is free; a live holder blocks).
+3. Then launch, THEN re-verify: `systemctl --user list-units '<wave>-*' | grep -c running` == the expected lane count.
