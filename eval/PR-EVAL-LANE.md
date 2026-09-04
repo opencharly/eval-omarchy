@@ -434,3 +434,9 @@ Every eval run gets a DEDICATED stats file — exact measurements, one file per 
 - Path: `eval/evidence/batch-<batch>/stats/<pr>-stats.md` (the matrix is the aggregate; the stats files are the per-run records).
 - Content: run calver, the verdict line verbatim, EVERY phase (name + duration_seconds + ok) from the run's summary.yml, total_seconds, plus timestamps (the run dir mtimes / log times).
 - The supervisor/batch owner EMITS the file when each run concludes (before the aggregate matrix) — never after a batch restart that would blur the runs.
+
+
+### Media-density rule (loop finding 2026-09-04 23:25 — batch16-r3 measured 535s vs the 93s single-lane baseline)
+Under 16-lane concurrency the FULL three-artifact media loop on EVERY lane (the regen also added it to the probes) inflates EVERY phase 4-8x via lock/IO serialization (vm-create 34s, deploy-add 116s, update 233s, check-live 53s at load only ~13): the spice-record MJPEG streams + gif renders + mp4 transcodes keep the plugin processes and the VM IO saturated → the shared charly locks serialize the rest.
+RULE: the SPICE-VIDEO artifacts (spice: record start/stop + the mp4 transcode) are produced ONLY for `visual: true` plans (the judge rule). NON-visual beds keep the .cast + .gif + the SPICE screenshot + the deterministic checks — the mp4 is reviewable on demand for visual PRs only. The probe beds carry NO media loop at all (red-by-construction needs the greps only).
+Loop levers ranked: (1) update_gate restart-only (kills the 233s update+69s rebuild at 16 lanes) → (2) the media-density cut (the contention) → (3) the golden cache-warm + layer bump (deploy-add) → (4) lane count re-optimization AFTER the cuts.
