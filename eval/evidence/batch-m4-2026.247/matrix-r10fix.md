@@ -1,3 +1,5 @@
+<!-- HISTORICAL: the R10 re-verification run (00:18–00:26, the ssh-fragment fix only, BEFORE the ResolveRef-TTL fix) — every lane stalled at deploy-add by the ref-resolution storm. Superseded by matrix-final.md (the post-TTL-fix runs, all lanes concluded). -->
+
 # matrix-r10fix.md — R10 re-verification, 16-lane (2026-09-05 00:18:31 → 00:26:44, batch wall 493s)
 
 ssh-fragment-race fix under test: sdk local tree HEAD **5ecea08** "fix(kit): serialize the managed ssh-fragment save" (kit/sshconfig.go +21/-3), binary /home/atrawog/Sync/Atrapub/coder/pi/opencharly/charly/bin/charly (mtime 00:08, buildinfo dep sdk => /home/atrawog/Sync/Atrapub/coder/pi/opencharly/sdk (devel)). Fresh binary, probes skipped (red-proven), 16 concurrent `charly check run check-omarchy-pr-<N>-vm` from eval-omarchy.
