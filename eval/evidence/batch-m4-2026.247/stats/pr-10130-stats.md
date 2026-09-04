@@ -14,3 +14,7 @@ verdict ok: True | total_seconds: 548
 | check-live-rebuild | 44 | True |
 | cleanup | 15 | True |
 | cleanup-members | 0 | True |
+
+## media window (inner-step evidence, artifact-mtime) ##
+spice-record→gif window: 3s (mjpeg 1788556600 → gif 1788556603)
+cast: 23:16:42 774B

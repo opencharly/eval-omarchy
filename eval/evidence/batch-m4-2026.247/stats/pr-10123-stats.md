@@ -12,3 +12,7 @@ verdict ok: False | total_seconds: 505
 | check-live | 53 | True |
 | update | 244 | True |
 | check-live-rebuild | 49 | False |
+
+## media window (inner-step evidence, artifact-mtime) ##
+spice-record→gif window: 3s (mjpeg 1788556602 → gif 1788556605)
+cast: 23:16:44 982B
