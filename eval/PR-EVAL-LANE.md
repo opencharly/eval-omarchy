@@ -140,9 +140,48 @@ live behavior never becomes a pass or a fail — it becomes nothing.
   run the update; the dev base additionally hosts the `~/omarchy` source checkout (the
   channel binds the OS to it) — the PRIMARY upstream-code lane: a PR is applied by
   checking out its head there.
-- **Per PR (serial):** restore the clean snapshot → apply the PR at the channel seam →
-  run the checks on the live system → persist evidence (`eval/evidence/<pr>-<calver>/`)
-  → restore the clean snapshot again.
+
+### Purpose-built VM configs — match the PR's hardware class (MANDATORY)
+
+An eval of a HARDWARE-dependent PR on a box WITHOUT that hardware is useless — the
+eval config must match what the PR exercises. Every PR is classified BEFORE its bed is
+chosen:
+
+| PR | Subject | Hardware class | VM config |
+|---|---|---|---|
+| #9332 | hybrid GPU switching (supergfxctl → cardwire) | **GPU — the REAL cardwire GPU switching needs the passed-through GPU** | `omarchy-vm-clone-gpu` (clone + `requires_exclusive: [nvidia-gpu]`, SERIAL — one GPU) |
+| #9893 | low-space update errors (Btrfs snapshot boot detection) | software | `omarchy-vm-clone` (lean) |
+| #9894 | Tailscale panel reconnect | software | `omarchy-vm-clone` (lean) |
+| #9906 | Flatpak desktop entries | software | `omarchy-vm-clone` (lean) |
+| #9912 | `omarchy pkg add` group-aware | software | `omarchy-vm-clone` (lean) |
+| #9917 | terminal launch speed | software | `omarchy-vm-clone` (lean) |
+| #9921 | SUPER+A select-all keybinding | software | `omarchy-vm-clone` (lean) |
+| #9923 | network panel split-brain | software | `omarchy-vm-clone` (lean) |
+
+- **Lean class (software PRs):** `omarchy-vm-clone` — the clone (COW overlay on the
+  golden), **no GPU**, 4G RAM — runs MANY in PARALLEL (≈ 16 evals on a 64G host; each
+  VM starts from the golden, no rebuild). A GPU-less eval of a software PR is correct
+  AND the fastest possible.
+- **GPU class (GPU PRs):** `omarchy-vm-clone-gpu` — the same clone PLUS the NVIDIA
+  GPU passthrough (`requires_exclusive: [nvidia-gpu]`, the whole-IOMMU-group hostdev
+  auto-allocated by `charly vm create`). The REAL cardwire GPU switching is only
+  meaningful here. SERIAL — one GPU, one such eval at a time. Classify the PR first;
+  NEVER evaluate a GPU PR on a lean box (the behavior is hardware-bound → the eval is
+  worthless).
+- **Per PR:** `charly check run check-omarchy-pr-<N>-vm-anchored --anchor golden --keep-venue`
+  — the CLONE-based eval (vm-create ≈ 3s vs the fresh ISO install ≈ 20-30 min): revert
+  the golden → apply the PR at the channel seam (the runtime apply check) → run the
+  checks on the live system (record:gif terminal evidence + the SPICE screen capture —
+  no guest Wayland session dependency) → save the media → restore the golden again.
+- **Parallel batch (lean PRs):** launch the lean evals CONCURRENTLY (one per PR, each
+  its own .check lock + domain + COW overlay); the only host limits are RAM (4G/VM) and
+  vCPU (4/VM). The GPU eval runs alone.
+- **Media (every run):** `scripts/save-media.sh <pr> <calver>` renders the exit-trimmed
+  GIF (cast-render.sh/cast-trim-end.py — the record: stop types `exit`, so a naive
+  render ends on the exit/blank screen; the trimmed GIF ends on the last test output),
+  saves the raw .cast + the SPICE frames + the SPICE video into the gitignored
+  `media/<pr>-<calver>/` (eval rule 6: every evaluation produces a terminal .cast AND a
+  screen recording).
 
 ### The apply seam — a local software template on the snapshot VM
 

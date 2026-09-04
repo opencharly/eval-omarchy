@@ -35,6 +35,356 @@ discover:
     - path: candy
       recursive: true
 
+# ── the omarchy VM template (local copy — the import does not expose the entity) ──
+omarchy-vm:
+    vm:
+        source:
+            kind: iso
+            distro: omarchy
+            url: https://iso.omarchy.org/omarchy-4.0.1.iso
+            checksum: {type: sha256}
+            installer:
+                username: user
+                password: user
+                full_name: Charly
+                email: charly@opencharly.invalid
+                hostname: omarchy
+                timezone: UTC
+                keyboard: us
+                locale: en_US.UTF-8
+                disk: /dev/vda
+                encrypt: false
+        disk_size: 40G
+        ram: 4G
+        cpu: 4
+        machine: q35
+        firmware: uefi-insecure
+        network: {mode: user}
+        ssh: {user: user, port_auto: true, key_source: generate}
+        backend: libvirt
+        libvirt:
+            devices:
+                channels: [{type: spicevmc, name: com.redhat.spice.0}]
+                graphics: [{type: spice, listen: [{type: socket}]}]
+                video: [{model: virtio, vram: 65536, heads: 1, accel3d: false}]
+                rng: [{model: virtio, backend: /dev/urandom}]
+                memballoon: {model: virtio}
+            snippets:
+                - "<channel type='unix'><target type='virtio' name='org.qemu.guest_agent.0'/></channel>"
+
+# ── the linked-disk clone (fast VM — a COW overlay on the golden) ─────────────
+# The base bed: provisions the omarchy VM and captures the golden (the clone's
+# from_vm must reference the BED — the golden is domain-keyed).
+check-omarchy-eval-base:
+    vm:
+        from: omarchy-vm
+        disposable: true
+        snapshot:
+            on_finalize: golden
+            mode: external
+            keep_venue: true
+        add_candy:
+            - '@github.com/opencharly/layer-charly:v2026.241.1407'
+        plan:
+            - check: the omarchy guest reports its hostname
+              id: ocb-hostname
+              command: "uname -n"
+              stdout:
+                matches: ".+"
+              eventually: 300s
+              retry_interval: 10s
+              context: [runtime]
+
+omarchy-vm-clone:
+    vm:
+        source:
+            kind: clone
+            from_vm: check-omarchy-eval-base
+            from_snapshot: golden
+        disk_size: 40G
+        ram: 4G
+        cpu: 4
+        machine: q35
+        firmware: uefi-insecure
+        network: {mode: user}
+        ssh: {user: user, port_auto: true, key_source: generate}
+        backend: libvirt
+        libvirt:
+            devices:
+                channels: [{type: spicevmc, name: com.redhat.spice.0}]
+                graphics: [{type: spice, listen: [{type: socket}]}]
+                video: [{model: virtio, vram: 65536, heads: 1, accel3d: false}]
+                rng: [{model: virtio, backend: /dev/urandom}]
+                memballoon: {model: virtio}
+            snippets:
+                - "<channel type='unix'><target type='virtio' name='org.qemu.guest_agent.0'/></channel>"
+
+
+# ── Tier-2 anchored PR eval bed (PR #9332) — the new capabilities ────────────
+# The linked-disk PR eval: the omarchy-vm template with the charly toolchain +
+# auto-login + a golden snapshot (on_finalize), the PR applied at RUNTIME via the
+# apply seam (anchored mode skips deploy-add — verified in plugin-check
+# anchored.go/bed_run.go), the behavior checks, and the record:gif evidence loop
+# (start → run → stop → render the .cast to an animated GIF with agg). Run with
+# `charly check run <bed> --anchor golden --keep-venue`: the golden disk is
+# reverted before the checks (revert ≈ seconds vs fresh ISO install ≈ 20-30 min),
+# so a batch of PR evals shares ONE golden base per channel.
+check-omarchy-pr-9332-vm-anchored:
+    vm:
+        from: omarchy-vm-clone
+        disposable: true
+        requires_exclusive: [nvidia-gpu]
+        snapshot:
+            on_finalize: golden
+            keep_venue: true
+        add_candy:
+            - '@github.com/opencharly/layer-charly:v2026.241.1407'
+            - omarchy-autologin
+            - omarchy-eval-record
+            - '@github.com/opencharly/layer-asciinema:v2026.246.1622'
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+        install_opts:
+            allow_repo_changes: true
+            allow_root_tasks: true
+            with_service: true
+            skip_incompatible: true
+        plan:
+            - check: apply PR #9332's head over the installed tree (runtime apply seam)
+              id: pr-apply
+              context: [runtime]
+              command: |
+                  set -eu
+                  rm -rf /tmp/pr-src
+                  git init -q /tmp/pr-src
+                  cd /tmp/pr-src
+                  git remote add origin https://github.com/omacom/omarchy
+                  git fetch -q --depth 1 origin pull/9332/head
+                  git checkout -q FETCH_HEAD
+                  sudo cp bin/omarchy-hw-hybrid-gpu /usr/share/omarchy/bin/omarchy-hw-hybrid-gpu
+                  sudo cp bin/omarchy-toggle-hybrid-gpu /usr/share/omarchy/bin/omarchy-toggle-hybrid-gpu
+            - check: the PR's omarchy-hw-hybrid-gpu is installed (pr-applied)
+              id: pr-applied
+              context: [runtime]
+              file:
+                  file: /usr/share/omarchy/bin/omarchy-hw-hybrid-gpu
+                  exists: true
+            - check: start a terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: pr-9332}
+            - check: run the PR's key command inside the recording
+              id: rec-drive
+              context: [runtime]
+              record: {method: run, record_name: pr-9332, text: 'grep -n cardwire /usr/share/omarchy/bin/omarchy-toggle-hybrid-gpu; echo toggle-check-done', settle_ms: 1000}
+            - check: capture the VM display via SPICE (frame 1 — the hypervisor-level screen evidence)
+              id: rec-screen-spice-1
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/pr-9332-screen-1.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: drive the second terminal command (more screen content for the video)
+              id: rec-drive-2
+              context: [runtime]
+              record: {method: run, record_name: pr-9332, text: 'ls -la /usr/share/omarchy/bin/omarchy-hw-hybrid-gpu; echo hw-check-done', settle_ms: 1000}
+            - check: capture the VM display via SPICE (frame 2)
+              id: rec-screen-spice-2
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/pr-9332-screen-2.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the recording and pull the .cast (both commands recorded)
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: pr-9332, artifact: /tmp/pr-9332.cast, artifact_min_bytes: 200}
+            - check: render the .cast to an animated GIF (agg)
+              id: rec-gif
+              context: [runtime]
+              record: {method: gif, record_name: pr-9332, artifact: /tmp/pr-9332.gif, artifact_min_bytes: 100}
+            - check: capture the VM display via SPICE (frame 3 — the final state)
+              id: rec-screen-spice-3
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/pr-9332-screen-3.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+        description: >-
+            Tier-2 anchored PR eval for omacom/omarchy#9332 (hybrid GPU
+            supergfxctl→cardwire migration) — the GPU-CLASS bed: the omarchy-vm
+            template with the charly toolchain + auto-login + a golden snapshot,
+            the PR applied at RUNTIME via the apply seam, the behavior checks,
+            and the record:gif evidence loop. requires_exclusive: [nvidia-gpu]
+            (the REAL cardwire GPU switching is only meaningful with the
+            passed-through GPU — a GPU-less eval of this PR is worthless). Run
+            with --anchor golden --keep-venue: the golden disk is reverted before
+            the checks (revert ≈ seconds). SERIAL — one GPU, one such eval.
+
+
+# ── Tier-2 anchored PR eval beds (parallel batch — PRs #9893, #9912) ──────
+# The parallel-batch instances of the clone-based eval: EVERY VM starts from the
+# golden (omarchy-vm-clone — the linked disk), NO GPU passthrough, 4G RAM each,
+# so the host runs MANY evals concurrently (≈ 16 on a 64G host). The anchored
+# lane (--anchor golden --keep-venue) reverts the golden per PR (≈ seconds).
+omarchy-vm-clone-9893:
+    vm:
+        source:
+            kind: clone
+            from_vm: check-omarchy-eval-base
+            from_snapshot: golden
+        disk_size: 40G
+        ram: 4G
+        cpu: 4
+        machine: q35
+        firmware: uefi-insecure
+        network: {mode: user}
+        ssh: {user: user, port_auto: true, key_source: generate}
+        backend: libvirt
+        libvirt:
+            devices:
+                channels: [{type: spicevmc, name: com.redhat.spice.0}]
+                graphics: [{type: spice, listen: [{type: socket}]}]
+                video: [{model: virtio, vram: 65536, heads: 1, accel3d: false}]
+                rng: [{model: virtio, backend: /dev/urandom}]
+                memballoon: {model: virtio}
+            snippets:
+                - "<channel type='unix'><target type='virtio' name='org.qemu.guest_agent.0'/></channel>"
+
+check-omarchy-pr-9893-vm-anchored:
+    vm:
+        from: omarchy-vm-clone-9893
+        disposable: true
+        snapshot:
+            on_finalize: golden
+            keep_venue: true
+        add_candy:
+            - '@github.com/opencharly/layer-charly:v2026.241.1407'
+            - omarchy-autologin
+            - omarchy-eval-record
+            - '@github.com/opencharly/layer-asciinema:v2026.246.1622'
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+        install_opts:
+            allow_repo_changes: true
+            allow_root_tasks: true
+            with_service: true
+            skip_incompatible: true
+        plan:
+            - check: apply the PR head over the installed tree (runtime apply seam)
+              id: pr-apply
+              context: [runtime]
+              command: |
+                  set -eu
+                  rm -rf /tmp/pr-src
+                  git init -q /tmp/pr-src
+                  cd /tmp/pr-src
+                  git remote add origin https://github.com/omacom/omarchy
+                  git fetch -q --depth 1 origin pull/9893/head
+                  git checkout -q FETCH_HEAD
+                  sudo cp bin/omarchy-hw-hybrid-gpu /usr/share/omarchy/bin/omarchy-hw-hybrid-gpu
+            - check: the PR file is installed (pr-applied)
+              id: pr-applied
+              context: [runtime]
+              file:
+                  file: /usr/share/omarchy/bin/omarchy-hw-hybrid-gpu
+                  exists: true
+            - check: start a terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: pr-9893}
+            - check: run the PR test command inside the recording
+              id: rec-drive
+              context: [runtime]
+              record: {method: run, record_name: pr-9893, text: 'grep -n cardwire /usr/share/omarchy/bin/omarchy-hw-hybrid-gpu; echo pr-9893-check-done', settle_ms: 1000}
+            - check: stop the recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: pr-9893, artifact: /tmp/pr-9893.cast, artifact_min_bytes: 200}
+            - check: render the .cast to an animated GIF (agg)
+              id: rec-gif
+              context: [runtime]
+              record: {method: gif, record_name: pr-9893, artifact: /tmp/pr-9893.gif, artifact_min_bytes: 100}
+            - check: capture the VM display via SPICE (the screen evidence)
+              id: rec-screen-spice
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/pr-9893-screen.png, artifact_min_bytes: 1000}
+
+omarchy-vm-clone-9912:
+    vm:
+        source:
+            kind: clone
+            from_vm: check-omarchy-eval-base
+            from_snapshot: golden
+        disk_size: 40G
+        ram: 4G
+        cpu: 4
+        machine: q35
+        firmware: uefi-insecure
+        network: {mode: user}
+        ssh: {user: user, port_auto: true, key_source: generate}
+        backend: libvirt
+        libvirt:
+            devices:
+                channels: [{type: spicevmc, name: com.redhat.spice.0}]
+                graphics: [{type: spice, listen: [{type: socket}]}]
+                video: [{model: virtio, vram: 65536, heads: 1, accel3d: false}]
+                rng: [{model: virtio, backend: /dev/urandom}]
+                memballoon: {model: virtio}
+            snippets:
+                - "<channel type='unix'><target type='virtio' name='org.qemu.guest_agent.0'/></channel>"
+
+check-omarchy-pr-9912-vm-anchored:
+    vm:
+        from: omarchy-vm-clone-9912
+        disposable: true
+        snapshot:
+            on_finalize: golden
+            keep_venue: true
+        add_candy:
+            - '@github.com/opencharly/layer-charly:v2026.241.1407'
+            - omarchy-autologin
+            - omarchy-eval-record
+            - '@github.com/opencharly/layer-asciinema:v2026.246.1622'
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+        install_opts:
+            allow_repo_changes: true
+            allow_root_tasks: true
+            with_service: true
+            skip_incompatible: true
+        plan:
+            - check: apply the PR head over the installed tree (runtime apply seam)
+              id: pr-apply
+              context: [runtime]
+              command: |
+                  set -eu
+                  rm -rf /tmp/pr-src
+                  git init -q /tmp/pr-src
+                  cd /tmp/pr-src
+                  git remote add origin https://github.com/omacom/omarchy
+                  git fetch -q --depth 1 origin pull/9912/head
+                  git checkout -q FETCH_HEAD
+                  sudo cp bin/omarchy-pkg-missing /usr/share/omarchy/bin/omarchy-pkg-missing
+            - check: the PR file is installed (pr-applied)
+              id: pr-applied
+              context: [runtime]
+              file:
+                  file: /usr/share/omarchy/bin/omarchy-pkg-missing
+                  exists: true
+            - check: start a terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: pr-9912}
+            - check: run the PR test command inside the recording
+              id: rec-drive
+              context: [runtime]
+              record: {method: run, record_name: pr-9912, text: 'grep -n pkg-missing /usr/share/omarchy/bin/omarchy-pkg-add; echo pr-9912-check-done', settle_ms: 1000}
+            - check: stop the recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: pr-9912, artifact: /tmp/pr-9912.cast, artifact_min_bytes: 200}
+            - check: render the .cast to an animated GIF (agg)
+              id: rec-gif
+              context: [runtime]
+              record: {method: gif, record_name: pr-9912, artifact: /tmp/pr-9912.gif, artifact_min_bytes: 100}
+            - check: capture the VM display via SPICE (the screen evidence)
+              id: rec-screen-spice
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/pr-9912-screen.png, artifact_min_bytes: 1000}
+
+
 # ── Tier-1 PR-injection bed (PR #9332) ────────────────────────────────────────
 # omacom/omarchy#9332 — "Migrate hybrid GPU switching from supergfxctl to
 # cardwire". The PR-variant image (omarchy-suite-base-pr9332) applies the PR's
