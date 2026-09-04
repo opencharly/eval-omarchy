@@ -133,6 +133,7 @@ check-omarchy-pr-9332-vm-anchored:
     vm:
         from: omarchy-vm-clone
         disposable: true
+        requires_exclusive: [nvidia-gpu]
         snapshot:
             on_finalize: golden
             keep_venue: true
@@ -202,12 +203,14 @@ check-omarchy-pr-9332-vm-anchored:
               spice: {method: screenshot, artifact: /tmp/pr-9332-screen-3.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
         description: >-
             Tier-2 anchored PR eval for omacom/omarchy#9332 (hybrid GPU
-            supergfxctl→cardwire migration): the omarchy-vm template with the
-            charly toolchain + auto-login + a golden snapshot, the PR applied at
-            RUNTIME via the apply seam, the behavior checks, and the record:gif
-            evidence loop. Run with --anchor golden --keep-venue: the golden disk
-            is reverted before the checks (revert ≈ seconds vs fresh ISO install
-            ≈ 20-30 min).
+            supergfxctl→cardwire migration) — the GPU-CLASS bed: the omarchy-vm
+            template with the charly toolchain + auto-login + a golden snapshot,
+            the PR applied at RUNTIME via the apply seam, the behavior checks,
+            and the record:gif evidence loop. requires_exclusive: [nvidia-gpu]
+            (the REAL cardwire GPU switching is only meaningful with the
+            passed-through GPU — a GPU-less eval of this PR is worthless). Run
+            with --anchor golden --keep-venue: the golden disk is reverted before
+            the checks (revert ≈ seconds). SERIAL — one GPU, one such eval.
 
 
 # ── Tier-2 anchored PR eval beds (parallel batch — PRs #9893, #9912) ──────
