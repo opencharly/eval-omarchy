@@ -378,3 +378,20 @@ A FAILED probe leaves the VM running "for debugging"; `charly check stop` releas
 
 - **The ONLY PR eval lane is the golden-backed VM**: a linked-disk clone of the channel INSTRUMENTED golden (or the eval-base-inst golden), with the PR applied at runtime via the single pr-apply seam + the record/spice evidence loop. GPU passthrough is added ONLY for GPU-class PRs (requires_exclusive: [nvidia-gpu], serial). Everything else is cut: no fresh ISO installs per PR (S6), no pod-only evals for system-behavior PRs. A system-behavior PR without the live VM lane gets NO VALIDATION, never a container-claimed pass.
 - Base provenance is the GOLDEN SNAPSHOT (channel + snapshot id/sha256), not the installer version — the template's "Who ran this" reflects it (see PR-EVAL-TEMPLATE.md).
+
+
+## COLD-READER RUBRIC (M6, permanent) — the grading contract for every eval result
+
+A cold read is a FRESH-CONTEXT validation of the eval evidence (the report + the media + the ledger) against the criteria. It issues TWO verdicts:
+
+- **SUBJECT** (about the PR): PASS (verified working on a live system) / FAIL (verified not working) / NO VALIDATION. Any "might work" framing for untested live behavior is STRICTLY FORBIDDEN.
+- **PROCESS** (about the eval itself): every PR-specific check known-red (probe FAIL exit 2 observed), tier compliance (system PRs on the live VM), claims scoped to the tier, media non-empty AND showing the commands, footer + disclaimer verbatim. Any process defect = REDO-PROCESS (setup update + full re-run), never a posted report.
+
+### The vision-deterministic cross-check (mandatory, the GNOME trap)
+The vision model can mislabel the desktop (measured: Hyprland+Quickshell repeatedly called "GNOME"). Every material vision claim MUST be corroborated by a deterministic source: the .cast text, the wl:/spice:/record: verb outputs, or the config. A vision claim without corroboration is a PROCESS finding. Reading lanes: vision_ask/pi.read on SPICE frames + the GIF; ffmpeg frames from screen.mp4; the .cast text (the terminal lane truth).
+
+### The adversarial self-test (performed at M6 and whenever the rubric changes)
+Feed the reader deliberately MISLABELED frames (e.g., a real GNOME-desktop screenshot labeled as the omarchy eval output, or the Hyprland desktop labeled "boot failure") + verify the reader flags the mismatch via the deterministic cross-check. A reader that accepts a mislabeled frame without a PROCESS finding FAILS the self-test.
+
+### Calibration (one past-report re-audit)
+Re-audit one previously finalized eval (from eval/) with the current rubric; the audit's verdict (PASS/FAIL-of-process) is recorded in the findings ledger as the calibration baseline.
