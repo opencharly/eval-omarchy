@@ -1,0 +1,43 @@
+omarchy-pr-apply:
+    candy:
+        version: 2026.247.1100
+        description: |
+            The ONE runtime PR-apply helper for omarchy evaluations (T10 — the
+            single-source apply seam; R3: no per-PR copy-paste of the git-fetch
+            block ever again). Installs /usr/local/bin/pr-apply, which fetches a
+            PR head (SHA-pinned) and installs ONLY its changed files over the
+            installed tree. Every eval bed's apply step is exactly:
+                pr-apply <pr> <sha> <changed-files...>
+            The grep guard lives here: 'git fetch .* pull/<N>/head' may only
+            appear in THIS candy. The same seam serves the pod venue and the VM
+            venue (AGENTS.md per-PR artifact pattern, runtime lane).
+        plan:
+            - run: install the pr-apply helper (the single runtime apply seam)
+              id: eval-pr-apply-install
+              command: |
+                  set -eu
+                  install -D -m 0755 /dev/stdin /usr/local/bin/pr-apply <<'PR_APPLY_EOF'
+                  #!/usr/bin/env bash
+                  # pr-apply <pr> <sha> <file...> — install ONLY the PR's changed files over the installed tree.
+                  set -eu
+                  PR=$1; SHA=$2; shift 2
+                  T=$(mktemp -d)
+                  trap 'rm -rf "$T"' EXIT
+                  git init -q "$T"
+                  cd "$T"
+                  git remote add origin https://github.com/omacom/omarchy
+                  git fetch -q --depth 1 origin "pull/$PR/head"
+                  git checkout -q --detach "$SHA"
+                  for f in "$@"; do
+                      if [ -f "$f" ]; then
+                          sudo install -D -m 0644 "$f" "/usr/share/omarchy/$f"
+                      else
+                          echo "pr-apply: WARNING: $f not in the PR head — skipping" >&2
+                      fi
+                  done
+                  echo "pr-apply: installed $(($#)) file(s) for PR $PR @ $SHA"
+                  PR_APPLY_EOF
+            - check: the helper is installed and runnable
+              id: eval-pr-apply-ok
+              context: [runtime]
+              command: pr-apply --help >/dev/null 2>&1 || true; test -x /usr/local/bin/pr-apply
