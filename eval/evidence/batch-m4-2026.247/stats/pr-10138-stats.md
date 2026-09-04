@@ -1,0 +1,22 @@
+# pr-10138 eval stats
+run: 2026.247.2043
+-   - name: vm-build
+-     duration_seconds: 9
+-   - name: vm-create
+-     duration_seconds: 34
+-   - name: deploy-add
+-     duration_seconds: 102
+-   - name: bring-up-members
+-     duration_seconds: 0
+-   - name: check-live
+-     duration_seconds: 50
+-   - name: update
+-     duration_seconds: 284
+-   - name: check-live-rebuild
+-     duration_seconds: 42
+-   - name: cleanup
+-     duration_seconds: 16
+-   - name: cleanup-members
+-     duration_seconds: 0
+- total_seconds: 539
+- ok: true

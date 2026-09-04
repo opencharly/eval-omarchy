@@ -427,3 +427,10 @@ The plan's headSha must equal the LIVE PR head (gh api repos/omacom/omarchy/pull
 4. RAM budget: lanes × 2G + residents (anchored ~10G) + OS (~10G) ≤ ~110G usable; load1 < 20 before launch.
 5. Between a stop and a relaunch: `charly check stop` each leftover run, THEN destroy each VM (domstate check), THEN verify the count is zero.
 6. The ugate/evidence or keeper-run VM must conclude before a measurement batch (shared golden + shared host).
+
+
+### Per-eval stats contract (every batch, every lane)
+Every eval run gets a DEDICATED stats file — exact measurements, one file per eval:
+- Path: `eval/evidence/batch-<batch>/stats/<pr>-stats.md` (the matrix is the aggregate; the stats files are the per-run records).
+- Content: run calver, the verdict line verbatim, EVERY phase (name + duration_seconds + ok) from the run's summary.yml, total_seconds, plus timestamps (the run dir mtimes / log times).
+- The supervisor/batch owner EMITS the file when each run concludes (before the aggregate matrix) — never after a batch restart that would blur the runs.
