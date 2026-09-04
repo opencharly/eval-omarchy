@@ -176,14 +176,6 @@ check-omarchy-pr-9332-vm-anchored:
               id: rec-drive
               context: [runtime]
               record: {method: run, record_name: pr-9332, text: 'grep -n cardwire /usr/share/omarchy/bin/omarchy-toggle-hybrid-gpu; echo toggle-check-done', settle_ms: 1000}
-            - check: stop the recording and pull the .cast
-              id: rec-stop
-              context: [runtime]
-              record: {method: stop, record_name: pr-9332, artifact: /tmp/pr-9332.cast, artifact_min_bytes: 200}
-            - check: render the .cast to an animated GIF (agg)
-              id: rec-gif
-              context: [runtime]
-              record: {method: gif, record_name: pr-9332, artifact: /tmp/pr-9332.gif, artifact_min_bytes: 100}
             - check: capture the VM display via SPICE (frame 1 — the hypervisor-level screen evidence)
               id: rec-screen-spice-1
               context: [runtime]
@@ -196,7 +188,15 @@ check-omarchy-pr-9332-vm-anchored:
               id: rec-screen-spice-2
               context: [runtime]
               spice: {method: screenshot, artifact: /tmp/pr-9332-screen-2.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
-            - check: capture the VM display via SPICE (frame 3)
+            - check: stop the recording and pull the .cast (both commands recorded)
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: pr-9332, artifact: /tmp/pr-9332.cast, artifact_min_bytes: 200}
+            - check: render the .cast to an animated GIF (agg)
+              id: rec-gif
+              context: [runtime]
+              record: {method: gif, record_name: pr-9332, artifact: /tmp/pr-9332.gif, artifact_min_bytes: 100}
+            - check: capture the VM display via SPICE (frame 3 — the final state)
               id: rec-screen-spice-3
               context: [runtime]
               spice: {method: screenshot, artifact: /tmp/pr-9332-screen-3.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
