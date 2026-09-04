@@ -186,7 +186,7 @@ check-omarchy-pr-9332-vm-anchored:
               record: {method: gif, record_name: pr-9332, artifact: /tmp/pr-9332.gif, artifact_min_bytes: 100}
             - check: capture the VM display via SPICE (the hypervisor-level screen evidence)
               id: rec-screen-spice
-              context: [deploy]
+              context: [runtime]
               spice: {method: screenshot, artifact: /tmp/pr-9332-screen.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
         description: >-
             Tier-2 anchored PR eval for omacom/omarchy#9332 (hybrid GPU
