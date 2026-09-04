@@ -3,9 +3,11 @@ omarchy-eval-record:
         version: 2026.246.0000
         description: |
             The eval-tooling payload for omarchy PR evaluations: recording tools (tmux +
-            asciinema, eval rule 6) AND acpid (fast ACPI shutdown so VM teardown is ~15s).
-            Baked into the instrumented golden (check-omarchy-eval-base-inst); mutating
-            steps run at deploy. The recording tooling:
+            asciinema, eval rule 6) AND acpid (ACPI power-off handling enabled in the
+            golden). Baked into the instrumented golden (check-omarchy-eval-base-inst);
+            mutating steps run at deploy. NOTE: the 182 s cleanup grace is an UNRESOLVED
+            hill-climb target — acpid's effect on charly's teardown grace is not yet
+            measured; no claim is made. The recording tooling:
             tmux + asciinema installed natively, so a venue can run the
             record: gif loop (start a terminal recording → run a command →
             stop → render the .cast to an animated GIF with agg). agg itself

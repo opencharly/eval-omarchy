@@ -793,11 +793,13 @@ check-omarchy-suite-pod-pr9906:
                 artifact_min_bytes: 200
                 artifact_min_cast_events: 3
 
-# ── the INSTRUMENTED base bed (linked-disk wave): the stable golden PLUS the full
-# eval-tooling payload (charly, autologin, record tools, pr-apply helper, record/spice
-# plugins, acpid for fast ACPI shutdown) captured as its own golden. Per-PR evals clone
-# from THIS golden with an EMPTY add_candy — deploy-add ≈ 0 s, the R10 update gate has
-# nothing to reinstall, and teardown is fast (acpid). Provision it once: run the FRESH
+# ── the INSTRUMENTED base bed: the stable golden PLUS the eval-tooling payload
+# (charly, autologin, record tools incl. acpid, pr-apply helper) captured as its own
+# golden. Per-PR evals clone from THIS golden; per-eval add_candy carries ONLY the
+# record/spice PLUGIN providers (verbs register at check-run time — baking them gave
+# 'no provider registered'). The 182 s cleanup grace is an OPEN hill-climb target
+# (no teardown claim). Provision once via the FRESH lane; the runner stops the domain
+# after capture (the golden must never stay held). Provision it once: run the FRESH
 # lane (no --anchor). Capture is a golden-building event (T4), amortized to zero per eval.
 check-omarchy-eval-base-inst:
     vm:
@@ -828,7 +830,7 @@ check-omarchy-eval-base-inst:
               command: 'pgrep -fx quickshell >/dev/null || pgrep -f hyprland >/dev/null'
               eventually: 240s
               retry_interval: 10s
-            - check: acpid is enabled (fast ACPI shutdown for teardown)
+            - check: acpid is enabled (ACPI power-off handling present in the golden)
               id: inst-acpid
               context: [runtime]
               service:
