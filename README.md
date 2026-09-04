@@ -36,9 +36,9 @@ fails); a pod-only eval is not a validation.
 
 | Path | Purpose |
 |---|---|
-| `candy/omarchy-pr-<N>/charly.yml` | Per-PR package: fetches the PR head and installs its changed files over the installed omarchy tree at build time |
-| `box/omarchy-suite-base-pr<N>/charly.yml` | Per-PR image: the suite-base + the PR package + the declarative behavior checks |
-| `charly.yml` | The `check-omarchy-suite-pod-pr<N>` test environments (container PR injection) |
+| `candy/omarchy-pr-apply/` | The ONE runtime apply seam (`pr-apply <pr> <sha> <files...>`; the git-fetch block lives here and nowhere else) |
+| `pr-beds/pr-<N>/charly.yml` | Oracle-generated per-PR environments from `pr-plans/eval-plan-<N>.json`: clone entity + RED-PROBE bed (must FAIL) + eval bed (single apply seam + checks + record:/spice: evidence) |
+| `charly.yml` | The stable hand-authored config: the omarchy VM template, the golden bases (`check-omarchy-eval-base`, `check-omarchy-eval-base-inst`), and the shared clone entity. Per-PR test environments are **oracle-generated** into `pr-beds/pr-<N>/` (eval + RED-PROBE beds) |
 | `eval/PR-EVAL-TEMPLATE.md` | **The PR-eval template** — every evaluation report (`eval/pr-<N>.md`) and every posted PR comment is rendered from it, in user-testing voice, carrying its EXTERNAL, NON-AUTHORITATIVE disclaimer verbatim and the Assisted-by footer |
 | `eval/PR-EVAL-LANE.md` | The eval lane + standing rules (install missing software, test to the max, record both lanes, reusable packages, snapshot-VM + local apply mechanics) |
 | `eval/pr-<N>.md` | Per-PR evaluation reports (what I tested, how it went, what I ran, what I noticed) |
@@ -49,7 +49,7 @@ fails); a pod-only eval is not a validation.
 ## Running a test environment
 
 ```bash
-charly check run check-omarchy-suite-pod-pr9332
+charly check run check-omarchy-pr-<N>-vm   # oracle-generated bed in pr-beds/pr-<N>/
 ```
 
 Requires a charly binary that supports the schema (v2026.244+). The test environment is
