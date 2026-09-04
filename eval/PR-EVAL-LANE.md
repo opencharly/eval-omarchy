@@ -1,6 +1,6 @@
 # PR-eval lane — per-channel snapshot bases
 
-**Status:** PARTIALLY OPERATIONAL — the **stable** and **dev** golden bases are provisioned and the per-channel revert → apply → check → evidence → revert loop is live for them (measured: stable via the anchored bed's fresh lane, dev via the dev keeper lane). The **rc/edge** bases are BLOCKED on a channel-bootstrap finding: the channel switch does not stick (the `omarchy-channel-current` reader reports `stable` after the channel-set + update bootstrap) — tracked as a named follow-up (the keeper beds' channel bootstrap needs upstream omarchy investigation).
+**Status:** OPERATIONAL — all four channel golden bases are provisioned (stable via the anchored bed's fresh lane; dev via the dev keeper lane; rc/edge via the keeper lanes with the bootstrap fix — the channel-set now executes as a check step + `pacman -Suu` accepts the rc/edge downgrades, distro-omarchy #43). The per-channel revert → apply → check → evidence → revert loop is live for all four channels.
 
 ## Goal
 
