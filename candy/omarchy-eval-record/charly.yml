@@ -21,11 +21,12 @@ omarchy-eval-record:
         plan:
             - run: install the recording tools (tmux + asciinema)
               id: eval-record-install
+              timeout: 10m   # bounded: the pacman mirror-refresh can hang indefinitely (measured)
               command: |
                   set -eu
                   pacman -S --needed --noconfirm tmux asciinema acpid qemu-guest-agent
                   systemctl enable --now acpid
-                  systemctl enable --now qemu-guest-agent
+                  systemctl enable qemu-guest-agent
                   pacman -Syu --noconfirm
             - check: tmux is installed
               id: eval-record-tmux
