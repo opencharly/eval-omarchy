@@ -104,9 +104,9 @@ Every evaluated PR gets three artifacts, following the established pattern:
 
 | Artifact | Purpose |
 |---|---|
-| `candy/omarchy-pr-<N>/charly.yml` | Per-PR package: fetches the PR head (SHA-pinned) and installs its changed files over the installed tree at build time |
-| `box/omarchy-suite-base-pr<N>/charly.yml` | Per-PR image: the suite-base + the PR package + the declarative behavior checks (REAL tools only, never mocks) |
-| `charly.yml` | The `check-omarchy-suite-pod-pr<N>` test environment (container PR injection) |
+| `candy/omarchy-pr-apply/` | The ONE runtime apply seam: `pr-apply <pr> <sha> <files...>` fetches the PR head (SHA-pinned) and installs only its changed files over the installed tree. The git-fetch block lives here and nowhere else (S9) |
+| `pr-beds/pr-<N>/charly.yml` | The per-PR test environments, ORACLE-GENERATED from `pr-plans/eval-plan-<N>.json` (§Template): the clone entity + the RED-PROBE bed (same checks, NO apply — must FAIL) + the eval bed (apply via the single seam + behavior checks + the record:/spice: evidence loop). Gate: `charly box validate`; NO hand-edits; NO `run:` steps |
+| `charly.yml` | The stable hand-authored config (VM template + golden bases + shared clone); per-PR test environments are oracle-generated into `pr-beds/pr-<N>/` |
 
 The checks must be **known-red**: every PR-specific check fails without the PR
 applied. A behavior that cannot be tested with the container's real tools is routed
