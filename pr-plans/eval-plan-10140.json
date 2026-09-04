@@ -15,7 +15,7 @@
   "checks": [
     {
       "id": "pr-behavior",
-      "file": "/usr/share/omarchy/etc/modprobe.d/omarchy-usb-autosuspend.conf",
+      "file": "/usr/share/omarchy/migrations/1788507775.sh",
       "token": "autosuspend"
     }
   ],

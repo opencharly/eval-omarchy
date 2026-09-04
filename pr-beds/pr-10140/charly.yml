@@ -36,7 +36,7 @@ check-omarchy-pr-10140-vm:
               id: pr-apply
               context: [runtime]
               command: 'pr-apply 10140 d06853a760955a09ef5a014a4f28584c6d1f0ec9 bin/omarchy-upgrade-to-quattro etc/limine-entry-tool.d/omarchy-defaults.conf etc/modprobe.d/omarchy-usb-autosuspend.conf migrations/1788507775.sh test/shell.d/usb-autosuspend-test.sh'
-            - check: the PR behaviour is present (autosuspend in etc/modprobe.d/omarchy-usb-autosuspend.conf)
+            - check: the PR behaviour is present (autosuspend in migrations/1788507775.sh)
               id: pr-behavior
               context: [runtime]
               command: 'grep -qi autosuspend /usr/share/omarchy/migrations/1788507775.sh'
@@ -70,8 +70,10 @@ check-omarchy-pr-10140-vm-probe:
         add_candy:
             - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
             - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+        description: >-
+            RED-PROBE twin for omacom/omarchy#10140 — the pr-behavior check must FAIL on the golden (known-red, S7).
         plan:
-            - check: the PR behaviour is present (autosuspend in etc/modprobe.d/omarchy-usb-autosuspend.conf)
+            - check: the PR behaviour is present (autosuspend in migrations/1788507775.sh)
               id: pr-behavior
               context: [runtime]
               command: 'grep -qi autosuspend /usr/share/omarchy/migrations/1788507775.sh'

@@ -1,6 +1,6 @@
 {
   "pr": 10134,
-  "title": "vscode",
+  "title": "vscode-theme _watch marker",
   "headSha": "977e0fcdc2ca46b2fbf7dbeab6bd5b29b49b1398",
   "class": "software",
   "channel": "stable",
@@ -12,8 +12,8 @@
     {
       "id": "pr-behavior",
       "file": "/usr/share/omarchy/bin/omarchy-theme-set-vscode",
-      "token": "vscode"
+      "token": "_watch"
     }
   ],
-  "knownRed": "by-construction: vscode only lands with PR 10134"
+  "knownRed": "by-construction: the `_watch` marker only lands with PR 10134"
 }
