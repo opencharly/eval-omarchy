@@ -72,6 +72,31 @@ omarchy-vm:
             snippets:
                 - "<channel type='unix'><target type='virtio' name='org.qemu.guest_agent.0'/></channel>"
 
+# ── the linked-disk clone (fast VM — a COW overlay on the golden) ─────────────
+omarchy-vm-clone:
+    vm:
+        source:
+            kind: clone
+            from_vm: omarchy-vm
+            from_snapshot: golden
+        disk_size: 40G
+        ram: 8G
+        cpu: 4
+        machine: q35
+        firmware: uefi-insecure
+        network: {mode: user}
+        ssh: {user: user, port_auto: true, key_source: generate}
+        backend: libvirt
+        libvirt:
+            devices:
+                channels: [{type: spicevmc, name: com.redhat.spice.0}]
+                graphics: [{type: spice, listen: [{type: socket}]}]
+                video: [{model: virtio, vram: 65536, heads: 1, accel3d: false}]
+                rng: [{model: virtio, backend: /dev/urandom}]
+                memballoon: {model: virtio}
+            snippets:
+                - "<channel type='unix'><target type='virtio' name='org.qemu.guest_agent.0'/></channel>"
+
 
 # ── Tier-2 anchored PR eval bed (PR #9332) — the new capabilities ────────────
 # The linked-disk PR eval: the omarchy-vm template with the charly toolchain +
@@ -84,7 +109,7 @@ omarchy-vm:
 # so a batch of PR evals shares ONE golden base per channel.
 check-omarchy-pr-9332-vm-anchored:
     vm:
-        from: omarchy-vm
+        from: omarchy-vm-clone
         disposable: true
         snapshot:
             on_finalize: golden
@@ -95,6 +120,7 @@ check-omarchy-pr-9332-vm-anchored:
             - omarchy-eval-record
             - '@github.com/opencharly/layer-asciinema:v2026.246.1622'
             - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.244.1401'
         install_opts:
             allow_repo_changes: true
             allow_root_tasks: true
@@ -136,18 +162,10 @@ check-omarchy-pr-9332-vm-anchored:
               id: rec-gif
               context: [runtime]
               record: {method: gif, record_name: pr-9332, artifact: /tmp/pr-9332.gif, artifact_min_bytes: 100}
-            - check: start a desktop (screen) recording
-              id: rec-screen-start
-              context: [runtime]
-              record: {method: start, record_mode: desktop, record_name: pr-9332-screen, record_env: {XDG_RUNTIME_DIR: /run/user/1000, WAYLAND_DISPLAY: wayland-1}}
-            - check: let the screen recording capture the desktop (10s)
-              id: rec-screen-settle
-              context: [runtime]
-              command: sleep 10
-            - check: stop the screen recording and pull the .mp4
-              id: rec-screen-stop
-              context: [runtime]
-              record: {method: stop, record_name: pr-9332-screen, artifact: /tmp/pr-9332.mp4, artifact_min_bytes: 100}
+            - check: capture the VM display via SPICE (the hypervisor-level screen evidence)
+              id: rec-screen-spice
+              context: [deploy]
+              spice: {method: screenshot, artifact: /tmp/pr-9332-screen.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
         description: >-
             Tier-2 anchored PR eval for omacom/omarchy#9332 (hybrid GPU
             supergfxctl→cardwire migration): the omarchy-vm template with the
