@@ -35,6 +35,125 @@ discover:
     - path: candy
       recursive: true
 
+# ── the omarchy VM template (local copy — the import does not expose the entity) ──
+omarchy-vm:
+    vm:
+        source:
+            kind: iso
+            distro: omarchy
+            url: https://iso.omarchy.org/omarchy-4.0.1.iso
+            checksum: {type: sha256}
+            installer:
+                username: user
+                password: user
+                full_name: Charly
+                email: charly@opencharly.invalid
+                hostname: omarchy
+                timezone: UTC
+                keyboard: us
+                locale: en_US.UTF-8
+                disk: /dev/vda
+                encrypt: false
+        disk_size: 40G
+        ram: 8G
+        cpu: 4
+        machine: q35
+        firmware: uefi-insecure
+        network: {mode: user}
+        ssh: {user: user, port_auto: true, key_source: generate}
+        backend: libvirt
+        libvirt:
+            devices:
+                channels: [{type: spicevmc, name: com.redhat.spice.0}]
+                graphics: [{type: spice, listen: [{type: socket}]}]
+                video: [{model: virtio, vram: 65536, heads: 1, accel3d: false}]
+                rng: [{model: virtio, backend: /dev/urandom}]
+                memballoon: {model: virtio}
+            snippets:
+                - "<channel type='unix'><target type='virtio' name='org.qemu.guest_agent.0'/></channel>"
+
+
+# ── Tier-2 anchored PR eval bed (PR #9332) — the new capabilities ────────────
+# The linked-disk PR eval: the omarchy-vm template with the charly toolchain +
+# auto-login + a golden snapshot (on_finalize), the PR applied at RUNTIME via the
+# apply seam (anchored mode skips deploy-add — verified in plugin-check
+# anchored.go/bed_run.go), the behavior checks, and the record:gif evidence loop
+# (start → run → stop → render the .cast to an animated GIF with agg). Run with
+# `charly check run <bed> --anchor golden --keep-venue`: the golden disk is
+# reverted before the checks (revert ≈ seconds vs fresh ISO install ≈ 20-30 min),
+# so a batch of PR evals shares ONE golden base per channel.
+check-omarchy-pr-9332-vm-anchored:
+    vm:
+        from: omarchy-vm
+        disposable: true
+        snapshot:
+            on_finalize: golden
+            keep_venue: true
+        add_candy:
+            - '@github.com/opencharly/layer-charly:v2026.241.1407'
+            - omarchy-autologin
+            - omarchy-eval-record
+            - '@github.com/opencharly/layer-asciinema:v2026.246.1622'
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+        install_opts:
+            allow_repo_changes: true
+            allow_root_tasks: true
+            with_service: true
+            skip_incompatible: true
+        plan:
+            - check: apply PR #9332's head over the installed tree (runtime apply seam)
+              id: pr-apply
+              context: [runtime]
+              command: |
+                  set -eu
+                  rm -rf /tmp/pr-src
+                  git init -q /tmp/pr-src
+                  cd /tmp/pr-src
+                  git remote add origin https://github.com/omacom/omarchy
+                  git fetch -q --depth 1 origin pull/9332/head
+                  git checkout -q FETCH_HEAD
+                  sudo cp bin/omarchy-hw-hybrid-gpu /usr/share/omarchy/bin/omarchy-hw-hybrid-gpu
+                  sudo cp bin/omarchy-toggle-hybrid-gpu /usr/share/omarchy/bin/omarchy-toggle-hybrid-gpu
+            - check: the PR's omarchy-hw-hybrid-gpu is installed (pr-applied)
+              id: pr-applied
+              context: [runtime]
+              file:
+                  file: /usr/share/omarchy/bin/omarchy-hw-hybrid-gpu
+                  exists: true
+            - check: start a terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: pr-9332}
+            - check: run the PR's key command inside the recording
+              id: rec-drive
+              context: [runtime]
+              record: {method: run, record_name: pr-9332, text: 'grep -n cardwire /usr/share/omarchy/bin/omarchy-toggle-hybrid-gpu; echo toggle-check-done', settle_ms: 1000}
+            - check: stop the recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: pr-9332, artifact: /tmp/pr-9332.cast, artifact_min_bytes: 200}
+            - check: render the .cast to an animated GIF (agg)
+              id: rec-gif
+              context: [runtime]
+              record: {method: gif, record_name: pr-9332, artifact: /tmp/pr-9332.gif, artifact_min_bytes: 100}
+            - check: start a desktop (screen) recording
+              id: rec-screen-start
+              context: [runtime]
+              record: {method: start, record_mode: desktop, record_name: pr-9332-screen, record_env: {XDG_RUNTIME_DIR: /run/user/1000, WAYLAND_DISPLAY: wayland-1}}
+            - check: stop the screen recording and pull the .mp4
+              id: rec-screen-stop
+              context: [runtime]
+              record: {method: stop, record_name: pr-9332-screen, artifact: /tmp/pr-9332.mp4, artifact_min_bytes: 1000}
+        description: >-
+            Tier-2 anchored PR eval for omacom/omarchy#9332 (hybrid GPU
+            supergfxctl→cardwire migration): the omarchy-vm template with the
+            charly toolchain + auto-login + a golden snapshot, the PR applied at
+            RUNTIME via the apply seam, the behavior checks, and the record:gif
+            evidence loop. Run with --anchor golden --keep-venue: the golden disk
+            is reverted before the checks (revert ≈ seconds vs fresh ISO install
+            ≈ 20-30 min).
+
+
 # ── Tier-1 PR-injection bed (PR #9332) ────────────────────────────────────────
 # omacom/omarchy#9332 — "Migrate hybrid GPU switching from supergfxctl to
 # cardwire". The PR-variant image (omarchy-suite-base-pr9332) applies the PR's
