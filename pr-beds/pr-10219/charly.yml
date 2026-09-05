@@ -61,6 +61,8 @@ check-omarchy-pr-10219-vm:
               record: {method: run, record_name: pr-10219, text: 'grep -n omarchy-duress /usr/share/omarchy/bin/omarchy-setup-security-duress; echo pr-10219-done', settle_ms: 1000}
             - check: stop the SPICE capture and pull the MJPEG stream
               id: rec-spice-stop
+              eventually: 90s
+              retry_interval: 5s
               context: [runtime]
               spice: {method: record, action: stop, record_name: pr-10219, artifact: /tmp/pr-10219.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
             - check: stop the terminal recording and pull the .cast

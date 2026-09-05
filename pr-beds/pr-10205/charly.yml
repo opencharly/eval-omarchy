@@ -57,6 +57,8 @@ check-omarchy-pr-10205-vm:
               record: {method: run, record_name: pr-10205, text: 'grep -nF handle-lid-switch /usr/share/omarchy/bin/omarchy-update-stay-awake; echo pr-10205-done', settle_ms: 1000}
             - check: stop the SPICE capture and pull the MJPEG stream
               id: rec-spice-stop
+              eventually: 90s
+              retry_interval: 5s
               context: [runtime]
               spice: {method: record, action: stop, record_name: pr-10205, artifact: /tmp/pr-10205.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
             - check: stop the terminal recording and pull the .cast

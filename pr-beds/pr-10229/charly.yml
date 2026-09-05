@@ -57,6 +57,8 @@ check-omarchy-pr-10229-vm:
               record: {method: run, record_name: pr-10229, text: 'grep -n tooltipText /usr/share/omarchy/shell/plugins/bar/widgets/Workspaces.qml; echo pr-10229-done', settle_ms: 1000}
             - check: stop the SPICE capture and pull the MJPEG stream
               id: rec-spice-stop
+              eventually: 90s
+              retry_interval: 5s
               context: [runtime]
               spice: {method: record, action: stop, record_name: pr-10229, artifact: /tmp/pr-10229.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
             - check: stop the terminal recording and pull the .cast

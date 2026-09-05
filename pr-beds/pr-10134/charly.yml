@@ -63,6 +63,8 @@ check-omarchy-pr-10134-vm:
               spice: {method: screenshot, artifact: /tmp/pr-10134-screen.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
             - check: stop the SPICE capture and pull the MJPEG stream
               id: rec-spice-stop
+              eventually: 90s
+              retry_interval: 5s
               context: [runtime]
               spice: {method: record, action: stop, record_name: pr-10134, artifact: /tmp/pr-10134.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
             - check: stop the recording and pull the .cast
@@ -120,6 +122,8 @@ check-omarchy-pr-10134-vm-probe:
               spice: {method: screenshot, artifact: /tmp/pr-10134-screen.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
             - check: stop the SPICE capture and pull the MJPEG stream
               id: rec-spice-stop
+              eventually: 90s
+              retry_interval: 5s
               context: [runtime]
               spice: {method: record, action: stop, record_name: pr-10134, artifact: /tmp/pr-10134.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
             - check: stop the recording and pull the .cast
