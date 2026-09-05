@@ -1,0 +1,26 @@
+{
+  "pr": 10144,
+  "title": "launcher",
+  "headSha": "ca17c1854aca4c0ed4d1bcd7818e4132c172ad05",
+  "class": "software",
+  "channel": "stable",
+  "tier": "vm",
+  "visual": true,
+  "changedFiles": [
+    "bin/omarchy-remove-launcher-entry",
+    "bin/omarchy-rename-launcher-entry",
+    "docs/menu.md",
+    "shell/plugins/menu/Menu.qml",
+    "shell/services/AppLibrary.qml",
+    "test/shell.d/launcher-remove-test.sh",
+    "test/shell.d/launcher-rename-test.sh"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "file": "/usr/share/omarchy/bin/omarchy-rename-launcher-entry",
+      "token": "launcher"
+    }
+  ],
+  "knownRed": "by-construction: launcher only lands with PR 10144"
+}

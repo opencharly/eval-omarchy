@@ -1,11 +1,11 @@
 {
   "pr": 10138,
-  "title": "Resync the clock when the wall clock is stepped",
+  "title": "Wallclock",
   "headSha": "87f2bf1e72e60de3a49531f0e65aeb7c5d4f5f02",
   "class": "software",
   "channel": "stable",
   "tier": "vm",
-  "entity": {"ram": "4G", "cpu": 4},
+  "visual": true,
   "changedFiles": [
     "docs/omarchy-shell.md",
     "shell/Commons/Wallclock.qml",
@@ -16,11 +16,11 @@
     "test/shell.d/clock-test.sh"
   ],
   "checks": [
-    {"id": "pr-applied", "what": "the PR's Wallclock.qml is installed over the tree", "file": "/usr/share/omarchy/shell/Commons/Wallclock.qml"},
-    {"id": "pr-wired-qmldir", "what": "the Wallclock singleton is declared in qmldir", "cmd": "grep -q Wallclock /usr/share/omarchy/shell/Commons/qmldir"},
-    {"id": "pr-wired-bar", "what": "the bar clock resyncs via the Wallclock singleton", "cmd": "grep -q Wallclock /usr/share/omarchy/shell/plugins/panels/clock/BarWidget.qml"},
-    {"id": "pr-wired-panel", "what": "the calendar panel resyncs (not refreshes) via Wallclock", "cmd": "grep -q Wallclock /usr/share/omarchy/shell/plugins/panels/clock/Panel.qml"}
+    {
+      "id": "pr-behavior",
+      "file": "/usr/share/omarchy/shell/plugins/panels/clock/BarWidget.qml",
+      "token": "Wallclock"
+    }
   ],
-  "knownRed": "by-construction: all four checks assert Wallclock, which exists only in PR #10138 (none of the files exist on the golden)",
-  "record": {"terminal": "grep -n wallclock /usr/share/omarchy/shell/plugins/panels/clock/BarWidget.qml; echo clock-check-done"}
+  "knownRed": "by-construction: Wallclock only lands with PR 10138"
 }

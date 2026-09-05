@@ -86,7 +86,7 @@ check-omarchy-eval-base:
             mode: external
             keep_venue: true
         add_candy:
-            - '@github.com/opencharly/layer-charly:v2026.241.1407'
+            - '@github.com/opencharly/layer-charly:v2026.243.0408'
         plan:
             - check: the omarchy guest reports its hostname
               id: ocb-hostname
@@ -139,9 +139,10 @@ check-omarchy-eval-base-inst:
             mode: external
             keep_venue: true
         add_candy:
-            - '@github.com/opencharly/layer-charly:v2026.241.1407'
+            - '@github.com/opencharly/layer-charly:v2026.243.0408'
             - omarchy-autologin
             - omarchy-eval-record
+            - omarchy-eval-harden
             - omarchy-pr-apply
             - '@github.com/opencharly/layer-asciinema:v2026.246.1622'
             - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
@@ -152,6 +153,22 @@ check-omarchy-eval-base-inst:
             with_service: true
             skip_incompatible: true
         plan:
+            - run: full system upgrade + omarchy channel update (bakes the current channel state into the golden)
+              id: inst-full-upgrade
+              command: 'pacman -Syu --noconfirm && omarchy-channel-update 2>/dev/null || true'
+              context: [runtime]
+            - run: clean the pacman cache (keeps the golden lean)
+              id: inst-clean-cache
+              command: 'pacman -Scc --noconfirm >/dev/null 2>&1; rm -rf /var/cache/pacman/pkg/* 2>/dev/null; true'
+              context: [runtime]
+            - run: pre-seed the pr-apply bare clone with the eval head objects (removes the guest-side clone/fetch from every eval)
+              id: inst-preseed-pr-apply
+              command: 'set -eu; R=/root/.cache/omarchy-pr-apply.git; if [ ! -d "$R" ]; then git clone --bare -q https://github.com/omacom/omarchy "$R"; fi; for h in 0681cadf28aae14f9cc46271ecb2af76e5958a36 075feebd8248a31f35a8c5914083bdb0f0aa615b 16a6ede2687255e198281a11969152a33d1d337a 21992f03f72c2b15bdeb135e9ae8e8bb21274e95 2f44cf431c58fb7e796e6f54e8dfac2c14bb2a52 38c07810ee3d06e22eaa069c630d7a33fbbf3475 399665b58a317c50ff134555a9d9188d10ab4c9e 411736590c4e6699d43980c511c843bfb3052b5a 4e022c0940ab2630e8d0ac46c597dc94b2981ce8 51bbe4a4ea03bccd51f53ce0882db96fef233c79 51c4cf8148922ccb6f213f6f399856ace93bff32 5245d3f78e077e1efd3d0a662900f0f921ab08ad 65fa55975f6e54757d3a087534f107b28005077b 6be10b410a14114cf75007ae2a2b1054c793aa42 6e735dde6b505d6de73977ec6650b997b6d970f4 6ebb7e1b319a9f477d8242d02fefa62e886339bb 70047956fac8bdfe36aabb9dea82b4eee50e1b2c 73a09695f98c7d4c95d88040b5876c858cc5e02e 7afa9ddd518fc2c1dda38033f5f4c54c5c05f4ad 87f2bf1e72e60de3a49531f0e65aeb7c5d4f5f02 977e0fcdc2ca46b2fbf7dbeab6bd5b29b49b1398 a3e951158dcac624ced50d4df9b0a33e68539468 a68df9c8cac7a78925001006fe64d9f7bfbf9429 b9f53d4bbdd64900cb0f66a3ac0d4eac36811bc2 ca17c1854aca4c0ed4d1bcd7818e4132c172ad05 d06853a760955a09ef5a014a4f28584c6d1f0ec9 e13b3b4f83010ebeb894dc34f478a054b945cb39 e523d5da1699c5d2fc6adec2c628c9f34ae0ce0d e65f2f6c5f2cb015ca5cd4a841e9f4d6d64b7008 e9d011328f230aab529d4020499222eb15343c3c ecb69659d9d66cb56ec2b8a5a1f9bf846e8ebe2d f0bc41fb263362cdf8fcdb3b14ea9ac024c17a32; do git -C "$R" fetch -q origin "$h" || true; done'
+              context: [runtime]
+            - run: warm the guest charly resolution cache (bakes the git metadata for the eval's deploy + pr-apply refs — removes the guest-side first-run fetch from every deploy-add)
+              id: inst-warm-charly-cache
+              command: 'charly box list >/dev/null 2>&1; charly box validate /root >/dev/null 2>&1 || true; find /root/.cache/charly -type f 2>/dev/null | head -1'
+              context: [runtime]
             - check: the instrumented golden reaches the desktop
               id: inst-autologin
               context: [runtime]

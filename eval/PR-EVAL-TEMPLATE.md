@@ -20,7 +20,7 @@ empty section is not a valid answer). Delete the "Render instructions" block bef
 - **Update channel tested:** `stable` | `rc` | `edge` | `dev` — <why this channel>
 - **Test environment(s):** <one per line> · **Run date:** <YYYY.DDD.HHMM>
 - **Testing tool version:** <ver> · **Tested on:** <YYYY-MM-DD>
-- **What the test system was based on:** base VM <name> · installer version <ver> · clean snapshot <id/date>
+- **What the test system was based on:** golden VM lane only — channel <ch> instrumented golden snapshot <id/sha256> (linked-disk clone; GPU passthrough only for GPU-class PRs)
 
 ## How it went
 
@@ -76,7 +76,11 @@ and "Recordings" sections), then referenced here:
 - **Terminal lane (asciinema):** `.cast` of the flow — `record: start` → `record: run|cmd` →
   `record: stop` with `artifact:` + `artifact_min_bytes`/`artifact_min_cast_events`; playback on
   the host with `asciinema play` / `asciinema convert -f raw <file>.cast -`.
-- **Full-screen lane:** desktop video via `record: {record_mode: desktop}`
+- **Full-screen lane:** the SPICE output as video via the shipped `spice: record`
+  method (plugin-spice v2026.245.1508+): `spice: {method: record, action: start, fps: 5}`
+  → drive → `spice: {method: record, action: stop, artifact: …/pr-<N>.mjpeg}`
+  (MJPEG capture at fps, honest-failing artifact validators) + ONE ffmpeg transcode
+  step → `screen.mp4`. Mandatory (mp4 + mjpeg + cast + gif).
   (pixelflux/wf-recorder) on desktop systems, or SPICE video of the VM display —
   `spice: {method: record, action: start, fps}` → drive steps → `spice: {method: record,
   action: stop, artifact:}`; reality-check with `ffprobe` + a frame extract
@@ -131,8 +135,7 @@ references them; small evidence stays committed in `eval/evidence/<pr>-<calver>/
 
 ## Who ran this
 
-*Tested by opencharly.ai (opencharly/eval-omarchy) · testing tool <ver> · channel <ch> · base
-<installer version>/snapshot <id> · <date> · tested head <sha>*
+*Tested by opencharly.ai (opencharly/eval-omarchy) · testing tool <ver> · channel <ch> · base: <golden snapshot id/sha256> · <date> · tested head <sha>*
 
 *Assisted-by: <Harness> <Provider Full Model Name> (<confidence>)*
 

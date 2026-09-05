@@ -1,0 +1,73 @@
+{
+  "pr": 10219,
+  "title": "security: add a disk-unlock duress password that factory-resets",
+  "headSha": "7afa9ddd518fc2c1dda38033f5f4c54c5c05f4ad",
+  "class": "security-luks-initramfs",
+  "channel": "stable",
+  "tier": "vm",
+  "entity": {
+    "kind": "clone",
+    "from_vm": "check-omarchy-eval-base-inst",
+    "from_snapshot": "golden",
+    "ram": "4G",
+    "cpu": 4,
+    "disk_size": "40G"
+  },
+  "changedFiles": [
+    "bin/omarchy-provision-owner",
+    "bin/omarchy-setup-security-duress",
+    "bin/omarchy-system-factory-reset",
+    "default/initcpio/cryptsetup-wrapper",
+    "default/initcpio/hooks/omarchy-duress",
+    "default/initcpio/install/omarchy-duress",
+    "default/initcpio/zz-omarchy-duress.conf",
+    "default/omarchy/omarchy-menu.jsonc",
+    "docs/file-layout.md",
+    "install/omarchy-other.packages",
+    "install/provisioning/omarchy-provision-duress.service",
+    "install/provisioning/omarchy-provision-owner.service",
+    "install/provisioning/omarchy-system-duress-wipe.service",
+    "install/user/first-run/welcome.sh",
+    "manual/48-security.md",
+    "migrations/1788536042.sh",
+    "migrations/1788548841.sh",
+    "test/shell.d/duress-password-test.sh",
+    "test/shell.d/menu-test.sh"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "what": "the duress enrollment script exists and marks the LUKS token type omarchy-duress",
+      "file": "/usr/share/omarchy/bin/omarchy-setup-security-duress",
+      "token": "omarchy-duress",
+      "assertion": "grep -qiF omarchy-duress /usr/share/omarchy/bin/omarchy-setup-security-duress"
+    },
+    {
+      "id": "pr-behavior-2",
+      "what": "the factory-reset script implements the --unattended duress path (duress-pending marker arming)",
+      "file": "/usr/share/omarchy/bin/omarchy-system-factory-reset",
+      "token": "duress-pending",
+      "assertion": "grep -qiF duress-pending /usr/share/omarchy/bin/omarchy-system-factory-reset"
+    }
+  ],
+  "knownRed": "by-construction: bin/omarchy-setup-security-duress is a NEW file (+434) and duress-pending is an ADDED line in system-factory-reset (diff +150/−13); the base has neither, so both probe greps exit 2 on the golden.",
+  "markerRule": {
+    "verified": "marker token(s) confirmed present in the ADDED lines of the PR diff via gh api repos/omacom/omarchy/pulls/10219/files",
+    "probeExpected": "probe bed (same checks, NO pr-apply) must FAIL with exit 2 on the golden; a green probe = RED-PROBE-BROKEN (process block, S7)"
+  },
+  "record": {
+    "cast": true,
+    "gif": true,
+    "spiceMjpeg": true,
+    "screenMp4": true,
+    "visual": false,
+    "mediaNote": "three-artifact contract: record start→drive→stop (.cast, artifact_min_bytes 200), record gif render (.gif), spice record action start (fps 5) → drive → stop (/tmp/pr-10219.mjpeg, artifact_min_bytes 10000, artifact_not_uniform true) + ONE run: ffmpeg transcode to /tmp/pr-10219-screen.mp4. NOTE: the spice MJPEG is written HOST-side by the SPICE-wire plugin; the in-venue run: ffmpeg step reports when the guest copy is absent and the host runner performs the container transcode (lane: EVAL RUNNER assembles media/<pr>-<calver>/).",
+    "drive": "grep -n omarchy-duress /usr/share/omarchy/bin/omarchy-setup-security-duress; echo pr-10219-done"
+  },
+  "expectedPhaseSeconds": {
+    "probe": 60,
+    "eval": 240,
+    "apply": 30,
+    "media": 45
+  }
+}

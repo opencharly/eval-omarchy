@@ -1,0 +1,22 @@
+{
+  "pr": 10116,
+  "title": "adapter",
+  "headSha": "075feebd8248a31f35a8c5914083bdb0f0aa615b",
+  "class": "software",
+  "channel": "stable",
+  "tier": "vm",
+  "visual": true,
+  "changedFiles": [
+    "shell/plugins/panels/network/Model.js",
+    "shell/plugins/panels/network/Panel.qml",
+    "test/shell.d/network-test.sh"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "file": "/usr/share/omarchy/shell/plugins/panels/network/Model.js",
+      "token": "adapter"
+    }
+  ],
+  "knownRed": "by-construction: adapter only lands with PR 10116"
+}

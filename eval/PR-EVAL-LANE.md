@@ -353,3 +353,138 @@ counter-example: pr-9332 was reported NO VALIDATION because "cardwire is not
 in the omarchy package repository" — but cardwire IS on AUR, the PR's own
 test suites run, and the scripts' real behavior (detection fallback,
 install-path failure) is measurable. The re-evaluation found all of it.
+
+
+## M4 findings — permanent guidance (16-lane batch, 2026-09-04)
+
+### The ORACLE marker rule (mandatory)
+A PR-specific check marker MUST be a **diff-ADDED token** (a string in the PR's added lines, never a word that pre-exists in the base). Verified against the base before the bed ships: a probe that does NOT fail (exit 2) on the golden = **RED-PROBE-BROKEN = a PROCESS block — no eval is valid from that bed** (S7). Caught live: 10115 `countdown` (base theme token), 10130 `reblank` (the PR uses re-arm/rearmed), 10134 `vscode` (base `VS_CODE_THEME_DESCRIPTOR`) — all fixed with diff-added tokens (`showCountdown`, `blankArmed`, `_watch`).
+
+### The ORACLE path rule (mandatory)
+A check path must be from a PROVEN-LANDING class (`bin/`, `shell/`, `migrations/` — verified by pr-apply) or verified against the post-apply tree. `etc/` (10140) failed to land at `/usr/share/omarchy/etc/...` — the check path was wrong by construction.
+
+### The RUNNER orphan-sequencing rule (mandatory)
+A FAILED probe leaves the VM running "for debugging"; `charly check stop` releases the flock but does NOT destroy the VM — the eval's clone vm-build collides on the overlay write-lock (caught: 10116/10125/10129 eval-attempt-1). Sequence: probe verdict → `charly check stop` → `charly vm destroy <entity> --domain <bed>` → eval.
+
+### Concurrency guidance (16-lane)
+- Golden-lock: NEVER start a batch while a golden-provisioning run is active (the 21:00 attempts crashed on the held golden).
+- The shared `~/.config/charly/ssh_config` rewrite across 16 parallel lanes raced (10134 deploy-add "Could not resolve hostname") — a charly shared-state observation; the lane retry after the config settled succeeded. Recorded as an upstream candidate.
+
+### Measured speed profile (folded into the hill-climb baseline)
+- update 61 s → 28 s (payload baked; var.), cleanup 182 s → 4–8 s (acpid), evals avg ≈ 150 s (was 437 s); 10134 @ 82 s with the trimmed media (settle_ms 300, single frame). Remaining levers: update-gate change-class (operator decision), deploy-add resolver+staging (~30 s), boot floor.
+
+
+## The ONE eval lane — golden-backed VM (mandatory, R5)
+
+- **The ONLY PR eval lane is the golden-backed VM**: a linked-disk clone of the channel INSTRUMENTED golden (or the eval-base-inst golden), with the PR applied at runtime via the single pr-apply seam + the record/spice evidence loop. GPU passthrough is added ONLY for GPU-class PRs (requires_exclusive: [nvidia-gpu], serial). Everything else is cut: no fresh ISO installs per PR (S6), no pod-only evals for system-behavior PRs. A system-behavior PR without the live VM lane gets NO VALIDATION, never a container-claimed pass.
+- Base provenance is the GOLDEN SNAPSHOT (channel + snapshot id/sha256), not the installer version — the template's "Who ran this" reflects it (see PR-EVAL-TEMPLATE.md).
+
+
+## COLD-READER RUBRIC (M6, permanent) — the grading contract for every eval result
+
+A cold read is a FRESH-CONTEXT validation of the eval evidence (the report + the media + the ledger) against the criteria. It issues TWO verdicts:
+
+- **SUBJECT** (about the PR): PASS (verified working on a live system) / FAIL (verified not working) / NO VALIDATION. Any "might work" framing for untested live behavior is STRICTLY FORBIDDEN.
+- **PROCESS** (about the eval itself): every PR-specific check known-red (probe FAIL exit 2 observed), tier compliance (system PRs on the live VM), claims scoped to the tier, media non-empty AND showing the commands, footer + disclaimer verbatim. Any process defect = REDO-PROCESS (setup update + full re-run), never a posted report.
+
+### The vision-deterministic cross-check (mandatory, the GNOME trap)
+The vision model can mislabel the desktop (measured: Hyprland+Quickshell repeatedly called "GNOME"). Every material vision claim MUST be corroborated by a deterministic source: the .cast text, the wl:/spice:/record: verb outputs, or the config. A vision claim without corroboration is a PROCESS finding. Reading lanes: vision_ask/pi.read on SPICE frames + the GIF; ffmpeg frames from screen.mp4; the .cast text (the terminal lane truth).
+
+### The adversarial self-test (performed at M6 and whenever the rubric changes)
+Feed the reader deliberately MISLABELED frames (e.g., a real GNOME-desktop screenshot labeled as the omarchy eval output, or the Hyprland desktop labeled "boot failure") + verify the reader flags the mismatch via the deterministic cross-check. A reader that accepts a mislabeled frame without a PROCESS finding FAILS the self-test.
+
+### Calibration (one past-report re-audit)
+Re-audit one previously finalized eval (from eval/) with the current rubric; the audit's verdict (PASS/FAIL-of-process) is recorded in the findings ledger as the calibration baseline.
+
+
+### The THREE-artifact media contract (mandatory, every eval)
+Every eval lane produces ALL THREE artifacts — no exceptions:
+1. **`.cast`** — the ascii screencast of the checks: `record: {method: start, record_mode: terminal, record_name: <pr>}` → the drive step → `record: {method: stop, artifact: …/pr-<N>.cast, artifact_min_bytes: 200}`.
+2. **`.gif`** — the screencast rendered to an animated GIF (the record verb render method).
+3. **`screen.mp4`** — the SPICE OUTPUT as video via the shipped `spice: record` method (plugin-spice v2026.245.1508+: the host-side MJPEG capture polls the display at fps, default 5): `spice: {method: record, action: start, fps: 5}` BEFORE the drive, the drive steps, then `spice: {method: record, action: stop, artifact: /tmp/pr-<N>.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}` (an empty/static stream honest-fails the validators). ONE `run:` step transcodes the MJPEG to MP4 (`ffmpeg -y -loglevel error -i /tmp/pr-<N>.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/pr-<N>-screen.mp4`). Charly-native: no frame-assembly workarounds — the capture IS the spice video stream; the ffmpeg step only relabels containers.
+
+### The judge rule (cold-reader)
+- **ALWAYS** read the `.cast` (the terminal-lane truth: exact commands, exit codes, timestamps).
+- **MP4 review ON DEMAND only**: review the `screen.mp4` (frames via ffmpeg + vision_ask) ONLY when the plan's `visual:` flag is true (the PR's diff touches the desktop UI — panels, notifications, themes, overlays, animations) or the diff clearly implies visual change. A non-visual PR (config/scripts/docs) never needs the mp4 — the .cast + check results suffice.
+- Every material vision claim is corroborated by a deterministic source (the .cast/wl/spice text) — the GNOME-mislabel trap applies to mp4 frames too.
+
+
+### Head-freshness rule (RCA 2026-09-04: PR 10147's branch was force-pushed upstream — the pinned head became orphaned and pr-apply failed with `unable to read tree`)
+The plan's headSha must equal the LIVE PR head (gh api repos/omacom/omarchy/pulls/<N>) — checked BEFORE any run. On drift (the branch was rebased/force-pushed), REGENERATE the plan + bed to the live head FIRST (verify the marker is still in the new head's added lines via the diff), never run a stale pin. A fetch-by-PR-ref only brings the live head's objects — an orphaned pinned commit's tree is unreachable in the guest. The oracle re-validates head freshness at authoring; the runner re-checks the triple (plan ↔ bed ↔ live head) at launch.
+
+
+### Golden keeper-run protocol (RCA 2026-09-04 22:17: the refresh run 2013 left its VM running — it holds a WRITE LOCK on the fresh golden; destroying that VM also removes the external-snapshot golden — only meta.json survives). OBLIGATORY after any golden refresh:
+1. Verify the capture: snapshots/golden/disk.qcow2 EXISTS with a nonzero size.
+2. THEN `charly check stop` + destroy the base-inst VM (the external goldens are re-capturable: a re-provision recreates them capture-declared, ~2 min).
+3. BATCH PREFLIGHT: before ANY batch, verify the golden disk's presence — a missing golden fails every clone's vm-create at ~4.6s with 'Failed to get shared write lock' (measured twice).
+4. Never destroy a VM while it holds the only external golden without re-capturing first.
+
+
+### HARD lane-sequencing gate (RCA 2026-09-04 22:49-22:57: the 32-lane batch ran against in-flight lanes — golden-refresh VM, warm-repeat, ugate evidence + the sibling's anchored VMs → RAM 110/123G, load 75/16, probes ballooned past 3 min, ALL measurements invalidated. Corrective — a batch may launch ONLY when ALL hold):
+1. ZERO live batch VMs (`ps aux | grep qemu-system | grep -oE 'guest=charly-check-omarchy-pr-[0-9]+-vm'` = empty; the anchored 9893/9912/snap-probe residents are expected and budgeted).
+2. ZERO in-flight `charly check run` processes for the batch beds.
+3. The golden disk EXISTS (nonzero) and NO base-inst VM holds its lock.
+4. RAM budget: lanes × 2G + residents (anchored ~10G) + OS (~10G) ≤ ~110G usable; load1 < 20 before launch.
+5. Between a stop and a relaunch: `charly check stop` each leftover run, THEN destroy each VM (domstate check), THEN verify the count is zero.
+6. The ugate/evidence or keeper-run VM must conclude before a measurement batch (shared golden + shared host).
+
+
+### Per-eval stats contract (every batch, every lane)
+Every eval run gets a DEDICATED stats file — exact measurements, one file per eval:
+- Path: `eval/evidence/batch-<batch>/stats/<pr>-stats.md` (the matrix is the aggregate; the stats files are the per-run records).
+- Content: run calver, the verdict line verbatim, EVERY phase (name + duration_seconds + ok) from the run's summary.yml, total_seconds, plus timestamps (the run dir mtimes / log times).
+- The supervisor/batch owner EMITS the file when each run concludes (before the aggregate matrix) — never after a batch restart that would blur the runs.
+
+
+### Media-density rule (loop finding 2026-09-04 23:25 — batch16-r3 measured 535s vs the 93s single-lane baseline)
+Under 16-lane concurrency the FULL three-artifact media loop on EVERY lane (the regen also added it to the probes) inflates EVERY phase 4-8x via lock/IO serialization (vm-create 34s, deploy-add 116s, update 233s, check-live 53s at load only ~13): the spice-record MJPEG streams + gif renders + mp4 transcodes keep the plugin processes and the VM IO saturated → the shared charly locks serialize the rest.
+RULE: the SPICE-VIDEO artifacts (spice: record start/stop + the mp4 transcode) are produced ONLY for `visual: true` plans (the judge rule). NON-visual beds keep the .cast + .gif + the SPICE screenshot + the deterministic checks — the mp4 is reviewable on demand for visual PRs only. The probe beds carry NO media loop at all (red-by-construction needs the greps only).
+Loop levers ranked: (1) update_gate restart-only (kills the 233s update+69s rebuild at 16 lanes) → (2) the media-density cut (the contention) → (3) the golden cache-warm + layer bump (deploy-add) → (4) lane count re-optimization AFTER the cuts.
+
+
+### RCA stats-signature discipline (2026-09-04 — the media hypothesis was withdrawn with NO evidence; the user rule) 
+Whatever is suspected MUST show up in the per-eval stats:
+- Every hypothesis declares its STATS SIGNATURE before testing (e.g. 'the media steps are the cost' ⇒ the stats' media-window rows must sum large; 'the deploy machinery serializes' ⇒ deploy-add grows with the concurrent lane count in the A/B; 'the update recreate is the cost' ⇒ the update+rebuild rows dominate).
+- The stats files carry BOTH the phase rows (summary.yml) AND the media-window rows (artifact mtimes — currently the only precise inner-step timing source) until the charly enhancement lands (summary.yml gains the check-live inner step durations — queued in the plugin-check pipeline).
+- A hypothesis without its signature in the stats is NOT a finding.
+
+
+### Measured speed findings (2026-09-05, 16/32-lane waves + the RCA chain)
+1. **The 16-lane ceiling is the host's real max**: a 32-lane wave measured the early slots at 94-201s but the LATE slots at 518-632s (the vm-store/libvirt queue at >16 concurrent VM lifecycles) — evals/min went DOWN at 32 (≈3.75 vs ≈4.6-5.5 at 16). Tune lanes ≤16 unless the per-lane cost shrinks further.
+2. **Launch detachment is MANDATORY for long lanes**: `setsid <cmd> </dev/null > log 2>&1 &` — a plain nohup inside a tool-call session gets killed when the caller's call is cancelled (every long batch before this either stalled or vanished mid-phase).
+3. **The 16-lane stall root causes (both fixed)**: (a) the unlocked shared ssh-fragment save dropped per-lane aliases (sdk #205 — the lock + fresh per-alias merge); (b) `ResolveRefTTL=5m` re-probed GitHub mid-batch — 152 concurrent ls-remotes = throttling (spec #92 — DefaultRefsCacheTTL=1h + the BypassCache operator surface + `charly cache` + `--no-git-cache`, charly #539).
+4. **The update/rebuild recreate phases are the last per-lane floor** (48s of the ~95s) AND the fail class (10129 update 66s, 10141 rebuild 9s under the wave) — the `update_gate: restart-only` change-class (spec merged, plugin-check #20 in flight) removes them.
+
+
+### THE 32-lane stall ROOT (proven 2026-09-05 by the SIGQUIT goroutine dumps, /tmp/rca32-evidence.md)
+**The cause is NOT the ssh wait (the symptom), NOT a mutex, NOT IO:** every phase that spawns a CLI subcommand (`charly fleet add`, `charly check live`, the rebuild) re-materializes the FULL merged 43-repo deploy tree through CUE (`loaderkit.ResolveMergedDeployTreeViaExecutor` → `MaterializeLoadedProject` → the CUE disjunction unify — 10+ nested disjunct pairs per 43 pins) PER CHILD. Under the 32-lane oversubscription (load 91 on 16c), each materialization exceeds its budget → the child burns CPU in the unify and never exits → the parent's `os/exec.Cmd.Run` waits forever (the observed exec-wait + the ssh ppoll = the same chain).
+**The fix (root)**: share/cache the materialized merged tree across the CLI-subcommand children (one host-side unify per project-ref state, not N per wave) — the sdk PR (load_via_executor + the executor HostBuild seam). Interim levers: ≤16 lanes / 1 vCPU (the oversubscription amplifier).
+
+
+### The host/guest responsibility split (skills-confirmed, 2026-09-05)
+- `target: local` deploy inside a VM: the guest = an SSHExecutor target (`ssh user@127.0.0.1:37xxx`); `host: local` = the ShellExecutor (direct shell on that machine). The install plan walks via the shared out-of-process walk; the steps the deploy:local plugin cannot render (`BuilderStep`/`LocalPkgInstallStep`/`SystemPackagesStep`/`OpStep`/… ) marshal to the charly on the host over the EXECUTOR REVERSE CHANNEL.
+- The loader already routes the merged-tree materialization to the host (`ResolveMergedDeployTreeViaExecutor` → the executor `HostBuild` seam) — the guest does NOT re-unify per child in-guest; the HOST re-materializes the 43-repo CUE unify PER CHILD (no cache) — the 32-lane burn sits host-side per subcommand child.
+- The root fix = the host materialized-tree cache at the executor seam (the sdk/ladervia-executor PR) — the wave's later children reuse one unify. ANY future 'why is the guest slow' RCA must first check the marshaling layer: which step runs where (guest vs host) + whether the host-side op is cached.
+
+
+### Launch sequencing (RCA 2026-09-05: the vc1 wave lost 19 lanes to `refusing a concurrent run (bed lock)` — a leftover wave still held them)
+A wave launches ONLY after the lock table is verified clean:
+1. `ps aux | grep -cE '/charly/bin/charly check run'` == 0 (no live run procs).
+2. No bed `.check/check-omarchy-pr-<N>-vm/.lock` is HELD (the flock, not just the file — a stale file is free; a live holder blocks).
+3. Then launch, THEN re-verify: `systemctl --user list-units '<wave>-*' | grep -c running` == the expected lane count.
+
+
+### Run preflight — the stale ssh-fragment stanza (RCA 2026-09-05: 10225's re-run wedged — the managed fragment kept the PREVIOUS run's passt port; the readiness gate parked on the wrong endpoint forever, no timeout)
+BEFORE every run: drop the bed's alias from the managed ssh fragment (~/.config/charly/ssh_config — the `Host charly-check-omarchy-pr-<N>-vm` stanza: `sed`/regex-remove the block) so the create re-publishes the CURRENT passt port. A re-run against a stale stanza parks the pre-deploy readiness gate (zero CPU, zero children, no probe). The deeper charly fix (the publish should always refresh the port on re-runs) is recorded for the plugin-vm lifecycle PR.
+
+
+### The media assembly (the missing contract step — the artifacts land in /tmp, the mp4 transcode is a verify-only-skipped run: step)
+The launch chain MUST assemble the media after every run: `charly check run <bed> && mkdir -p media/<pr>-<calver> && cp /tmp/pr-<N>.{cast,gif,mjpeg,screen.png} media/<pr>-<calver>/ && ffmpeg -y -loglevel error -i media/<pr>-<calver>/pr-<N>.mjpeg -c:v libx264 -pix_fmt yuv420p media/<pr>-<calver>/pr-<N>.mp4`. The mp4 is produced by the ASSEMBLY (the in-plan rec-mp4 run: step is skipped in verify-only mode by design). media/ is gitignored; the cold-reader reads the .cast always + the mp4 for visual-class PRs.
+
+
+### The media directory contract (gitignored, creation-validated, used for validation)
+- **Location**: `eval-omarchy/media/<pr>-<calver>/` — GITIGNORED (the evidence lives on disk, never in the tree; the PR carries the matrices + the stats, not the binaries).
+- **Contents** (the three-artifact contract): `pr-<N>.cast` (the ascii screencast), `pr-<N>.gif` (the cast render), `pr-<N>.mjpeg` (the spice-record MJPEG), `pr-<N>.mp4` (the ffmpeg transcode), `pr-<N>-screen.png` (the SPICE frame).
+- **Assembly**: the launch chain runs `charly check run <bed> && mkdir -p media/<pr>-<calver> && cp /tmp/pr-<N>.{cast,gif,mjpeg,screen.png} media/<pr>-<calver>/ && ffmpeg -y -loglevel error -i media/<pr>-<calver>/pr-<N>.mjpeg -c:v libx264 -pix_fmt yuv420p media/<pr>-<calver>/pr-<N>.mp4` (the in-plan rec-mp4 run: step is verify-only-skipped — the transcode belongs in the assembly).
+- **CREATION-VALIDATED by the runner**: after every run the runner verifies the 5 artifacts exist + are non-empty (`test -s` each; the .cast >= 200B, the .gif >= 1KB, the .mjpeg >= 10KB, the .mp4 >= 10KB, the screen.png >= 1KB) — a missing/empty artifact = a PROCESS finding (the media contract broken), reported with the run.
+- **USED FOR VALIDATION by the cold-reader**: the .cast is ALWAYS read (the terminal-lane truth); the mp4 frames (ffmpeg + vision_ask) are reviewed for visual-class PRs (the plan's `visual:` flag); the gif/mjpeg corroborate the visual claims. A media artifact that contradicts the checks = a finding.

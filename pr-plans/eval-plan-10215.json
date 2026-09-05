@@ -1,0 +1,91 @@
+{
+  "pr": 10215,
+  "title": "Add native calendar planning",
+  "headSha": "52952db276936a94b0be3ea289b6315c331930cc",
+  "class": "qml-desktop-ui-cli",
+  "channel": "stable",
+  "tier": "vm",
+  "entity": {
+    "kind": "clone",
+    "from_vm": "check-omarchy-eval-base-inst",
+    "from_snapshot": "golden",
+    "ram": "4G",
+    "cpu": 4,
+    "disk_size": "40G"
+  },
+  "changedFiles": [
+    "bin/omarchy",
+    "bin/omarchy-calendar",
+    "manual/05-the-top-bar.md",
+    "manual/14-omarchy-cli.md",
+    "shell/plugins/bar/README.md",
+    "shell/plugins/panels/clock/AgendaView.qml",
+    "shell/plugins/panels/clock/AvailabilityEditor.qml",
+    "shell/plugins/panels/clock/BarWidget.qml",
+    "shell/plugins/panels/clock/CalendarTabs.qml",
+    "shell/plugins/panels/clock/CalendarView.qml",
+    "shell/plugins/panels/clock/EventEditor.qml",
+    "shell/plugins/panels/clock/Panel.qml",
+    "shell/plugins/panels/clock/PlannerDateTimeField.qml",
+    "shell/plugins/panels/clock/PlannerModel.js",
+    "shell/plugins/panels/clock/PlannerSettings.qml",
+    "shell/plugins/panels/clock/PlannerView.qml",
+    "shell/plugins/panels/clock/ProposalReview.qml",
+    "shell/plugins/panels/clock/Service.qml",
+    "shell/plugins/panels/clock/State.js",
+    "shell/plugins/panels/clock/TaskEditor.qml",
+    "shell/plugins/panels/clock/manifest.json",
+    "test/acceptance.d/calendar-planner-test.sh",
+    "test/shell.d/calendar-cli-test.sh",
+    "test/shell.d/calendar-planner-model-test.sh",
+    "test/shell.d/calendar-planner-service-test.sh",
+    "test/shell.d/calendar-planner-wiring-test.sh",
+    "test/shell.d/calendar-state-test.sh",
+    "test/shell.d/clock-test.sh",
+    "test/shell.d/fixtures/calendar-planner-service/shell.qml",
+    "test/shell.d/fixtures/calendar-planner-service/solver"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "what": "the omarchy calendar CLI lands and talks to the omarchy.calendar shell service",
+      "file": "/usr/share/omarchy/bin/omarchy-calendar",
+      "token": "omarchy.calendar",
+      "assertion": "grep -qiF omarchy.calendar /usr/share/omarchy/bin/omarchy-calendar"
+    },
+    {
+      "id": "pr-behavior-2",
+      "what": "the clock panel ships the planner model (calendar planning UI)",
+      "file": "/usr/share/omarchy/shell/plugins/panels/clock/PlannerModel.js",
+      "token": "planner",
+      "assertion": "grep -qi planner /usr/share/omarchy/shell/plugins/panels/clock/PlannerModel.js"
+    },
+    {
+      "id": "pr-behavior-3",
+      "what": "bin/omarchy registers the calendar command group",
+      "file": "/usr/share/omarchy/bin/omarchy",
+      "token": "GROUP_DESCRIPTIONS[calendar]",
+      "assertion": "grep -qiF 'GROUP_DESCRIPTIONS[calendar]' /usr/share/omarchy/bin/omarchy"
+    }
+  ],
+  "knownRed": "by-construction: bin/omarchy-calendar and PlannerModel.js are NEW files and the GROUP_DESCRIPTIONS[calendar] line is ADDED (diff +1); the base has none of them, so all three probe greps exit 2 on the golden.",
+  "markerRule": {
+    "verified": "marker token(s) confirmed present in the ADDED lines of the PR diff via gh api repos/omacom/omarchy/pulls/10215/files",
+    "probeExpected": "probe bed (same checks, NO pr-apply) must FAIL with exit 2 on the golden; a green probe = RED-PROBE-BROKEN (process block, S7)"
+  },
+  "record": {
+    "cast": true,
+    "gif": true,
+    "spiceMjpeg": true,
+    "screenMp4": true,
+    "visual": true,
+    "mediaNote": "three-artifact contract: record start→drive→stop (.cast, artifact_min_bytes 200), record gif render (.gif), spice record action start (fps 5) → drive → stop (/tmp/pr-10215.mjpeg, artifact_min_bytes 10000, artifact_not_uniform true) + ONE run: ffmpeg transcode to /tmp/pr-10215-screen.mp4. NOTE: the spice MJPEG is written HOST-side by the SPICE-wire plugin; the in-venue run: ffmpeg step reports when the guest copy is absent and the host runner performs the container transcode (lane: EVAL RUNNER assembles media/<pr>-<calver>/).",
+    "drive": "grep -n omarchy.calendar /usr/share/omarchy/bin/omarchy-calendar; echo pr-10215-done"
+  },
+  "expectedPhaseSeconds": {
+    "probe": 60,
+    "eval": 240,
+    "apply": 30,
+    "media": 45
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "pr": 10211,
+  "title": "Unload BCM4377 Wi-Fi around sleep on T2 Macs",
+  "headSha": "51bbe4a4ea03bccd51f53ce0882db96fef233c79",
+  "class": "install-script-hardware",
+  "channel": "stable",
+  "tier": "vm",
+  "entity": {
+    "kind": "clone",
+    "from_vm": "check-omarchy-eval-base-inst",
+    "from_snapshot": "golden",
+    "ram": "4G",
+    "cpu": 4,
+    "disk_size": "40G"
+  },
+  "changedFiles": [
+    "bin/omarchy-hw-t2-bcm4377",
+    "bin/omarchy-t2-bcm4377-sleep",
+    "install/hardware/all.sh",
+    "install/hardware/apple/fix-suspend-bcm4377.sh",
+    "install/hardware/apple/omarchy-t2-bcm4377-sleep.service",
+    "migrations/1788544020.sh",
+    "test/shell.d/t2-bcm4377-sleep-test.sh"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "what": "the T2 BCM4377b detector ships and gates on the 14e4:4488 PCI id (BCM4364 14e4:4464 refused)",
+      "file": "/usr/share/omarchy/bin/omarchy-hw-t2-bcm4377",
+      "token": "14e4:4488",
+      "assertion": "grep -qiF 14e4:4488 /usr/share/omarchy/bin/omarchy-hw-t2-bcm4377"
+    },
+    {
+      "id": "pr-behavior-2",
+      "what": "the sleep migration 1788544020 wires the unload service (Before=sleep.target oneshot)",
+      "file": "/usr/share/omarchy/migrations/1788544020.sh",
+      "token": "omarchy-t2-bcm4377-sleep",
+      "assertion": "grep -qiF omarchy-t2-bcm4377-sleep /usr/share/omarchy/migrations/1788544020.sh"
+    }
+  ],
+  "knownRed": "by-construction: both checked files are NEW in the PR (bin/omarchy-hw-t2-bcm4377 +19, migrations/1788544020.sh +17 — 404 on the base ref 493067741); neither path exists on the golden, so both probe greps exit 2. Landing per docs/file-layout.md: bin/omarchy-* and migrations/** ship into /usr/share/omarchy/. NOTE (triage): the live BCM4377 sleep cycle is T2-Mac hardware-bound — NOT testable on this host; the eval proves file landing + detector/script logic on the live VM; the hardware cycle is PARTIAL.",
+  "markerRule": {
+    "verified": "marker token(s) confirmed present in the ADDED lines of the PR diff via gh api repos/omacom/omarchy/pulls/10211/files AND absent from the base-branch files (ref 493067741)",
+    "probeExpected": "probe bed (same checks, NO pr-apply) must FAIL with exit 2 on the golden; a green probe = RED-PROBE-BROKEN (process block, S7)"
+  },
+  "record": {
+    "cast": true,
+    "gif": true,
+    "spiceMjpeg": true,
+    "screenMp4": true,
+    "visual": false,
+    "mediaNote": "three-artifact contract: record start→drive→stop (.cast, artifact_min_bytes 200), record gif render (.gif), spice record action start (fps 5) → drive → stop (/tmp/pr-10211.mjpeg, artifact_min_bytes 10000, artifact_not_uniform true) + ONE run: ffmpeg transcode to /tmp/pr-10211-screen.mp4. NOTE: the spice MJPEG is written HOST-side by the SPICE-wire plugin; the in-venue run: ffmpeg step reports when the guest copy is absent and the host runner performs the container transcode (lane: EVAL RUNNER assembles media/<pr>-<calver>/).",
+    "drive": "grep -nF 14e4:4488 /usr/share/omarchy/bin/omarchy-hw-t2-bcm4377; echo pr-10211-done"
+  },
+  "expectedPhaseSeconds": {
+    "probe": 60,
+    "eval": 240,
+    "apply": 30,
+    "media": 45
+  }
+}

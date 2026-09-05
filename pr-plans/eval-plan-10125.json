@@ -1,0 +1,21 @@
+{
+  "pr": 10125,
+  "title": "encoder",
+  "headSha": "399665b58a317c50ff134555a9d9188d10ab4c9e",
+  "class": "software",
+  "channel": "stable",
+  "tier": "vm",
+  "visual": false,
+  "changedFiles": [
+    "bin/omarchy-capture-screenrecording",
+    "test/shell.d/screenrecording-encoder-test.sh"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "file": "/usr/share/omarchy/bin/omarchy-capture-screenrecording",
+      "token": "encoder"
+    }
+  ],
+  "knownRed": "by-construction: encoder only lands with PR 10125"
+}

@@ -1,0 +1,58 @@
+{
+  "pr": 10225,
+  "title": "Harden lock authentication command lookup",
+  "headSha": "70047956fac8bdfe36aabb9dea82b4eee50e1b2c",
+  "class": "install-script-security",
+  "channel": "stable",
+  "tier": "vm",
+  "entity": {
+    "kind": "clone",
+    "from_vm": "check-omarchy-eval-base-inst",
+    "from_snapshot": "golden",
+    "ram": "4G",
+    "cpu": 4,
+    "disk_size": "40G"
+  },
+  "changedFiles": [
+    "bin/omarchy-apply-lock",
+    "bin/omarchy-upgrade-to-quattro",
+    "test/shell.d/apply-lock-test.sh",
+    "test/shell.d/upgrade-to-quattro-test.sh"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "what": "the lock helper pins fprintd-list to /usr/bin (trusted absolute path, no PATH fallthrough)",
+      "file": "/usr/share/omarchy/bin/omarchy-apply-lock",
+      "token": "/usr/bin/fprintd-list",
+      "assertion": "grep -qiF /usr/bin/fprintd-list /usr/share/omarchy/bin/omarchy-apply-lock"
+    },
+    {
+      "id": "pr-behavior-2",
+      "what": "omarchy-upgrade-to-quattro defines the trusted root_path split from user-local bin",
+      "file": "/usr/share/omarchy/bin/omarchy-upgrade-to-quattro",
+      "token": "root_path=",
+      "assertion": "grep -qiF root_path= /usr/share/omarchy/bin/omarchy-upgrade-to-quattro"
+    }
+  ],
+  "knownRed": "by-construction: /usr/bin/fprintd-list and root_path= are ADDED lines (diff +8/−1 +6/−3); the base resolves fprintd-list via omarchy-cmd-present (no absolute path, no root_path), so both probe greps exit 2 on the golden.",
+  "markerRule": {
+    "verified": "marker token(s) confirmed present in the ADDED lines of the PR diff via gh api repos/omacom/omarchy/pulls/10225/files",
+    "probeExpected": "probe bed (same checks, NO pr-apply) must FAIL with exit 2 on the golden; a green probe = RED-PROBE-BROKEN (process block, S7)"
+  },
+  "record": {
+    "cast": true,
+    "gif": true,
+    "spiceMjpeg": true,
+    "screenMp4": true,
+    "visual": false,
+    "mediaNote": "three-artifact contract: record start→drive→stop (.cast, artifact_min_bytes 200), record gif render (.gif), spice record action start (fps 5) → drive → stop (/tmp/pr-10225.mjpeg, artifact_min_bytes 10000, artifact_not_uniform true) + ONE run: ffmpeg transcode to /tmp/pr-10225-screen.mp4. NOTE: the spice MJPEG is written HOST-side by the SPICE-wire plugin; the in-venue run: ffmpeg step reports when the guest copy is absent and the host runner performs the container transcode (lane: EVAL RUNNER assembles media/<pr>-<calver>/).",
+    "drive": "grep -n -e '/usr/bin/fprintd-list' /usr/share/omarchy/bin/omarchy-apply-lock; echo pr-10225-done"
+  },
+  "expectedPhaseSeconds": {
+    "probe": 60,
+    "eval": 240,
+    "apply": 30,
+    "media": 45
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "pr": 10141,
+  "title": "brcmfmac",
+  "headSha": "6e735dde6b505d6de73977ec6650b997b6d970f4",
+  "class": "software",
+  "channel": "stable",
+  "tier": "vm",
+  "visual": false,
+  "changedFiles": [
+    "default/firmware/apple/brcmfmac43602-pcie-mbp133.txt",
+    "default/firmware/apple/brcmfmac43602-pcie.txt",
+    "install/hardware/all.sh",
+    "install/hardware/apple/brcmfmac-43602.sh",
+    "install/hardware/apple/fix-brcmfmac-5ghz.sh",
+    "install/hardware/apple/fix-mbp133-amdgpu.sh"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "file": "/usr/share/omarchy/default/firmware/apple/brcmfmac43602-pcie-mbp133.txt",
+      "token": "brcmfmac"
+    }
+  ],
+  "knownRed": "by-construction: brcmfmac only lands with PR 10141"
+}

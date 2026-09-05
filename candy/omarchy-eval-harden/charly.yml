@@ -1,0 +1,31 @@
+omarchy-eval-harden:
+    candy:
+        version: 2026.248.0100
+        description: |
+            The eval-lane golden hardening whose steps run at DEPLOY time (the only
+            mutation path the check-run honors — plan `run:` steps are verify-only
+            skips by design). Installs: the guest sshd MaxStartups raise (the wave's
+            ssh burst refused the pulls), the pr-apply bare-clone pre-seed (the batch
+            PR heads pre-fetched — the per-lane apply fully local), and the guest
+            charly warm (the resolution cache filled for the deploy's own refs).
+        plan:
+            - run: raise the guest sshd MaxStartups (the eval-wave ssh burst refused the default 10:30:100 — the rec-stop .cast pulls failed)
+              id: hard-sshd
+              command: 'printf "\nMaxStartups 200:60:200\n" >> /etc/ssh/sshd_config; systemctl restart sshd >/dev/null 2>&1 || true'
+            - run: pre-seed the pr-apply bare clone with the batch PR heads (the per-lane apply becomes fully local)
+              id: hard-preseed
+              command: |
+                  set -eu
+                  R=/root/.cache/omarchy-pr-apply.git
+                  if [ ! -d "$R" ]; then git clone --bare -q https://github.com/omacom/omarchy "$R"; fi
+                  for h in 0681cadf28aae14f9cc46271ecb2af76e5958a36 075feebd8248a31f35a8c5914083bdb0f0aa615b 16a6ede2687255e198281a11969152a33d1d337a 65fa55975f6e54757d3a087534f107b28005077b 52952db276936a94b0be3ea289b6315c331930cc cce3fd6427a60d16b3f6bfc29fd3ebfab82da94f; do git -C "$R" fetch -q origin "$h" || true; done
+            - run: warm the guest charly resolution cache (the deploy's refs resolve locally at the first bed run)
+              id: hard-warm
+              command: 'charly box list >/dev/null 2>&1 || true; true'
+            - check: the guest sshd carries the raised MaxStartups
+              id: hard-check-sshd
+              command: 'grep -q "^MaxStartups 200" /etc/ssh/sshd_config'
+            - check: the pr-apply pre-seed clone exists with the head objects
+              id: hard-check-preseed
+              command: 'sudo -n test -d /root/.cache/omarchy-pr-apply.git'
+

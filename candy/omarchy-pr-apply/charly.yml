@@ -21,13 +21,27 @@ omarchy-pr-apply:
                   # pr-apply <pr> <sha> <file...> — install ONLY the PR's changed files over the installed tree.
                   set -eu
                   PR=$1; SHA=$2; shift 2
+                  REPO=${PR_APPLY_REPO:-/root/.cache/omarchy-pr-apply.git}
                   T=$(mktemp -d)
                   trap 'rm -rf "$T"' EXIT
-                  git init -q "$T"
+                  if [ -d "$REPO" ]; then
+                      # the golden carries a pre-seeded bare clone with the batch's
+                      # PR heads pre-fetched — the checkout is fully local (no per-lane
+                      # GitHub fetch; the measured per-lane fetch ~2-10s avoided).
+                      git clone -q --shared "$REPO" "$T"
+                  else
+                      git init -q "$T"
+                      cd "$T"
+                      git remote add origin https://github.com/omacom/omarchy
+                      git fetch -q --depth 1 origin "pull/$PR/head"
+                  fi
                   cd "$T"
-                  git remote add origin https://github.com/omacom/omarchy
-                  git fetch -q --depth 1 origin "pull/$PR/head"
-                  git checkout -q --detach "$SHA"
+                  # the pre-seeded repo may lack a moved/orphaned SHA (never swallow):
+                  # fall back to the fresh depth-1 fetch of the PR head, then retry.
+                  git checkout -q --detach "$SHA" || {
+                      git fetch -q --depth 1 origin "pull/$PR/head" || { echo "pr-apply: fetch failed for $PR"; exit 1; }
+                      git checkout -q --detach "$SHA"
+                  }
                   for f in "$@"; do
                       if [ -f "$f" ]; then
                           sudo install -D -m 0644 "$f" "/usr/share/omarchy/$f"

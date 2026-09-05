@@ -12,7 +12,7 @@ The test environments derive from the shipped [opencharly/distro-omarchy](https:
 boxes (imported as the `omarchy` namespace) and inject an omacom/omarchy PR's
 files at **BUILD time** via a per-PR package (`candy/omarchy-pr-<N>`), then assert
 the PR's **behavior** with checks that verify the actual system state — the charly
-variant of the PR's own shell tests, strictly stronger than upstream's simulated tests.
+grep-presence assertions of the diff-ADDED markers (per the ORACLE marker rule), verified live + red-by-construction + update-survival — the PR's own test/shell.d/*.sh scripts are not re-run (coverage scoping, M6 B8).
 
 > **What is charly?** charly is the open-source testing tool that builds and runs these
 > test environments. A **candy** is a small, reusable software package that charly

@@ -182,3 +182,11 @@ Before the first tool call of a task, load the relevant skills from the marketpl
   seam
 - `strict-policy` / `root-cause-analyzer` — R1-R5 discipline
 - `git-workflow` — PR-only landing
+
+
+## Permanent eval-guidance additions (M4, 2026-09-04)
+
+- The ORACLE marker rule: PR-specific checks must assert DIFF-ADDED tokens (never pre-existing base words); a probe that passes on the golden is RED-PROBE-BROKEN = a PROCESS block, never an eval.
+- The ORACLE path rule: check paths from proven-landing classes only (bin/, shell/, migrations/).
+- The RUNNER sequencing rule: after any probe/eval verdict, `charly check stop` THEN destroy the leftover VM (`charly vm destroy <entity> --domain <bed>`) before the next run on the same clone disk.
+- Every finding above is recorded permanently in PR-EVAL-LANE.md (single source; this file references it).

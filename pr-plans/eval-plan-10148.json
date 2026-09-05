@@ -1,0 +1,22 @@
+{
+  "pr": 10148,
+  "title": "audient",
+  "headSha": "a68df9c8cac7a78925001006fe64d9f7bfbf9429",
+  "class": "software",
+  "channel": "stable",
+  "tier": "vm",
+  "visual": false,
+  "changedFiles": [
+    "config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf",
+    "migrations/1788513270.sh",
+    "test/shell.d/audient-soft-mixer-migration-test.sh"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "file": "/usr/share/omarchy/config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf",
+      "token": "audient"
+    }
+  ],
+  "knownRed": "by-construction: audient only lands with PR 10148"
+}

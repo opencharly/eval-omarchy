@@ -1,0 +1,20 @@
+{
+  "pr": 10123,
+  "title": "tile",
+  "headSha": "51c4cf8148922ccb6f213f6f399856ace93bff32",
+  "class": "software",
+  "channel": "stable",
+  "tier": "vm",
+  "visual": false,
+  "changedFiles": [
+    "manual/42-common-tweaks.md"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "file": "/usr/share/omarchy/manual/42-common-tweaks.md",
+      "token": "tile"
+    }
+  ],
+  "knownRed": "by-construction: tile only lands with PR 10123"
+}

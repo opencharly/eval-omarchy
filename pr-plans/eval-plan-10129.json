@@ -1,0 +1,22 @@
+{
+  "pr": 10129,
+  "title": "presentation",
+  "headSha": "0681cadf28aae14f9cc46271ecb2af76e5958a36",
+  "class": "software",
+  "channel": "stable",
+  "tier": "vm",
+  "visual": false,
+  "changedFiles": [
+    "bin/omarchy-hyprland-window-restore-presentation",
+    "bin/omarchy-restart-shell",
+    "test/shell.d/hyprland-window-restore-presentation-test.sh"
+  ],
+  "checks": [
+    {
+      "id": "pr-behavior",
+      "file": "/usr/share/omarchy/bin/omarchy-restart-shell",
+      "token": "presentation"
+    }
+  ],
+  "knownRed": "by-construction: presentation only lands with PR 10129"
+}
