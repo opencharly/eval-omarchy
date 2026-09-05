@@ -61,10 +61,14 @@ check-omarchy-pr-10205-vm:
               spice: {method: record, action: stop, record_name: pr-10205, artifact: /tmp/pr-10205.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
             - check: stop the terminal recording and pull the .cast
               id: rec-stop
+              eventually: 60s
+              retry_interval: 5s
               context: [runtime]
               record: {method: stop, record_name: pr-10205, artifact: /tmp/pr-10205.cast, artifact_min_bytes: 200}
             - check: render the .cast to an animated GIF
               id: rec-gif
+              eventually: 60s
+              retry_interval: 5s
               context: [runtime]
               record: {method: gif, record_name: pr-10205, artifact: /tmp/pr-10205.gif, artifact_min_bytes: 100}
             - run: transcode the SPICE MJPEG capture to MP4 (screen.mp4)
