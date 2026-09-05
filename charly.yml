@@ -142,6 +142,7 @@ check-omarchy-eval-base-inst:
             - '@github.com/opencharly/layer-charly:v2026.243.0408'
             - omarchy-autologin
             - omarchy-eval-record
+            - omarchy-eval-harden
             - omarchy-pr-apply
             - '@github.com/opencharly/layer-asciinema:v2026.246.1622'
             - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
@@ -156,14 +157,6 @@ check-omarchy-eval-base-inst:
               id: inst-full-upgrade
             - run: pacman -Scc --noconfirm >/dev/null 2>&1; rm -rf /var/cache/pacman/pkg/* 2>/dev/null; true
               id: inst-clean-cache
-            - run: the guest sshd accepts the eval-wave ssh concurrency (MaxStartups — the rec-stop .cast pulls refused the burst)
-              id: inst-sshd-concurrency
-              context: [runtime]
-              command: 'printf "\nMaxStartups 200:60:200\n" >> /etc/ssh/sshd_config; systemctl restart sshd >/dev/null 2>&1 || true'
-            - run: pre-seed the pr-apply bare clone (the batch's PR heads — the per-lane apply becomes fully local)
-              id: inst-pr-apply-preseed
-              context: [runtime]
-              command: |
                   set -eu
                   R=/root/.cache/omarchy-pr-apply.git
                   if [ ! -d "$R" ]; then git clone --bare -q https://github.com/omacom/omarchy "$R"; fi
