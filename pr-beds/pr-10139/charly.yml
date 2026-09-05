@@ -47,6 +47,8 @@ check-omarchy-pr-10139-vm:
               record: {method: start, record_mode: terminal, record_name: pr-10139}
             - check: start the SPICE display video capture
               id: rec-spice-start
+              eventually: 90s
+              retry_interval: 5s
               context: [runtime]
               spice: {method: record, action: start, record_name: pr-10139, fps: 5}
             - check: drive the PR key command inside the recording
@@ -98,6 +100,8 @@ check-omarchy-pr-10139-vm-probe:
               record: {method: start, record_mode: terminal, record_name: pr-10139}
             - check: start the SPICE display video capture
               id: rec-spice-start
+              eventually: 90s
+              retry_interval: 5s
               context: [runtime]
               spice: {method: record, action: start, record_name: pr-10139, fps: 5}
             - check: drive the PR key command inside the recording
