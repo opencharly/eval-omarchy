@@ -55,6 +55,8 @@ check-omarchy-pr-10146-vm:
               record: {method: run, record_name: pr-10146, text: 'grep -n group /usr/share/omarchy/shell/plugins/notifications/NotificationLogic.js; echo pr-10146-done', settle_ms: 1000}
             - check: capture the VM display via SPICE
               id: rec-screen-spice
+              eventually: 90s
+              retry_interval: 5s
               context: [runtime]
               spice: {method: screenshot, artifact: /tmp/pr-10146-screen.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
             - check: stop the SPICE capture and pull the MJPEG stream
@@ -104,6 +106,8 @@ check-omarchy-pr-10146-vm-probe:
               record: {method: run, record_name: pr-10146, text: 'grep -n group /usr/share/omarchy/shell/plugins/notifications/NotificationLogic.js; echo pr-10146-done', settle_ms: 1000}
             - check: capture the VM display via SPICE
               id: rec-screen-spice
+              eventually: 90s
+              retry_interval: 5s
               context: [runtime]
               spice: {method: screenshot, artifact: /tmp/pr-10146-screen.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
             - check: stop the SPICE capture and pull the MJPEG stream
