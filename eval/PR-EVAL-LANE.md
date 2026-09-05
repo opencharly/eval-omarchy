@@ -476,3 +476,7 @@ A wave launches ONLY after the lock table is verified clean:
 
 ### Run preflight — the stale ssh-fragment stanza (RCA 2026-09-05: 10225's re-run wedged — the managed fragment kept the PREVIOUS run's passt port; the readiness gate parked on the wrong endpoint forever, no timeout)
 BEFORE every run: drop the bed's alias from the managed ssh fragment (~/.config/charly/ssh_config — the `Host charly-check-omarchy-pr-<N>-vm` stanza: `sed`/regex-remove the block) so the create re-publishes the CURRENT passt port. A re-run against a stale stanza parks the pre-deploy readiness gate (zero CPU, zero children, no probe). The deeper charly fix (the publish should always refresh the port on re-runs) is recorded for the plugin-vm lifecycle PR.
+
+
+### The media assembly (the missing contract step — the artifacts land in /tmp, the mp4 transcode is a verify-only-skipped run: step)
+The launch chain MUST assemble the media after every run: `charly check run <bed> && mkdir -p media/<pr>-<calver> && cp /tmp/pr-<N>.{cast,gif,mjpeg,screen.png} media/<pr>-<calver>/ && ffmpeg -y -loglevel error -i media/<pr>-<calver>/pr-<N>.mjpeg -c:v libx264 -pix_fmt yuv420p media/<pr>-<calver>/pr-<N>.mp4`. The mp4 is produced by the ASSEMBLY (the in-plan rec-mp4 run: step is skipped in verify-only mode by design). media/ is gitignored; the cold-reader reads the .cast always + the mp4 for visual-class PRs.
