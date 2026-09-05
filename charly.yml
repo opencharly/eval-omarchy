@@ -156,12 +156,12 @@ check-omarchy-eval-base-inst:
               id: inst-full-upgrade
             - run: pacman -Scc --noconfirm >/dev/null 2>&1; rm -rf /var/cache/pacman/pkg/* 2>/dev/null; true
               id: inst-clean-cache
-            - run: pre-seed the pr-apply bare clone (the batch's PR heads — the per-lane apply becomes fully local)
-                          - run: the guest sshd accepts the eval-wave ssh concurrency (the default MaxStartups 10:30:100 refused the burst — the rec-stop .cast pulls failed)
+            - run: the guest sshd accepts the eval-wave ssh concurrency (MaxStartups — the rec-stop .cast pulls refused the burst)
               id: inst-sshd-concurrency
               context: [runtime]
-              command: 'grep -q "MaxStartups" /etc/ssh/sshd_config || echo "MaxStartups 200:60:200" >> /etc/ssh/sshd_config; systemctl restart sshd'
-            - run: pre-seed the pr-apply bare clone
+              command: 'printf "\nMaxStartups 200:60:200\n" >> /etc/ssh/sshd_config; systemctl restart sshd >/dev/null 2>&1 || true'
+            - run: pre-seed the pr-apply bare clone (the batch's PR heads — the per-lane apply becomes fully local)
+              id: inst-pr-apply-preseed
               context: [runtime]
               command: |
                   set -eu
