@@ -480,3 +480,11 @@ BEFORE every run: drop the bed's alias from the managed ssh fragment (~/.config/
 
 ### The media assembly (the missing contract step — the artifacts land in /tmp, the mp4 transcode is a verify-only-skipped run: step)
 The launch chain MUST assemble the media after every run: `charly check run <bed> && mkdir -p media/<pr>-<calver> && cp /tmp/pr-<N>.{cast,gif,mjpeg,screen.png} media/<pr>-<calver>/ && ffmpeg -y -loglevel error -i media/<pr>-<calver>/pr-<N>.mjpeg -c:v libx264 -pix_fmt yuv420p media/<pr>-<calver>/pr-<N>.mp4`. The mp4 is produced by the ASSEMBLY (the in-plan rec-mp4 run: step is skipped in verify-only mode by design). media/ is gitignored; the cold-reader reads the .cast always + the mp4 for visual-class PRs.
+
+
+### The media directory contract (gitignored, creation-validated, used for validation)
+- **Location**: `eval-omarchy/media/<pr>-<calver>/` — GITIGNORED (the evidence lives on disk, never in the tree; the PR carries the matrices + the stats, not the binaries).
+- **Contents** (the three-artifact contract): `pr-<N>.cast` (the ascii screencast), `pr-<N>.gif` (the cast render), `pr-<N>.mjpeg` (the spice-record MJPEG), `pr-<N>.mp4` (the ffmpeg transcode), `pr-<N>-screen.png` (the SPICE frame).
+- **Assembly**: the launch chain runs `charly check run <bed> && mkdir -p media/<pr>-<calver> && cp /tmp/pr-<N>.{cast,gif,mjpeg,screen.png} media/<pr>-<calver>/ && ffmpeg -y -loglevel error -i media/<pr>-<calver>/pr-<N>.mjpeg -c:v libx264 -pix_fmt yuv420p media/<pr>-<calver>/pr-<N>.mp4` (the in-plan rec-mp4 run: step is verify-only-skipped — the transcode belongs in the assembly).
+- **CREATION-VALIDATED by the runner**: after every run the runner verifies the 5 artifacts exist + are non-empty (`test -s` each; the .cast >= 200B, the .gif >= 1KB, the .mjpeg >= 10KB, the .mp4 >= 10KB, the screen.png >= 1KB) — a missing/empty artifact = a PROCESS finding (the media contract broken), reported with the run.
+- **USED FOR VALIDATION by the cold-reader**: the .cast is ALWAYS read (the terminal-lane truth); the mp4 frames (ffmpeg + vision_ask) are reviewed for visual-class PRs (the plan's `visual:` flag); the gif/mjpeg corroborate the visual claims. A media artifact that contradicts the checks = a finding.
