@@ -27,5 +27,5 @@ omarchy-eval-harden:
               command: 'grep -q "^MaxStartups 200" /etc/ssh/sshd_config'
             - check: the pr-apply pre-seed clone exists with the head objects
               id: hard-check-preseed
-              command: 'test -d /root/.cache/omarchy-pr-apply.git'
+              command: 'sudo -n test -d /root/.cache/omarchy-pr-apply.git'
 
