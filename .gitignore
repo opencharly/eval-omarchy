@@ -2,6 +2,7 @@
 .check/
 .containerignore
 .dockerignore
+media/
 output/
 *.bak*
 *.log
