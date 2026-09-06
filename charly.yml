@@ -75,6 +75,7 @@ omarchy-vm:
                 - "<channel type='unix'><target type='virtio' name='org.qemu.guest_agent.0'/></channel>"
 
 # ── the golden base: provisions the omarchy VM and captures the golden ──────
+check-omarchy-eval-base:
     vm:
         from: omarchy-vm
         disposable: true
