@@ -13,7 +13,7 @@
 #
 #  Usage:
 #      charly check run check-omarchy-pr-<N>-vm  (oracle-generated bed under pr-beds/pr-<N>/)
-version: 2026.240.1943
+version: 2026.248.1030
 repo: github.com/opencharly/eval-omarchy
 defaults:
     platform:
