@@ -111,8 +111,10 @@ check-omarchy-eval-base-inst:
             on_finalize: golden
             mode: external
             keep_venue: true
+        # layer-charly is inherited from check-omarchy-eval-base:golden (the [charly]
+        # repo is already registered in the golden's pacman.conf); re-adding it here
+        # fails pacman with 'database already registered' (errors_fatal).
         add_candy:
-            - '@github.com/opencharly/layer-charly:v2026.243.0408'
             - omarchy-autologin
             - omarchy-eval-record
             - omarchy-eval-harden
