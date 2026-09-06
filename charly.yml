@@ -13,7 +13,7 @@
 #
 #  Usage:
 #      charly check run check-omarchy-pr-<N>-vm  (oracle-generated bed under pr-beds/pr-<N>/)
-version: 2026.240.1943
+version: 2026.248.1030
 repo: github.com/opencharly/eval-omarchy
 defaults:
     platform:
@@ -74,9 +74,7 @@ omarchy-vm:
             snippets:
                 - "<channel type='unix'><target type='virtio' name='org.qemu.guest_agent.0'/></channel>"
 
-# ── the linked-disk clone (fast VM — a COW overlay on the golden) ─────────────
-# The base bed: provisions the omarchy VM and captures the golden (the clone's
-# from_vm must reference the BED — the golden is domain-keyed).
+# ── the golden base: provisions the omarchy VM and captures the golden ──────
 check-omarchy-eval-base:
     vm:
         from: omarchy-vm
@@ -97,31 +95,6 @@ check-omarchy-eval-base:
               retry_interval: 10s
               context: [runtime]
 
-omarchy-vm-clone:
-    vm:
-        source:
-            kind: clone
-            from_vm: check-omarchy-eval-base
-            from_snapshot: golden
-        disk_size: 40G
-        ram: 4G
-        cpu: 4
-        machine: q35
-        firmware: uefi-insecure
-        network: {mode: user}
-        ssh: {user: user, port_auto: true, key_source: generate}
-        backend: libvirt
-        libvirt:
-            devices:
-                channels: [{type: spicevmc, name: com.redhat.spice.0}]
-                graphics: [{type: spice, listen: [{type: socket}]}]
-                video: [{model: virtio, vram: 65536, heads: 1, accel3d: false}]
-                rng: [{model: virtio, backend: /dev/urandom}]
-                memballoon: {model: virtio}
-            snippets:
-                - "<channel type='unix'><target type='virtio' name='org.qemu.guest_agent.0'/></channel>"
-
-
 # ── the INSTRUMENTED golden base (the stable channel): the golden PLUS the
 # eval-tooling payload (charly, autologin, record tools incl. acpid, pr-apply)
 # captured as its own golden. Per-PR evals clone from THIS golden; per-eval
@@ -131,15 +104,17 @@ omarchy-vm-clone:
 # verification (RCA #7); the runner stops the domain after capture (RCA #3).
 check-omarchy-eval-base-inst:
     vm:
-        from: omarchy-vm-clone
+        from: check-omarchy-eval-base:golden
         disposable: true
         lifecycle: dev
         snapshot:
             on_finalize: golden
             mode: external
             keep_venue: true
+        # layer-charly is inherited from check-omarchy-eval-base:golden (the [charly]
+        # repo is already registered in the golden's pacman.conf); re-adding it here
+        # fails pacman with 'database already registered' (errors_fatal).
         add_candy:
-            - '@github.com/opencharly/layer-charly:v2026.243.0408'
             - omarchy-autologin
             - omarchy-eval-record
             - omarchy-eval-harden
