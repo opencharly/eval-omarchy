@@ -71,7 +71,7 @@ All test environments above ran on testing tool version <version>; base provenan
 
 Every PR evaluation records BOTH lanes — this is mandatory, not optional. The recording
 steps are authored in the per-PR test environment (per the lane doc's "Standing rules"
-and "Recordings" sections), then referenced here:
+and the media contract in `eval/references/media-contract.md`), then referenced here:
 
 - **Terminal lane (asciinema):** `.cast` of the flow — `record: start` → `record: run|cmd` →
   `record: stop` with `artifact:` + `artifact_min_bytes`/`artifact_min_cast_events`; playback on
@@ -143,7 +143,7 @@ references them; small evidence stays committed in `eval/evidence/<pr>-<calver>/
 
 ## Render instructions (delete before saving)
 
-1. Triage first (lane standing rule 7): if the PR is not useful, adds no new insight,
+1. Triage first (lane standing rule 8): if the PR is not useful, adds no new insight,
    or cannot be tested on the available hardware, do NOT render a report — record a short
    triage note instead. Only PRs that pass triage get a full report.
 2. Copy this file to `eval/pr-<N>.md` and fill every section with EVIDENCE, not promises.

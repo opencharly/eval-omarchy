@@ -17,50 +17,12 @@ PARTIAL/NOT-EVALUABLE — never a faked test environment.
 
 ## The eval rules (every PR evaluation)
 
-1. **NEVER mock anything — ever.** A check that substitutes a fake tool for the real
-   one proves nothing about the PR. Every check must exercise the REAL tool, the REAL
-   system state, the REAL behavior. If a behavior cannot be tested with the real
-   tools available in the current tier (e.g. real cardwire, real btrfs snapshots, a
-   real flatpak session), it must be tested on the live VM tier (Tier-2) — or not
-   claimed at all. A mocked check is not evidence; a report built on mocks is
-   useless. This rule is first because it is the whole point: an evaluation that
-   mocks is not an evaluation.
-2. **Test like a user, not a validator.** Reports and posted comments are
-   first-person: what I did, what worked, what did not, what I could not do and why.
-   The evidence rigor stays (step matrix, per-check matrix, findings tied to
-   evidence) — only the framing changes. Every report is rendered from
-   `eval/PR-EVAL-TEMPLATE.md`.
-3. **Assisted-by footer on every posted comment.** Every PR comment ends with
-   `*Assisted-by: <Harness> <Provider Full Model Name> (<confidence>)*`.
-4. **Install missing software in the test environment.** When a check fails or a test
-   environment cannot complete because a tool/package is missing, install it (extra
-   software package / install step, or the system's own package installer) and
-   re-run BEFORE declaring "couldn't be tested". Only a genuinely impossible install
-   (package in no reachable repository) stays untested — with the exact blocker
-   documented.
-5. **Test to the maximum extent possible — on a live system.** Run every applicable
-   test environment (container, virtual machine, visual, GPU when hardware is
-   available), exercise the PR's own "## Verification" claims, and probe edge cases
-   (idempotence, failure paths, clean-install vs upgrade). System-behavior PRs MUST
-   be tested on a live omarchy VM (Tier-2), never only in a container. Do not stop at
-   the first green check.
-6. **Record every evaluation — both lanes.** Every PR evaluation produces a terminal
-   asciinema `.cast` AND a full-screen video (desktop recording or VM display
-   recording), saved to the gitignored `media/<pr>-<calver>/`. Check output must be
-   surfaced on the system's desktop and visible in the recording frames.
-7. **Create reusable software packages when software is missing.** When a PR needs
-   software or tooling that does not exist yet, create a small reusable package for
-   it — following the established rules (scaffold with the scaffolding tool; every
-   package needs a description + at least one automated check; one generic package
-   per concern, no duplication) — so future PR evaluations reuse it.
-8. **Triage before authoring a validation.** Is the PR useful (real problem, not
-   trivial/duplicative/WIP/"do not merge")? Would the evaluation add new insight?
-   Can the core behavior be tested on the available hardware? Which tier proves the
-   behavior? A PR that fails triage gets a short triage note, not a report.
-9. **Every PR-specific check must fail without the PR (the known-red fixture).** A
-   check that passes on the base image without the PR proves nothing about the PR.
-   General sanity checks (e.g. "bash is installed") are labeled non-PR-specific and
-   never counted as PR proof.
+The standing rules live **ONCE** in `eval/PR-EVAL-LANE.md` (+ `eval/references/`) —
+every agent and skill points there, never restates. In short: never mock; test like
+a user; Assisted-by footer on every posted comment; install missing software before
+declaring "couldn't be tested"; test to the maximum extent on a live system; record
+both lanes; create reusable packages when software is missing; triage before
+authoring; every PR-specific check known-red; every result cold-read validated.
 
 ## What each tier proves (honest semantics)
 
@@ -79,24 +41,9 @@ live-system behavior from a container run.
 - **Tier-2 visual / L3 GPU:** desktop evidence and hardware-bound classes
   (PARTIAL/NOT-EVALUABLE when the hardware is unavailable — never a faked bed).
 
-**Routing rule:** a PR whose core behavior is system-level (hardware switching,
-filesystem/snapshot behavior, session environment, network state, keybindings,
-service behavior) MUST be evaluated on a live VM (Tier-2), not just the container.
-
-**The validation's purpose is binary: does it actually work?** The only valid
-verdicts are PASS (verified working on a live system) and FAIL (verified not
-working on a live system). NO VALIDATION means the validation itself failed — it
-could not answer the question because the core behavior could not be tested on a
-live system.
-
-**Strict prohibition:** any "might work" / "mostly works" / "it works" evaluation
-that is NOT verified on a live system is **STRICTLY FORBIDDEN** — it fakes
-success for something the validation could not test. A pod-only eval is NOT a
-validation: the container tier cannot test live system behavior, so a container
-run of a system-behavior PR proves nothing about the PR and must never be
-presented as a validation. If the validation cannot test the thing on a live
-system, the validation itself FAILS — the result is NO VALIDATION, and no report
-is produced.
+The full semantics — the routing rule, the binary purpose of a validation, the
+strict prohibition, and honesty about testing — live ONCE in
+`eval/references/tiers.md`; every agent and skill points there, never restates.
 
 ## The per-PR artifact pattern
 
@@ -138,8 +85,8 @@ to the Tier-2 live VM, never mocked.
   contract gets root-cause analysis before remediation. No "pre-existing", "out of
   scope", or "follow-up PR" classifications.
 - **R3 — No duplication.** One canonical implementation per behavior. The standing
-  rules live once in `eval/PR-EVAL-LANE.md`; the template references them, never
-  copies them.
+  rules live once in `eval/PR-EVAL-LANE.md` (+ `eval/references/`); the template and
+  AGENTS.md point there, never copy them.
 - **R4 — No workarounds.** No sleeps, blind retries, or manual fixes. The never-mock
   rule is the fix, not a workaround.
 - **R5 — Delete legacy completely.** A cutover removes the old path in the same PR.
@@ -186,7 +133,9 @@ Before the first tool call of a task, load the relevant skills from the marketpl
 
 ## Permanent eval-guidance additions (M4, 2026-09-04)
 
-- The ORACLE marker rule: PR-specific checks must assert DIFF-ADDED tokens (never pre-existing base words); a probe that passes on the golden is RED-PROBE-BROKEN = a PROCESS block, never an eval.
-- The ORACLE path rule: check paths from proven-landing classes only (bin/, shell/, migrations/).
-- The RUNNER sequencing rule: after any probe/eval verdict, `charly check stop` THEN destroy the leftover VM (`charly vm destroy <entity> --domain <bed>`) before the next run on the same clone disk.
-- Every finding above is recorded permanently in PR-EVAL-LANE.md (single source; this file references it).
+The M4-era guidance — the ORACLE marker rule, the ORACLE path rule, the RUNNER
+orphan-sequencing rule — lives ONCE in present-tense standing form:
+`eval/references/oracle-rules.md` and `eval/references/lane-sequencing.md`. Its
+dated origin (the 16-lane batch, 2026-09-04, with the caught-live examples) is
+archived in `CHANGELOG/2026.250.1700.md`. Agents point there; AGENTS.md never
+restates the rules.
