@@ -40,7 +40,8 @@ fails); a pod-only eval is not a validation.
 | `pr-beds/pr-<N>/charly.yml` | Oracle-generated per-PR environments from `pr-plans/eval-plan-<N>.json`: clone entity + RED-PROBE bed (must FAIL) + eval bed (single apply seam + checks + record:/spice: evidence) |
 | `charly.yml` | The stable hand-authored config: the omarchy VM template, the golden bases (`check-omarchy-eval-base`, `check-omarchy-eval-base-inst`), and the shared clone entity. Per-PR test environments are **oracle-generated** into `pr-beds/pr-<N>/` (eval + RED-PROBE beds) |
 | `eval/PR-EVAL-TEMPLATE.md` | **The PR-eval template** — every evaluation report (`eval/pr-<N>.md`) and every posted PR comment is rendered from it, in user-testing voice, carrying its EXTERNAL, NON-AUTHORITATIVE disclaimer verbatim and the Assisted-by footer |
-| `eval/PR-EVAL-LANE.md` | The eval lane + standing rules (install missing software, test to the max, record both lanes, reusable packages, snapshot-VM + local apply mechanics) |
+| `eval/PR-EVAL-LANE.md` | The eval lane entry — Goal, the lane state machine, the 10 standing rules, the NO VALIDATION semantics, the publication gate, and the index to the references |
+| `eval/references/` | The lane rules in detail (entry: `eval/PR-EVAL-LANE.md`): tier semantics, oracle rules + §Template, lane sequencing, media contract, golden mechanics, cold-reader rubric |
 | `eval/pr-<N>.md` | Per-PR evaluation reports (what I tested, how it went, what I ran, what I noticed) |
 | `eval/evidence/` | Committed small evidence (summary.yml + per-check logs per pr+run-date) |
 | `media/` | Recording artifacts (asciinema `.cast` + full-screen video per pr+run-date) — **gitignored** |
