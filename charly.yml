@@ -104,7 +104,7 @@ check-omarchy-eval-base:
 # verification (RCA #7); the runner stops the domain after capture (RCA #3).
 check-omarchy-eval-base-inst:
     vm:
-        from: check-omarchy-eval-base:golden
+        from: omarchy-vm
         disposable: true
         lifecycle: dev
         snapshot:
