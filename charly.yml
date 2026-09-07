@@ -13,7 +13,7 @@
 #
 #  Usage:
 #      charly check run check-omarchy-pr-<N>-vm  (oracle-generated bed under pr-beds/pr-<N>/)
-version: 2026.248.1030
+version: 2026.249.2125
 repo: github.com/opencharly/eval-omarchy
 defaults:
     platform:
@@ -28,7 +28,7 @@ defaults:
 import:
     # The omarchy image family (base box, suite-base, VM templates) lives in
     # opencharly/distro-omarchy. Qualified refs: omarchy.omarchy-suite-base.
-    - omarchy: '@github.com/opencharly/distro-omarchy:v2026.244.1743'
+    - omarchy: '@github.com/opencharly/distro-omarchy:v2026.250.0359'
 discover:
     - path: box
       recursive: true
@@ -104,7 +104,7 @@ check-omarchy-eval-base:
 # verification (RCA #7); the runner stops the domain after capture (RCA #3).
 check-omarchy-eval-base-inst:
     vm:
-        from: check-omarchy-eval-base:golden
+        from: omarchy-vm
         disposable: true
         lifecycle: dev
         snapshot:
