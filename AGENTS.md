@@ -17,8 +17,8 @@ PARTIAL/NOT-EVALUABLE — never a faked test environment.
 
 ## The eval rules (every PR evaluation)
 
-The standing rules live **ONCE** in `eval/PR-EVAL-LANE.md` (+ `skills/`) —
-every agent and skill points there, never restates. In short: never mock; test like
+The standing rules live **ONCE** in `skills/omarchy-eval-lane/SKILL.md` (+ its
+referenced skills) — every agent and skill points there, never restates. In short: never mock; test like
 a user; Assisted-by footer on every posted comment; install missing software before
 declaring "couldn't be tested"; test to the maximum extent on a live system; record
 both lanes; create reusable packages when software is missing; triage before
@@ -44,6 +44,11 @@ live-system behavior from a container run.
 The full semantics — the routing rule, the binary purpose of a validation, the
 strict prohibition, and honesty about testing — live ONCE in
 `skills/omarchy-eval-tiers/SKILL.md`; every agent and skill points there, never restates.
+
+The **FULL LOOP** (every stage grades the previous stage and can trigger a change;
+the runner CONFIG AUDIT; the artifacts-only cold-read; the loop guard) is the
+`skills/omarchy-eval-full-loop/SKILL.md` contract — the runner never leaves a VM
+running when done; the cold-reader grades the artifact packet only.
 
 ## The per-PR artifact pattern
 
@@ -85,8 +90,8 @@ to the Tier-2 live VM, never mocked.
   contract gets root-cause analysis before remediation. No "pre-existing", "out of
   scope", or "follow-up PR" classifications.
 - **R3 — No duplication.** One canonical implementation per behavior. The standing
-  rules live once in `eval/PR-EVAL-LANE.md` (+ `skills/`); the template and
-  AGENTS.md point there, never copy them.
+  rules live once in `skills/` (entry `skills/omarchy-eval-lane/SKILL.md`); the
+  template and AGENTS.md point there, never copy them.
 - **R4 — No workarounds.** No sleeps, blind retries, or manual fixes. The never-mock
   rule is the fix, not a workaround.
 - **R5 — Delete legacy completely.** A cutover removes the old path in the same PR.
@@ -119,7 +124,7 @@ to the Tier-2 live VM, never mocked.
 
 ## Skills first (R0)
 
-Before the first tool call of a task, load the relevant skills from the marketplace:
+Before the first tool call of a task, load the relevant skills. From the marketplace:
 
 - `omarchy-eval` — the omarchy PR evaluation procedure (never mock, tier semantics,
   known-red fixture, live-VM routing)
@@ -129,6 +134,13 @@ Before the first tool call of a task, load the relevant skills from the marketpl
   seam
 - `strict-policy` / `root-cause-analyzer` — R1-R5 discipline
 - `git-workflow` — PR-only landing
+
+Plus the REPO skills under `skills/` (the binding lane contract — in addition to the
+marketplace procedure): `omarchy-eval-lane` (the entry: standing rules, class-based
+§Template index, work-lane schema), `omarchy-eval-tiers`, `omarchy-eval-oracle` (the
+§Template + marker/path rules), `omarchy-eval-golden`, `omarchy-eval-sequencing`,
+`omarchy-eval-media`, `omarchy-eval-cold-reader`, `omarchy-eval-work-lane`, and
+`omarchy-eval-full-loop` (the grading/redo loop).
 
 
 ## Permanent eval-guidance additions (M4, 2026-09-04)

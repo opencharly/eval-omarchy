@@ -9,10 +9,16 @@ Dedicated home for the **omarchy PR evaluation test environments** and their **e
 > merge. Hardware-bound classes may be PARTIAL/NOT-EVALUABLE.
 
 The test environments derive from the shipped [opencharly/distro-omarchy](https://github.com/opencharly/distro-omarchy)
-boxes (imported as the `omarchy` namespace) and inject an omacom/omarchy PR's
-files at **BUILD time** via a per-PR package (`candy/omarchy-pr-<N>`), then assert
-the PR's **behavior** with checks that verify the actual system state — the charly
-grep-presence assertions of the diff-ADDED markers (per the ORACLE marker rule), verified live + red-by-construction + update-survival — the PR's own test/shell.d/*.sh scripts are not re-run (coverage scoping, M6 B8).
+boxes (imported as the `omarchy` namespace) plus the **instrumented per-channel
+golden bases** in this repo's `charly.yml`. Each PR gets a **dedicated per-PR
+config** (`pr-beds/pr-<N>/charly.yml`, authored by the config-oracle — the
+charly.yml IS the plan): a lean 2G/1cpu clone of the PR's channel golden, the
+RED-PROBE twin (must FAIL), and the eval bed that applies the PR at **RUNTIME** via
+the single `pr-apply` seam and asserts the actual system state — known-red
+grep-presence checks of the diff-ADDED markers (the ORACLE marker rule), the
+PR's own `## Verification` claims, and the FULL record:/spice: evidence loop
+(asciinema `.cast` + screen video, every run). A system-behavior PR is evaluated
+on a live VM, never a container-only eval.
 
 > **What is charly?** charly is the open-source testing tool that builds and runs these
 > test environments. A **candy** is a small, reusable software package that charly
@@ -40,7 +46,7 @@ fails); a pod-only eval is not a validation.
 | `pr-beds/pr-<N>/charly.yml` | Per-PR test environments authored by the config-oracle from its per-PR analysis (the charly.yml IS the plan): 2G/1cpu clone entity from the channel golden + RED-PROBE bed (must FAIL) + eval bed (single apply seam + known-red checks + the FULL record:/spice: evidence loop) |
 | `charly.yml` | The stable hand-authored config: the omarchy VM template, the golden bases (`check-omarchy-eval-base`, `check-omarchy-eval-base-inst`), and the shared clone entity. Per-PR test environments are **oracle-generated** into `pr-beds/pr-<N>/` (eval + RED-PROBE beds) |
 | `eval/PR-EVAL-TEMPLATE.md` | **The PR-eval template** — every evaluation report (`eval/pr-<N>.md`) and every posted PR comment is rendered from it, in user-testing voice, carrying its EXTERNAL, NON-AUTHORITATIVE disclaimer verbatim and the Assisted-by footer |
-| `eval/PR-EVAL-LANE.md` | The eval lane entry — Goal, the lane state machine, the 10 standing rules, the NO VALIDATION semantics, the publication gate, and the index to the references |
+| `eval/PR-EVAL-LANE.md` | Thin signpost — the binding lane contract moved to `skills/` (entry `skills/omarchy-eval-lane/SKILL.md`); the path keeps its long-standing anchors |
 | `skills/` | The eval lane as PROPER SKILLS — entry `skills/omarchy-eval-lane/SKILL.md` (standing rules, class-based §Template, full-loop index) + `omarchy-eval-{tiers,oracle,golden,sequencing,media,cold-reader,work-lane,full-loop}` |
 | `eval/pr-<N>.md` | Per-PR evaluation reports (what I tested, how it went, what I ran, what I noticed) |
 | `eval/evidence/` | Committed small evidence (summary.yml + per-check logs per pr+run-date) |
@@ -50,12 +56,18 @@ fails); a pod-only eval is not a validation.
 ## Running a test environment
 
 ```bash
-charly check run check-omarchy-pr-<N>-vm   # oracle-generated bed in pr-beds/pr-<N>/
+charly check run check-omarchy-pr-<N>-vm-probe   # RED-PROBE first — must FAIL (exit 2)
+charly check run check-omarchy-pr-<N>-vm          # the eval bed in pr-beds/pr-<N>/
 ```
 
-Requires a charly binary that supports the schema (v2026.244+). The test environment is
-`disposable: true` — the full sequence (build → check image → deploy → check live →
-fresh update → teardown) runs unattended.
+Requires a charly binary that supports the schema (v2026.244+). The test environment
+is `disposable: true` — the full sequence (build → check image → deploy → check live →
+fresh update → teardown) runs unattended; the runner never leaves a VM running when
+done. Lean PRs run in parallel — ONE EVAL LANE PER CPU CORE (nproc-derived,
+RAM-capped); GPU-class PRs run SERIAL. The full lane (triage → plan → RED-PROBE →
+eval → evidence → cold-read) is driven by the pi-agent contracts in the umbrella
+(`.pi/agents/omarchy-*`) per the skills in this repo — start at
+`skills/omarchy-eval-lane/SKILL.md`.
 
 ## Eval results
 
@@ -69,4 +81,7 @@ run log), the per-check verdict matrix, the recordings (both lanes, saved to the
 gitignored `media/`), and what was noticed (findings tied to evidence, including
 hardware-bound classes that are PARTIAL/NOT-EVALUABLE, never faked). Every posted PR
 comment ends with the `*Assisted-by: …*` footer. Every evaluation result is
-validated by a cold reader against the criteria before it is finalized or posted.
+validated by a **cold reader** (artifacts-only — `skills/omarchy-eval-cold-reader/SKILL.md`)
+against the criteria before it is finalized or posted, and the FULL LOOP
+(`skills/omarchy-eval-full-loop/SKILL.md`) lets any stage grade the previous stage
+and trigger a change (redo-plan / redo-run / redo-read / escalate).
