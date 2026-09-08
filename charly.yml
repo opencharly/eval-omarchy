@@ -9,7 +9,7 @@
 #
 #  Every evaluation report (eval/pr-<N>.md) and every posted PR comment is
 #  rendered from eval/PR-EVAL-TEMPLATE.md and carries its EXTERNAL,
-#  NON-AUTHORITATIVE-by-opencharly.ai disclaimer verbatim.
+#  direct: what was tested and how — no boilerplate.
 #
 #  Usage:
 #      charly check run check-omarchy-pr-<N>-vm  (oracle-generated bed under pr-beds/pr-<N>/)

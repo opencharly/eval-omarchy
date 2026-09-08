@@ -5,9 +5,8 @@
 An omarchy PR is a candy claim: its author says it works. Eval-omarchy is where
 that claim is tasted — not with a mock palate, but on a real omarchy system, the
 way another user would. The evaluation answers one binary question: **does it
-actually work?** It is an EXTERNAL, NON-AUTHORITATIVE evaluation performed by
-opencharly.ai: informational only, never a substitute for upstream review, never
-a gate on the PR's merge.
+actually work?** The evaluation is done by opencharly.ai on disposable golden-VM environments and every
+report says plainly what was tested and how it went.
 
 ## The tenets
 

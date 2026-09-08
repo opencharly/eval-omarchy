@@ -106,7 +106,7 @@ Batch/concurrency sequencing: `skills/omarchy-eval-sequencing/SKILL.md`.
     author the evaluation validates it: never mock, known-red (every PR-specific check
     fails without the PR), tier compliance (system-behavior PRs on the live VM;
     wrong-tier = FAIL), claims scoped to the tier, recordings non-empty and showing
-    the actual commands, Assisted-by footer present, disclaimer verbatim, triage
+    the actual commands, Assisted-by footer present, triage
     applied. The verdict is recorded in the report; a report that fails the cold read
     is fixed, not posted. Rubric: `skills/omarchy-eval-cold-reader/SKILL.md`.
 
@@ -174,7 +174,7 @@ No report is finalized and no comment is posted until ALL hold:
   report; a report that fails the cold read is fixed, not posted.
 - **Process cleanliness:** any process defect (non-red probe, wrong tier, claim
   scoped beyond the tier, media missing/empty or not showing the commands, footer or
-  disclaimer missing) = **REDO-PROCESS** (setup update + full re-run), never a posted
+  footer missing) = **REDO-PROCESS** (setup update + full re-run), never a posted
   report.
 - **Evidence persisted:** `eval/evidence/<pr>-<calver>/summary.yml` + per-check logs
   committed; recordings assembled in `media/<pr>-<calver>/` (gitignored).

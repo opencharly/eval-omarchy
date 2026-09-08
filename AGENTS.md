@@ -11,9 +11,9 @@ eval-omarchy is the home of the **omarchy PR evaluation test environments** and 
 apply the PR to a real omarchy system, use it, and report what happened — on
 disposable test environments, with the full evidence rigor.
 
-Every evaluation is **EXTERNAL, NON-AUTHORITATIVE** (performed by opencharly.ai,
-informational only, never gates the PR's merge). Hardware-bound classes may be
-PARTIAL/NOT-EVALUABLE — never a faked test environment.
+Every evaluation runs on the disposable golden-VM lane described in the skills and
+reports what was tested and how it went; a class the machine cannot test is recorded as
+PARTIAL/NOT-EVALUABLE with the blocker, as part of the test record.
 
 ## The eval rules (every PR evaluation)
 
@@ -68,13 +68,13 @@ to the Tier-2 live VM, never mocked.
 
 - Every report (`eval/pr-<N>.md`) and every posted PR comment is rendered from
   `eval/PR-EVAL-TEMPLATE.md` — in user-testing voice, carrying the EXTERNAL,
-  NON-AUTHORITATIVE disclaimer verbatim and the Assisted-by footer.
+  the Assisted-by footer.
 - Claims are scoped to the tier that produced them; untested live behavior is stated
   explicitly ("requires the Tier-2 VM lane").
 - Every evaluation result is validated by a **cold reader** against the criteria before
   it is finalized or posted — a fresh reader who did not author the evaluation checks
   never-mock, known-red, tier compliance, scoped claims, non-empty recordings, the
-  Assisted-by footer, the disclaimer, and triage. A report that fails the cold read
+  Assisted-by footer, and triage. A report that fails the cold read
   is fixed, not posted.
 - Reports are **plain language** — understandable to an average user and to an agent
   that knows nothing about opencharly. No charly-internal jargon (R-numbers, ADE,

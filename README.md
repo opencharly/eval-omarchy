@@ -2,11 +2,7 @@
 
 Dedicated home for the **omarchy PR evaluation test environments** and their **eval results**.
 
-> **External, non-authoritative:** every evaluation in this repo is an **EXTERNAL,
-> NON-AUTHORITATIVE evaluation** performed by **opencharly.ai**. It is informational
-> only: it does not represent, endorse, or bind omacom/omarchy or its maintainers, is
-> not a substitute for upstream review, and does not approve, block, or gate the PR's
-> merge. Hardware-bound classes may be PARTIAL/NOT-EVALUABLE — never faked.
+
 
 Every evaluation answers one binary question — **does the PR actually work?** — on a
 real omarchy system, the way another user would try it. The PR's files are applied at
@@ -109,7 +105,7 @@ in the skills.
 | `pr-beds/pr-<N>/charly.yml` | Dedicated per-PR configs (the charly.yml IS the plan) — clone + RED-PROBE twin + eval bed |
 | `skills/` | The lane instructions as proper skills (see above) |
 | `eval/PR-EVAL-LANE.md` | Thin signpost to the skills |
-| `eval/PR-EVAL-TEMPLATE.md` | The report/comment template (user-testing voice, disclaimer verbatim, Assisted-by footer) |
+| `eval/PR-EVAL-TEMPLATE.md` | The report/comment template (user-testing voice, Assisted-by footer) |
 | `eval/pr-<N>.md` | Per-PR evaluation reports |
 | `eval/evidence/` | Committed small evidence per pr+calver (summary, verdict, stage findings, TELEMETRY) |
 | `media/` | Recording artifacts — **gitignored** |
@@ -128,10 +124,14 @@ the tree must be green) and a libvirt session. The environment is `disposable: t
 — the full sequence runs unattended end to end. In normal operation the lane is
 driven by the pi agents and the skills, not by hand.
 
+Every evaluation reports what was actually tested on the golden-VM lane below and how it
+went; a class the machine cannot test is recorded as PARTIAL/NOT-EVALUABLE with the
+blocker, as part of the test record.
+
 ## Contributing / landing changes
 
 See `CONTRIBUTING.md` (requirements, the lane, the publication gate) and `VISION.md`
-(the external, non-authoritative boundary). Changes land PR-only on `feat/` branches;
+(what this evaluation is and how it runs). Changes land PR-only on `feat/` branches;
 the org-wide `charly/pr-validator` gates the merge and `tag-on-merge` writes the
 CHANGELOG from the PR body. This repo is an umbrella submodule — the umbrella records
 the gitlink after the merge.
