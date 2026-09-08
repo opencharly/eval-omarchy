@@ -1,2 +1,12 @@
+.build/
+.check/
+.containerignore
+.dockerignore
+media/
+output/
+*.bak*
+*.log
+.rollup-cache.json
+
 __pycache__/
 *.pyc
