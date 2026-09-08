@@ -1,7 +1,7 @@
 ---
 name: omarchy-eval-media
 description: |-
-  undefined
+  The mandatory record:/spice: evidence loop, media assembly into media/<pr>-<calver>/, and the three-artifact media contract. Use when running or grading eval evidence.
 ---
 
 # Media contract — recordings, artifacts, density, assembly

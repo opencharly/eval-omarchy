@@ -1,7 +1,7 @@
 ---
 name: omarchy-eval-tiers
 description: |-
-  undefined
+  What each tier proves (container vs live VM vs visual/GPU) and the mandatory routing rule. Use before scoping an eval claim.
 ---
 
 ## What each tier proves (honest semantics)

@@ -1,7 +1,7 @@
 ---
 name: omarchy-eval-full-loop
 description: |-
-  undefined
+  The full loop: every stage grades the previous stage and can trigger a change (redo-plan/redo-run/redo-read/escalate; the runner CONFIG AUDIT; the loop guard). Use when orchestrating or disputing an eval.
 ---
 
 # The full loop — every stage grades the previous stage, any stage can trigger a change

@@ -148,7 +148,7 @@ system, try to install the missing software for real, test the real behavior wit
 real tools, and record a PARTIAL with the real evidence):
 `skills/omarchy-eval-oracle/SKILL.md`.
 
-## The ORACLE rules and tier routing (condensed — full detail in references/)
+## The ORACLE rules and tier routing (condensed — full detail in `skills/omarchy-eval-oracle/SKILL.md` and `skills/omarchy-eval-tiers/SKILL.md`)
 
 - **ORACLE marker rule (mandatory):** a PR-specific check marker MUST be a
   **diff-ADDED token** (a string in the PR's added lines, never a word that

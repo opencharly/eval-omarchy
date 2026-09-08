@@ -1,7 +1,7 @@
 ---
 name: omarchy-eval-cold-reader
 description: |-
-  undefined
+  The cold-reader rubric: artifacts-only grading, SUBJECT + PROCESS verdicts, the deep-eval tool protocol. Use before finalizing any eval result.
 ---
 
 ## COLD-READER RUBRIC (M6, permanent) — the grading contract for every eval result

@@ -1,7 +1,7 @@
 ---
 name: omarchy-eval-work-lane
 description: |-
-  undefined
+  The eval/pr-<N>.md frontmatter schema (triage|tier|known_red|cold_read|verdict) and the routing table. Use when authoring or consuming reports.
 ---
 
 # Work-lane schema — eval/pr-<N>.md frontmatter
