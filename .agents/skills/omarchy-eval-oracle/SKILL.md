@@ -29,8 +29,8 @@ semantics). An eval of a HARDWARE-dependent PR on a box WITHOUT that hardware is
 
 | PR | Subject | Hardware class | VM config |
 |---|---|---|---|
-| #9332 | hybrid GPU switching (supergfxctl → cardwire) | **GPU — the REAL cardwire GPU switching needs the passed-through GPU** | `omarchy-vm-clone-<N>` + `requires_exclusive: [nvidia-gpu]`, SERIAL (one GPU) |
-| software PRs | (everything else, e.g. Btrfs/low-space, flatpak, keybindings, panels) | software | `omarchy-vm-clone-<N>` (lean) |
+| #9332 | hybrid GPU switching (supergfxctl → cardwire) | **GPU — the REAL cardwire GPU switching needs the passed-through GPU** | `check-omarchy-pr-<N>-vm` (drive) + `requires_exclusive: [nvidia-gpu]`, SERIAL (one GPU) |
+| software PRs | (everything else, e.g. Btrfs/low-space, flatpak, keybindings, panels) | software | `check-omarchy-pr-<N>-vm` (drive, lean base) |
 
 - **Lean class (software PRs):** the clone (COW overlay on the golden), no GPU,
   **ram 2G / cpu 1** (the committed per-PR beds are the record) — runs MANY in PARALLEL,
@@ -50,7 +50,7 @@ The lane is per-channel: the STABLE/current channel instrumented golden is
 dev channel bases live in the distro-omarchy import
 (`check-charly-omarchy-{rc,edge,dev}-vm`, each the stable base + its channel bootstrap,
 dev hosts the `~/omarchy` source checkout — the PRIMARY upstream-code lane). A PR's
-channel is chosen from its base/diff; the clone drives `from_vm:` the PR's channel base
+channel is chosen from its base/diff; the clone drives `from: <channel-base>:golden`
 and the report records channel + base provenance (channel, ISO calver, snapshot id).
 
 ## ORACLE TEMPLATE (§Template) — the canonical dedicated per-PR config
@@ -62,30 +62,22 @@ changed files, `## Verification` claim, known-red markers) and authors
 is the single artifact (the M4-era `pr-plans/eval-plan-<N>.json` orchestrator files
 were removed in the legacy cut — the charly.yml is the only plan artifact).
 
+> RUNTIME-FIXED (measured 2026-08-08): the clone-ENTITY grammar (source.kind: clone +
+> from_vm/from_snapshot/ram/cpu) VALIDATES but is REJECTED at RUNTIME vm-build on the
+> current charly ("source.from_snapshot is required for clone" — the verification run
+> failed at probe vm-build). The executable clone is the **from: <base>:<tag> DRIVE**;
+> the drive INHERITS the shape from its target, so per-entity ram/cpu is impossible —
+> the lean 2G/1cpu sizing lives on the BASE entity (`omarchy-vm` at ram 2G / cpu 1;
+> all clones inherit it). PROBE beds carry NO media loop (media skill). The CONFIG
+> AUDIT MUST include a RUNTIME check (a real vm-build launch), not only `charly box
+> validate`.
+
 ```yaml
-omarchy-vm-clone-<N>:
-    vm:
-        source: {kind: clone, from_vm: <channel-base>, from_snapshot: golden}
-        disk_size: 40G
-        ram: 2G
-        cpu: 1
-        machine: q35
-        firmware: uefi-insecure
-        network: {mode: user}
-        ssh: {user: user, port_auto: true, key_source: generate}
-        backend: libvirt
-        libvirt:
-            devices:
-                channels: [{type: spicevmc, name: com.redhat.spice.0}]
-                graphics: [{type: spice, listen: [{type: socket}]}]
-                video: [{model: virtio, vram: 65536, heads: 1, accel3d: false}]
-                rng: [{model: virtio, backend: /dev/urandom}]
-                memballoon: {model: virtio}
-            snippets:
-                - "<channel type='unix'><target type='virtio' name='org.qemu.guest_agent.0'/></channel>"
 check-omarchy-pr-<N>-vm:
     vm:
-        from: omarchy-vm-clone-<N>
+        from: <channel-base>:golden
+        disposable: true
+        lifecycle: dev
         disposable: true
         lifecycle: dev
         add_candy:              # ONLY the plugin provider candies (verbs register at check-run time)

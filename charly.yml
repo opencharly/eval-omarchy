@@ -57,8 +57,8 @@ omarchy-vm:
                 disk: /dev/vda
                 encrypt: false
         disk_size: 40G
-        ram: 4G
-        cpu: 4
+        ram: 2G
+        cpu: 1
         machine: q35
         firmware: uefi-insecure
         network: {mode: user}

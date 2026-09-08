@@ -6,6 +6,9 @@ description: |-
 
 # Lane sequencing — orphans, gates, launch, preflight, concurrency
 
+## FAIL-HARD CONTRACT (binding)
+On ANY unexpected failure (runtime, config, infra, resolution error) the lane agent MUST: (1) STOP all further execution immediately — no partial continuation, no workaround, no blind retry; (2) preserve every piece of evidence (logs, summary.yml, exit codes, the failing step) in the checkpoint; (3) write an RCA-READY failure block: the exact error, the step, the bed/entity, expected vs observed, first hypothesis; (4) FAIL THE RUN LOUDLY — never idle, never claim waiting, never declare success on partial work. Idling or continuing past an unresolved failure is a contract violation; the parent RCA's every such report.
+
 ### The RUNNER orphan-sequencing rule (mandatory)
 
 A FAILED probe leaves the VM running "for debugging"; `charly check stop` releases the
