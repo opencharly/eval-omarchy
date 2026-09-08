@@ -27,8 +27,9 @@ semantics). An eval of a HARDWARE-dependent PR on a box WITHOUT that hardware is
 | software PRs | (everything else, e.g. Btrfs/low-space, flatpak, keybindings, panels) | software | `omarchy-vm-clone-<N>` (lean) |
 
 - **Lean class (software PRs):** the clone (COW overlay on the golden), no GPU,
-  **ram 2G / cpu 1** (the committed per-PR beds are the record) — runs MANY in PARALLEL
-  (≈16 evals on a 64G host; each VM starts from the golden, no rebuild).
+  **ram 2G / cpu 1** (the committed per-PR beds are the record) — runs MANY in PARALLEL,
+  ONE EVAL LANE PER CPU CORE by default (concurrency = nproc, capped so 2G × lanes ≤
+  host RAM); each VM starts from the golden, no rebuild).
 - **GPU class (GPU PRs):** the same clone PLUS the NVIDIA GPU passthrough
   (`requires_exclusive: [nvidia-gpu]`, whole-IOMMU-group hostdev auto-allocated by
   `charly vm create`, entity uses `backend: libvirt` + `firmware: uefi-insecure`).

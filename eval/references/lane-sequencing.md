@@ -47,7 +47,8 @@ on re-runs) is recorded for the plugin-vm lifecycle PR.
 - **Shared ssh-config state:** the shared `~/.config/charly/ssh_config` rewrite races
   across parallel lanes (deploy-add "Could not resolve hostname"); a retry after the
   config settles succeeds. Recorded as an upstream candidate.
-- **Lane ceiling:** lane count stays ≤ 16 unless the per-lane cost shrinks further —
+- **Lane ceiling:** default = ONE EVAL LANE PER CPU CORE (concurrency = nproc, capped
+  so 2G × lanes ≤ host RAM); the measured cap stays ≤ the core count —
   beyond 16 concurrent VM lifecycles the vm-store/libvirt queue inflates the late
   slots and throughput goes DOWN (measured at 32).
 - **Launch detachment:** long lanes MUST be launched detached —

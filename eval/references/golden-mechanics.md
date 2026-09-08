@@ -28,10 +28,11 @@ chosen:
 | #9921 | SUPER+A select-all keybinding | software | `omarchy-vm-clone` (lean) |
 | #9923 | network panel split-brain | software | `omarchy-vm-clone` (lean) |
 
-- **Lean class (software PRs):** `omarchy-vm-clone` — the clone (COW overlay on the
-  golden), **no GPU**, 4G RAM — runs MANY in PARALLEL (≈ 16 evals on a 64G host; each
-  VM starts from the golden, no rebuild). A GPU-less eval of a software PR is correct
-  AND the fastest possible.
+- **Lean class (software PRs):** `omarchy-vm-clone-<N>` — the clone (COW overlay on the
+  golden), **no GPU**, ram 2G / cpu 1 (the committed per-PR beds are the record) — runs
+  MANY in PARALLEL, ONE EVAL LANE PER CPU CORE by default (concurrency = nproc, capped
+  so 2G × lanes ≤ host RAM); each VM starts from the golden, no rebuild. A GPU-less
+  eval of a software PR is correct AND the fastest possible.
 - **GPU class (GPU PRs):** `omarchy-vm-clone-gpu` — the same clone PLUS the NVIDIA
   GPU passthrough (`requires_exclusive: [nvidia-gpu]`, the whole-IOMMU-group hostdev
   auto-allocated by `charly vm create`). The REAL cardwire GPU switching is only
