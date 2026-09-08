@@ -82,8 +82,6 @@ check-omarchy-pr-<N>-vm:
         from: <channel-base>:golden
         disposable: true
         lifecycle: dev
-        disposable: true
-        lifecycle: dev
         add_candy:              # ONLY the plugin provider candies (verbs register at check-run time)
             - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
             - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
