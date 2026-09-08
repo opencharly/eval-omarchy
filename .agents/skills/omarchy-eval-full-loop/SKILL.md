@@ -6,6 +6,9 @@ description: |-
 
 # The full loop — every stage grades the previous stage, any stage can trigger a change
 
+## FAIL-HARD CONTRACT (binding)
+Any stage that encounters a failure — runtime, config, evidence-shaped, lock, build — MUST FAIL HARD: stop, preserve evidence, write the RCA-ready failure block, and report failure. NO idling, NO silent continuation, NO retry-without-RCA, NO invented progress. Every failure report is a first-class finding for RCA. The CONFIG AUDIT must include a RUNTIME verification (a real vm-build/probe launch), not only file-shape checks — a config that validates but fails at runtime is a hard FAIL.
+
 The lane is not a one-way pipe: EVERY stage fully evaluates the work of the agent BEFORE
 it and can TRIGGER A CHANGE. The trigger is deterministic evidence, never opinion: a
 dispute settles on the artifacts first, then a bounded council (supervisor-mediated,
