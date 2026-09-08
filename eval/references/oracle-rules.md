@@ -14,10 +14,106 @@ carry only `check:` steps.
 The probe proves known-red (S7) AND golden freshness; a probe that passes = stale golden
 or a non-red check → re-provision the golden (delete-before-recapture; the golden must
 survive — RCA #7: a failed capture run must not destroy it, the runner verifies golden
-presence post-run). Class routing, channel choice, vCPU/RAM sizing and the expected-phase
-budget (feeding plan stage 3) belong to the oracle (Tier-0 venue ladder; GPU class SERIAL
-`requires_exclusive: [nvidia-gpu]`; a system-behavior PR evaluated only in a container is
-a HARD FAIL).
+presence post-run).
+
+## Purpose-built VM configs — match the PR's hardware class (MANDATORY)
+
+Every PR is classified BEFORE its bed is authored (Tier-0 venue ladder / lane tier
+semantics). An eval of a HARDWARE-dependent PR on a box WITHOUT that hardware is useless:
+
+| PR | Subject | Hardware class | VM config |
+|---|---|---|---|
+| #9332 | hybrid GPU switching (supergfxctl → cardwire) | **GPU — the REAL cardwire GPU switching needs the passed-through GPU** | `omarchy-vm-clone-<N>` + `requires_exclusive: [nvidia-gpu]`, SERIAL (one GPU) |
+| software PRs | (everything else, e.g. Btrfs/low-space, flatpak, keybindings, panels) | software | `omarchy-vm-clone-<N>` (lean) |
+
+- **Lean class (software PRs):** the clone (COW overlay on the golden), no GPU,
+  **ram 2G / cpu 1** (the committed per-PR beds are the record) — runs MANY in PARALLEL
+  (≈16 evals on a 64G host; each VM starts from the golden, no rebuild).
+- **GPU class (GPU PRs):** the same clone PLUS the NVIDIA GPU passthrough
+  (`requires_exclusive: [nvidia-gpu]`, whole-IOMMU-group hostdev auto-allocated by
+  `charly vm create`, entity uses `backend: libvirt` + `firmware: uefi-insecure`).
+  SERIAL — one GPU, one such eval at a time. NEVER evaluate a GPU PR on a lean box.
+- **A system-behavior PR evaluated only in a container is a HARD FAIL** (routing rule).
+
+## Per-channel golden bases
+
+The lane is per-channel: the STABLE/current channel instrumented golden is
+`check-omarchy-eval-base-inst` (charly + autologin + record tools incl. acpid + pr-apply
++ pre-seeded eval heads + warmed cache, captured `on_finalize: golden`). The rc / edge /
+dev channel bases live in the distro-omarchy import
+(`check-charly-omarchy-{rc,edge,dev}-vm`, each the stable base + its channel bootstrap,
+dev hosts the `~/omarchy` source checkout — the PRIMARY upstream-code lane). A PR's
+channel is chosen from its base/diff; the clone drives `from_vm:` the PR's channel base
+and the report records channel + base provenance (channel, ISO calver, snapshot id).
+
+## ORACLE TEMPLATE (§Template) — the canonical dedicated per-PR config
+
+The plan IS the per-PR config: the config-oracle analyses the PR (class, channel, tier,
+changed files, `## Verification` claim, known-red markers) and authors
+`pr-beds/pr-<N>/charly.yml` DIRECTLY (gate: `charly box validate`; NO hand-edits; no
+`run:` steps — mutation lives in candies, RCA #2). No separate plan JSON: the charly.yml
+is the single artifact (legacy `pr-plans/eval-plan-<N>.json` files exist from the M4-era
+orchestrator and are NOT part of the current workflow).
+
+```yaml
+omarchy-vm-clone-<N>:
+    vm:
+        source: {kind: clone, from_vm: <channel-base>, from_snapshot: golden}
+        disk_size: 40G
+        ram: 2G
+        cpu: 1
+        machine: q35
+        firmware: uefi-insecure
+        network: {mode: user}
+        ssh: {user: user, port_auto: true, key_source: generate}
+        backend: libvirt
+        libvirt:
+            devices:
+                channels: [{type: spicevmc, name: com.redhat.spice.0}]
+                graphics: [{type: spice, listen: [{type: socket}]}]
+                video: [{model: virtio, vram: 65536, heads: 1, accel3d: false}]
+                rng: [{model: virtio, backend: /dev/urandom}]
+                memballoon: {model: virtio}
+            snippets:
+                - "<channel type='unix'><target type='virtio' name='org.qemu.guest_agent.0'/></channel>"
+check-omarchy-pr-<N>-vm:
+    vm:
+        from: omarchy-vm-clone-<N>
+        disposable: true
+        lifecycle: dev
+        add_candy:              # ONLY the plugin provider candies (verbs register at check-run time)
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+        plan:
+            - check: apply PR #<N> via the single apply seam
+              id: pr-apply
+              context: [runtime]
+              command: 'pr-apply <N> <sha> <file...>'
+            # … the PR-specific behavior checks (every one known-red: diff-ADDED markers,
+            #   proven-landing paths; ids unique) …
+            # … the FULL record:/spice: evidence loop (mandatory, rule 6):
+            #   rec-start (record: start) → rec-spice-start (spice: record) → rec-drive
+            #   (record: run) → rec-screen-spice (spice: screenshot) → rec-spice-stop
+            #   (spice: record stop → .mjpeg) → rec-stop (record: stop → .cast) →
+            #   rec-gif (record: gif) → rec-mp4 (ffmpeg transcode) …
+check-omarchy-pr-<N>-vm-probe:   # RED-PROBE twin: same checks, NO apply — must FAIL (exit 2)
+    vm:
+        from: omarchy-vm-clone-<N>
+        disposable: true
+        lifecycle: dev
+        add_candy: [plugin-record, plugin-spice pins]
+        plan:
+            # … the SAME PR-specific checks, no pr-apply step …
+```
+
+Media contract (rule 6): every evaluation produces a terminal asciinema `.cast` AND a
+screen recording; the record: and spice: steps pull every artifact onto the host; the
+EVAL RUNNER assembles them into the gitignored `media/<pr>-<calver>/` (pi file tools, no
+scripts) and the COLD READER grades them (vision on the frames + the deterministic .cast
+text).
+
+Expected-phase budget (per-PR ram/cpu/phase estimates feeding stage 3 anomaly detection)
+belongs to the oracle's plan.
 
 The SUPERVISOR agent maintains the verdict ledger (the `.check/` summaries ARE the
 data; the golden sha256 sidecar keys staleness — a re-provisioned golden invalidates
