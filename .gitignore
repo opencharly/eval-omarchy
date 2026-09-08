@@ -7,3 +7,6 @@ output/
 *.bak*
 *.log
 .rollup-cache.json
+
+__pycache__/
+*.pyc

@@ -1,0 +1,73 @@
+{
+  "pr": "10144",
+  "headSha": "ca17c1854aca4c0ed4d1bcd7818e4132c172ad05",
+  "calver": "2026.251.1427",
+  "verdict": "PASS",
+  "probeExit": 2,
+  "evalExit": 0,
+  "probeSummary": "/tmp/redo-wave2/eval/evidence/REDO-WAVE/runs/pr-10144-probe-summary.yml",
+  "evalSummary": "/tmp/redo-wave2/eval/evidence/REDO-WAVE/runs/pr-10144-eval-summary.yml",
+  "mediaDir": "/tmp/redo-wave2/media/pr-10144-2026.251.1427",
+  "media5of5": true,
+  "artifactSizes": {
+    "cast": 1352,
+    "gif": 27662,
+    "mjpeg": 782829,
+    "mp4": 76364,
+    "screenPng": 1255334
+  },
+  "lockIncidents": 0,
+  "evalTotalSeconds": 57,
+  "evalSteps": [
+    {
+      "name": "vm-build",
+      "duration_seconds": 1,
+      "ok": true
+    },
+    {
+      "name": "vm-create",
+      "duration_seconds": 1,
+      "ok": true
+    },
+    {
+      "name": "deploy-add",
+      "duration_seconds": 14,
+      "ok": true
+    },
+    {
+      "name": "bring-up-members",
+      "duration_seconds": 0,
+      "ok": true
+    },
+    {
+      "name": "check-live",
+      "duration_seconds": 17,
+      "ok": true
+    },
+    {
+      "name": "gate-restart-stop",
+      "duration_seconds": 1,
+      "ok": true
+    },
+    {
+      "name": "gate-restart-start",
+      "duration_seconds": 0,
+      "ok": true
+    },
+    {
+      "name": "check-live-rebuild",
+      "duration_seconds": 19,
+      "ok": true
+    },
+    {
+      "name": "cleanup",
+      "duration_seconds": 3,
+      "ok": true
+    },
+    {
+      "name": "cleanup-members",
+      "duration_seconds": 0,
+      "ok": true
+    }
+  ]
+}
