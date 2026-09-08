@@ -6,16 +6,19 @@ description: |-
 
 # Lane sequencing — orphans, gates, launch, preflight, concurrency
 
-## VM-BUILD OVERLAY WRITE-LOCK RACE (measured 2026-08-08, 16-lane wave)
-Every `charly check run` vm-build rewrites the SHARED per-checkout drive overlay
-(`output/qcow2/check-omarchy-eval-base-inst/disk.qcow2`) and attaches it read-write for
-the VM's life — so ANY overlapping lanes collide at qemu-img
-(`Failed to get "write" lock`; 16/21 runs in the wave). The launch-time ZERO-live-VMs
-gate is insufficient: holders appear DURING vm-build. EVERY LANE MUST re-gate
-immediately before its own vm-build: verify no sibling check-run holds the overlay (ps
-sibling pids + fuser on the overlay path); on a hit → REDO-INFRA for THAT lane (redo-run
-after the holder finishes) — never a bed defect, never silent retry. Upstream fix
-(charly plugin-vm): per-bed overlay isolation — recorded as a named dependency.
+## VM-BUILD OVERLAY WRITE-LOCK RACE — FIXED (shipped 2026-09-08)
+The from:-drive clone build is now IDEMPOTENT: plugin-vm#29 + charly#569 (tag
+v2026.251.1204) make `BuildClone` SKIP overlay creation when the target already
+materializes the resolved snapshot, and the backing resolves to the SNAPSHOT-STORE disk
+(`snapshots/<tag>/disk.qcow2`) opened READ-ONLY — the shared per-checkout overlay is
+never rewritten by a build after the golden capture (the previous every-build rewrite
++ read-write attach caused `Failed to get "write" lock` on overlapping lanes). PROVEN
+by the 14/14 redo wave (2026-09-08, fixed binary 2026.251.1146): 8 concurrent probe
+vm-builds with 5+ live sibling clones → zero lock incidents across all 28 lane logs;
+eval vm-builds idempotent-skip at 1.5-2.7s. Belt-and-braces (cheap, never load-bearing
+now): a lane still re-gates immediately before its own vm-build (sibling pids + fuser
+on the golden disk); on a residual hit → REDO-INFRA for THAT lane (redo-run after the
+holder finishes) — never a bed defect, never silent retry.
 
 ## FAIL-HARD CONTRACT (binding)
 On ANY unexpected failure (runtime, config, infra, resolution error) the lane agent MUST: (1) STOP all further execution immediately — no partial continuation, no workaround, no blind retry; (2) preserve every piece of evidence (logs, summary.yml, exit codes, the failing step) in the checkpoint; (3) write an RCA-READY failure block: the exact error, the step, the bed/entity, expected vs observed, first hypothesis; (4) FAIL THE RUN LOUDLY — never idle, never claim waiting, never declare success on partial work. Idling or continuing past an unresolved failure is a contract violation; the parent RCA's every such report.
