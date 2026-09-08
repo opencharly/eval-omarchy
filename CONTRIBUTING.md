@@ -61,3 +61,11 @@ comment is the operator's call, outside the repo's automated flows.
 - R10: verify from the final committed tree; a docs/config change that touches
   beds or the golden chain re-runs the affected bed and pastes the per-step
   output.
+
+## Which skills to load
+
+The lane instructions are the proper skills under `skills/` — see the index in
+`skills/omarchy-eval-lane/SKILL.md` (entry) and AGENTS.md R0. Load the entry + the
+skills your task touches (oracle for authoring beds, golden for provisioning, media
+for evidence, cold-reader for grading, full-loop for the redo contract) before any
+eval work.
