@@ -37,7 +37,7 @@ REPO = Path(__file__).resolve().parent.parent
 EVAL = REPO / "eval"
 SKILLS_DIR = REPO / ".agents" / "skills"
 EVIDENCE = EVAL / "evidence"
-UMBRELLA = Path("/home/atrawog/Sync/Atrapub/coder/pi/opencharly")
+UMBRELLA = Path(os.environ.get("EVAL_UMBRELLA") or REPO.parent)  # env-overridable; umbrella when eval-omarchy is a submodule
 REPO_URL = "omacom/omarchy"
 CFG = dict(debug=False, pi="pi", charly="/tmp/charly-r10-fixed/bin/charly", workdir=None)
 
