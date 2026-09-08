@@ -52,8 +52,8 @@ The plan IS the per-PR config: the config-oracle analyses the PR (class, channel
 changed files, `## Verification` claim, known-red markers) and authors
 `pr-beds/pr-<N>/charly.yml` DIRECTLY (gate: `charly box validate`; NO hand-edits; no
 `run:` steps — mutation lives in candies, RCA #2). No separate plan JSON: the charly.yml
-is the single artifact (legacy `pr-plans/eval-plan-<N>.json` files exist from the M4-era
-orchestrator and are NOT part of the current workflow).
+is the single artifact (the M4-era `pr-plans/eval-plan-<N>.json` orchestrator files
+were removed in the legacy cut — the charly.yml is the only plan artifact).
 
 ```yaml
 omarchy-vm-clone-<N>:
