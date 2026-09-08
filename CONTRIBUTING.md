@@ -1,9 +1,7 @@
 # Contributing to eval-omarchy
 
-Every evaluation in this repo is an **EXTERNAL, NON-AUTHORITATIVE** evaluation
-performed by opencharly.ai — informational only, never a substitute for upstream
-review, never a gate on the PR's merge. Read `VISION.md` for the boundary and
-`README.md` for what this repo is.
+This repo runs evaluations of omacom/omarchy PRs on disposable golden-VM
+environments — read `VISION.md` for what that is and `README.md` for how it works.
 
 ## What you need
 
@@ -46,7 +44,7 @@ preflight compares the plan's headSha with the live PR head.
 ## The publication gate
 
 Reports are rendered from `eval/PR-EVAL-TEMPLATE.md` (user-testing voice, the
-EXTERNAL, NON-AUTHORITATIVE disclaimer verbatim, the `*Assisted-by:*` footer).
+the `*Assisted-by:*` footer).
 **Nothing posts to omacom/omarchy without explicit operator approval.** Every posted
 comment is the operator's call, outside the repo's automated flows.
 
@@ -63,3 +61,11 @@ comment is the operator's call, outside the repo's automated flows.
 - R10: verify from the final committed tree; a docs/config change that touches
   beds or the golden chain re-runs the affected bed and pastes the per-step
   output.
+
+## Which skills to load
+
+The lane instructions are the proper skills under `skills/` — see the index in
+`skills/omarchy-eval-lane/SKILL.md` (entry) and AGENTS.md R0. Load the entry + the
+skills your task touches (oracle for authoring beds, golden for provisioning, media
+for evidence, cold-reader for grading, full-loop for the redo contract) before any
+eval work.

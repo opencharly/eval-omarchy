@@ -1,3 +1,9 @@
+---
+name: omarchy-eval-oracle
+description: |-
+  The per-PR config the config-oracle authors: class/lean sizing, per-channel goldens, the ORACLE TEMPLATE, pr-apply seam, marker/path rules, known-red contract. Use before authoring a pr-beds/pr-<N>/charly.yml.
+---
+
 # Oracle rules — the apply seam, the ORACLE TEMPLATE, the check-plan contract
 
 ## The apply seam — the ONE runtime seam (pr-apply), no nested templates

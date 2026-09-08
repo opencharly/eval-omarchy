@@ -1,3 +1,9 @@
+---
+name: omarchy-eval-work-lane
+description: |-
+  The eval/pr-<N>.md frontmatter schema (triage|tier|known_red|cold_read|verdict) and the routing table. Use when authoring or consuming reports.
+---
+
 # Work-lane schema — eval/pr-<N>.md frontmatter
 
 Binding route: the eval lane contract lives in eval/PR-EVAL-LANE.md (the entry) and
@@ -43,5 +49,5 @@ eval:
 ## Ownership
 
 - The schema is defined ONCE here; the cold-reader rubric grades against it
-  (eval/references/cold-reader.md); the report template (eval/PR-EVAL-TEMPLATE.md)
+  (skills/omarchy-eval-cold-reader/SKILL.md); the report template (eval/PR-EVAL-TEMPLATE.md)
   renders from these fields. Nothing else restates it (R3).

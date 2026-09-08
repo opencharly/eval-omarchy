@@ -5,9 +5,8 @@
 An omarchy PR is a candy claim: its author says it works. Eval-omarchy is where
 that claim is tasted — not with a mock palate, but on a real omarchy system, the
 way another user would. The evaluation answers one binary question: **does it
-actually work?** It is an EXTERNAL, NON-AUTHORITATIVE evaluation performed by
-opencharly.ai: informational only, never a substitute for upstream review, never
-a gate on the PR's merge.
+actually work?** The evaluation is done by opencharly.ai on disposable golden-VM environments and every
+report says plainly what was tested and how it went.
 
 ## The tenets
 
@@ -49,7 +48,7 @@ known-red fixture): a probe that passes without the PR proves nothing.
 tense, in the lane contract — and what merely happened (dated RCA narratives,
 measured runs) belongs in the CHANGELOG, never on the standing pages.
    → charly's cookbook tenet (charly/VISION.md tenet 10), the lane-split
-   convention (eval/PR-EVAL-LANE.md + eval/references/).
+   convention (eval/PR-EVAL-LANE.md + skills/).
 
 7. **The bench evaluates itself.** The pipeline is pi agents driving disposable
 charly beds — the evaluation loop is part of the factory that builds the factory:

@@ -1,3 +1,9 @@
+---
+name: omarchy-eval-cold-reader
+description: |-
+  The cold-reader rubric: artifacts-only grading, SUBJECT + PROCESS verdicts, the deep-eval tool protocol. Use before finalizing any eval result.
+---
+
 ## COLD-READER RUBRIC (M6, permanent) — the grading contract for every eval result
 
 A cold read is a FRESH-CONTEXT validation of the eval evidence (the report + the media
@@ -8,7 +14,7 @@ A cold read is a FRESH-CONTEXT validation of the eval evidence (the report + the
   behavior is STRICTLY FORBIDDEN.
 - **PROCESS** (about the eval itself): every PR-specific check known-red (probe FAIL
   exit 2 observed), tier compliance (system PRs on the live VM), claims scoped to the
-  tier, media non-empty AND showing the commands, footer + disclaimer verbatim. Any
+  tier, media non-empty AND showing the commands, Assisted-by footer present. Any
   process defect = REDO-PROCESS (setup update + full re-run), never a posted report.
 
 ### The vision-deterministic cross-check (mandatory, the GNOME trap)

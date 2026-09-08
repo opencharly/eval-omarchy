@@ -1,3 +1,9 @@
+---
+name: omarchy-eval-tiers
+description: |-
+  What each tier proves (container vs live VM vs visual/GPU) and the mandatory routing rule. Use before scoping an eval claim.
+---
+
 ## What each tier proves (honest semantics)
 
 A claim in a report is only as strong as the tier that produced it. Never claim

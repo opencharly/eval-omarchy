@@ -1,3 +1,9 @@
+---
+name: omarchy-eval-golden
+description: |-
+  The golden VM chain runbook: provision/re-provision dual-state, golden-presence gates, per-PR clones, head-freshness. Use before any golden work.
+---
+
 # Golden mechanics — the ONE golden-backed lane, provision, keepers, clones
 
 ## The ONE eval lane — golden-backed VM (mandatory, R5)

@@ -4,14 +4,7 @@
 Fill every section; mark `N/A — <reason>` where a section genuinely does not apply (an
 empty section is not a valid answer). Delete the "Render instructions" block before saving.*
 
-> ## EXTERNAL, NON-AUTHORITATIVE evaluation — read first
->
-> This is an **EXTERNAL, NON-AUTHORITATIVE evaluation** of omacom/omarchy#<N>
-> performed by **opencharly.ai** via the opencharly/eval-omarchy test environments. It is
-> informational only: it does not represent, endorse, or bind omacom/omarchy or its
-> maintainers, is not a substitute for upstream review, and does not approve, block,
-> or gate the PR's merge. Hardware-bound classes may be PARTIAL/NOT-EVALUABLE.
-
+# What was tested and how
 ## What I tested
 
 - **Title:** <PR title>
@@ -71,7 +64,7 @@ All test environments above ran on testing tool version <version>; base provenan
 
 Every PR evaluation records BOTH lanes — this is mandatory, not optional. The recording
 steps are authored in the per-PR test environment (per the lane doc's "Standing rules"
-and the media contract in `eval/references/media-contract.md`), then referenced here:
+and the media contract in `skills/omarchy-eval-media/SKILL.md`), then referenced here:
 
 - **Terminal lane (asciinema):** `.cast` of the flow — `record: start` → `record: run|cmd` →
   `record: stop` with `artifact:` + `artifact_min_bytes`/`artifact_min_cast_events`; playback on
@@ -117,9 +110,9 @@ references them; small evidence stays committed in `eval/evidence/<pr>-<calver>/
   run; untested live behavior is stated explicitly ("requires the Tier-2 VM lane").
 - **Cold-read validated:** a fresh reader who did not author the evaluation validated
   the report against the criteria (never mock, known-red, tier compliance, claims
-  scoped, recordings non-empty, footer, disclaimer, triage) — verdict recorded.
+  scoped, recordings non-empty, footer, triage) — verdict recorded.
 - **Template-conform:** rendered from `eval/PR-EVAL-TEMPLATE.md`; no empty sections.
-- **Disclaimer:** EXTERNAL, NON-AUTHORITATIVE header present verbatim here AND in any posted comment.
+
 - **No faked test environment:** hardware-bound classes PARTIAL/NOT-EVALUABLE; every check ran on a real test environment.
 - **Evidence persisted:** `eval/evidence/<pr>-<calver>/summary.yml` + per-check log committed in-repo.
 - **Recordings:** both lanes captured and saved to `media/<pr>-<calver>/` (gitignored), referenced above.
@@ -148,7 +141,7 @@ references them; small evidence stays committed in `eval/evidence/<pr>-<calver>/
    triage note instead. Only PRs that pass triage get a full report.
 2. Copy this file to `eval/pr-<N>.md` and fill every section with EVIDENCE, not promises.
 3. Render the PR comment from "How it went" + "What I noticed" + "What I ran" (overall line +
-   per-check matrix first), disclaimer header verbatim on top. Write it the way a user who
+   per-check matrix first), a direct what-was-tested header on top. Write it the way a user who
    tried the PR would — first person, what worked, what did not, what I could not do.
 4. End EVERY posted comment with the Assisted-by footer:
    `*Assisted-by: <Harness> <Provider Full Model Name> (<confidence>)*`
@@ -161,6 +154,6 @@ references them; small evidence stays committed in `eval/evidence/<pr>-<calver>/
    who did NOT author the evaluation validates the report against the criteria —
    never mock, known-red, tier compliance (system-behavior PRs on the live VM;
    wrong-tier = FAIL), claims scoped to the tier, recordings non-empty and showing the
-   actual commands, Assisted-by footer, disclaimer verbatim, triage applied. Record
+   actual commands, Assisted-by footer, triage applied. Record
    the cold reader's verdict in the report; a report that fails the cold read is
    fixed, not posted.

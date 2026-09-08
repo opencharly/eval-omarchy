@@ -1,3 +1,9 @@
+---
+name: omarchy-eval-sequencing
+description: |-
+  Lane sequencing: orphan discipline, launch ordering, concurrency (one lane per CPU core), lock and ssh-config lessons in standing form. Use when scheduling parallel eval lanes.
+---
+
 # Lane sequencing — orphans, gates, launch, preflight, concurrency
 
 ### The RUNNER orphan-sequencing rule (mandatory)
