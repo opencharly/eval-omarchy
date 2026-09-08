@@ -1,0 +1,23 @@
+{
+  "pr": "10130",
+  "calver": "2026.251.1418",
+  "headSha": "21992f03f72c2b15bdeb135e9ae8e8bb21274e95",
+  "verdict": "PASS",
+  "probeExit": 2,
+  "evalExit": 0,
+  "evalSummary": "/tmp/redo-wave2/eval/evidence/REDO-WAVE/runs/pr-10130-eval-summary.yml",
+  "probeSummary": "/tmp/redo-wave2/eval/evidence/REDO-WAVE/runs/pr-10130-probe-summary.yml",
+  "mediaDir": "/tmp/redo-wave2/media/pr-10130-2026.251.1418",
+  "media5of5": true,
+  "artifactSizes": {
+    "cast": 952,
+    "gif": 15499,
+    "mjpeg": 1267420,
+    "mp4": 102304,
+    "screenPng": 1251711
+  },
+  "lockIncidents": 0,
+  "totalSeconds": 70,
+  "findings": "none",
+  "rcaBlock": "none"
+}

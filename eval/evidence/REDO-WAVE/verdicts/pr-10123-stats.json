@@ -1,0 +1,107 @@
+{
+  "pr": "10123",
+  "headSha": "51c4cf8148922ccb6f213f6f399856ace93bff32",
+  "probeExit": 2,
+  "evalExit": 0,
+  "subject": "PASS",
+  "probeSummary": "/tmp/redo-wave2/eval/evidence/REDO-WAVE/runs/pr-10123-probe-summary.yml",
+  "evalSummary": "/tmp/redo-wave2/eval/evidence/REDO-WAVE/runs/pr-10123-eval-summary.yml",
+  "mediaDir": "/tmp/redo-wave2/media/pr-10123-2026.251.1419",
+  "media5of5": true,
+  "artifactSizes": {
+    "cast": 1392,
+    "gif": 30159,
+    "mjpeg": 1612812,
+    "mp4": 107348,
+    "screenPng": 1251622
+  },
+  "lockIncidents": 0,
+  "reGate": "zero omarchy domains; golden disk 38076416B read-only not held by any pid; sibling lanes in flight (10115,10129,10130,10136)",
+  "teardownOk": true,
+  "checkpoint": "/tmp/redo-wave2-CHECKPOINT/pr-10123.md",
+  "findings": "none",
+  "rcaBlock": "none",
+  "failed": false,
+  "phases": {
+    "probe": [
+      {
+        "name": "vm-build",
+        "duration_seconds": 54,
+        "ok": true
+      },
+      {
+        "name": "vm-create",
+        "duration_seconds": 2,
+        "ok": true
+      },
+      {
+        "name": "deploy-add",
+        "duration_seconds": 20,
+        "ok": true
+      },
+      {
+        "name": "bring-up-members",
+        "duration_seconds": 0,
+        "ok": true
+      },
+      {
+        "name": "check-live",
+        "duration_seconds": 7,
+        "ok": false
+      }
+    ],
+    "eval": [
+      {
+        "name": "vm-build",
+        "duration_seconds": 1,
+        "ok": true
+      },
+      {
+        "name": "vm-create",
+        "duration_seconds": 2,
+        "ok": true
+      },
+      {
+        "name": "deploy-add",
+        "duration_seconds": 21,
+        "ok": true
+      },
+      {
+        "name": "bring-up-members",
+        "duration_seconds": 0,
+        "ok": true
+      },
+      {
+        "name": "check-live",
+        "duration_seconds": 22,
+        "ok": true
+      },
+      {
+        "name": "gate-restart-stop",
+        "duration_seconds": 1,
+        "ok": true
+      },
+      {
+        "name": "gate-restart-start",
+        "duration_seconds": 1,
+        "ok": true
+      },
+      {
+        "name": "check-live-rebuild",
+        "duration_seconds": 24,
+        "ok": true
+      },
+      {
+        "name": "cleanup",
+        "duration_seconds": 6,
+        "ok": true
+      },
+      {
+        "name": "cleanup-members",
+        "duration_seconds": 0,
+        "ok": true
+      }
+    ],
+    "total_seconds": 78
+  }
+}
