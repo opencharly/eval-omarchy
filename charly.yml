@@ -111,9 +111,9 @@ check-omarchy-eval-base-inst:
             on_finalize: golden
             mode: external
             keep_venue: true
-        # layer-charly is inherited from check-omarchy-eval-base:golden (the [charly]
-        # repo is already registered in the golden's pacman.conf); re-adding it here
-        # fails pacman with 'database already registered' (errors_fatal).
+        # NOTE: derives from omarchy-vm (post-#32); the [charly] repo configured in the base
+        # golden's pacman.conf is NOT inherited here and must not be re-added — re-adding
+        # a registered repo fails pacman with 'database already registered' (errors_fatal).
         add_candy:
             - omarchy-autologin
             - omarchy-eval-record
@@ -130,7 +130,7 @@ check-omarchy-eval-base-inst:
         plan:
             - run: full system upgrade + omarchy channel update (bakes the current channel state into the golden)
               id: inst-full-upgrade
-              command: 'pacman -Syu --noconfirm && omarchy-channel-update 2>/dev/null || true'
+              command: 'OMARCHY_ALLOW_DIRECT_PACMAN=1 pacman -Syu --noconfirm && omarchy-channel-update 2>/dev/null || true'
               context: [runtime]
             - run: clean the pacman cache (keeps the golden lean)
               id: inst-clean-cache
