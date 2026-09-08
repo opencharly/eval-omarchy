@@ -49,5 +49,5 @@ eval:
 ## Ownership
 
 - The schema is defined ONCE here; the cold-reader rubric grades against it
-  (eval/references/cold-reader.md); the report template (eval/PR-EVAL-TEMPLATE.md)
+  (skills/omarchy-eval-cold-reader/SKILL.md); the report template (eval/PR-EVAL-TEMPLATE.md)
   renders from these fields. Nothing else restates it (R3).
