@@ -32,13 +32,13 @@ Every evaluation clones the PR's **channel golden** as a lean COW overlay
 record), so each VM starts in seconds from the immutable golden. The golden survives
 every re-provision (RCA #7); a missing golden after capture is a BLOCK. The full
 provision/re-provision runbook (delete-before-recapture, dual-state cleanup,
-golden-presence gates, head-freshness) is the `skills/omarchy-eval-golden` skill.
+golden-presence gates, head-freshness) is the `.agents/skills/omarchy-eval-golden` skill.
 
 ## The evaluation workflow (the pi-agent lane)
 
 The pipeline runs on **pi agents** committed in the opencharly umbrella
 (`.pi/agents/omarchy-{config-oracle,eval-runner,eval-supervisor,cold-reader}.md`) and
-driven by the **skills in this repo** (`skills/omarchy-eval-lane` is the entry). There
+driven by the **skills in this repo** (`.agents/skills/omarchy-eval-lane` is the entry). There
 is no GitHub Action in the eval path.
 
 1. **TRIAGE + PLAN (config-oracle).** Classify the PR (class, channel, tier); read the
@@ -68,7 +68,7 @@ trigger a change: `redo-plan` (the oracle re-authors the config when it does not
 the PR up for a proper eval — the runner CONFIG AUDIT), `redo-run` (infra/media-pull
 errors), `redo-read` (incomplete media), `escalate` (loop guard ≥3 redo entrances →
 council/operator — never a silent re-run). Contract:
-`skills/omarchy-eval-full-loop`. **Nothing posts to omacom/omarchy automatically** —
+`.agents/skills/omarchy-eval-full-loop`. **Nothing posts to omacom/omarchy automatically** —
 publication is operator-gated.
 
 Lean PRs run in parallel — **ONE EVAL LANE PER CPU CORE** (nproc-derived, capped so
@@ -76,7 +76,7 @@ Lean PRs run in parallel — **ONE EVAL LANE PER CPU CORE** (nproc-derived, capp
 The supervisor owns the lane board, the evals/min telemetry (target ≤60 s/eval), and
 the REDO state machine.
 
-## The skills (this repo's `skills/`)
+## The skills (this repo's `.agents/skills/` — the Agent Skills standard location, discovered by pi and Claude Code)
 
 The lane instructions live as proper skills (frontmatter + body):
 
@@ -103,7 +103,7 @@ in the skills.
 | `candy/omarchy-pr-apply/` | The ONE runtime apply seam (`pr-apply <pr> <sha> <files...>`; the git-fetch block lives here and nowhere else) |
 | `candy/omarchy-eval-record/` `candy/omarchy-eval-harden/` | The recording + hardening candies baked into the instrumented golden |
 | `pr-beds/pr-<N>/charly.yml` | Dedicated per-PR configs (the charly.yml IS the plan) — clone + RED-PROBE twin + eval bed |
-| `skills/` | The lane instructions as proper skills (see above) |
+| `.agents/skills/` | The lane instructions as proper skills — the Agent Skills standard location; pi/Claude Code discover them here (see above) |
 | `eval/PR-EVAL-LANE.md` | Thin signpost to the skills |
 | `eval/PR-EVAL-TEMPLATE.md` | The report/comment template (user-testing voice, Assisted-by footer) |
 | `eval/pr-<N>.md` | Per-PR evaluation reports |

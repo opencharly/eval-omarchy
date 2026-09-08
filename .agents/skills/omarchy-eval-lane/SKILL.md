@@ -40,8 +40,8 @@ evidence → revert.
   own .check lock + domain + COW overlay); the only host limits are RAM (4G/VM) and
   vCPU (4/VM). The GPU-class eval runs alone (SERIAL).
 
-Hardware-class VM configs + the full golden mechanics: `skills/omarchy-eval-golden/SKILL.md`.
-Batch/concurrency sequencing: `skills/omarchy-eval-sequencing/SKILL.md`.
+Hardware-class VM configs + the full golden mechanics: `.agents/skills/omarchy-eval-golden/SKILL.md`.
+Batch/concurrency sequencing: `.agents/skills/omarchy-eval-sequencing/SKILL.md`.
 
 ## Standing rules (every PR evaluation)
 
@@ -74,7 +74,7 @@ Batch/concurrency sequencing: `skills/omarchy-eval-sequencing/SKILL.md`.
    asciinema `.cast` AND a full-screen video, saved to the gitignored
    `media/<pr>-<calver>/`. Check output must be surfaced on the system's desktop AND
    visible in the recording frames (checks-visible-in-recordings rule). Media
-   contract: `skills/omarchy-eval-media/SKILL.md`.
+   contract: `.agents/skills/omarchy-eval-media/SKILL.md`.
 7. **Create reusable software packages when software is missing.** When a PR needs
    software or tooling that does not exist yet, create a small reusable package for it
    — scaffold with the scaffolding tool; a description + at least one automated check
@@ -108,7 +108,7 @@ Batch/concurrency sequencing: `skills/omarchy-eval-sequencing/SKILL.md`.
     wrong-tier = FAIL), claims scoped to the tier, recordings non-empty and showing
     the actual commands, Assisted-by footer present, triage
     applied. The verdict is recorded in the report; a report that fails the cold read
-    is fixed, not posted. Rubric: `skills/omarchy-eval-cold-reader/SKILL.md`.
+    is fixed, not posted. Rubric: `.agents/skills/omarchy-eval-cold-reader/SKILL.md`.
 
 ## The ONE eval lane — golden-backed VM (mandatory, R5)
 
@@ -123,7 +123,7 @@ Batch/concurrency sequencing: `skills/omarchy-eval-sequencing/SKILL.md`.
   installer version — the template's "Who ran this" reflects it (see
   PR-EVAL-TEMPLATE.md).
 - Provision/re-provision, keeper-run protocol, per-PR clone + RED-PROBE twins, head
-  freshness: `skills/omarchy-eval-golden/SKILL.md`.
+  freshness: `.agents/skills/omarchy-eval-golden/SKILL.md`.
 
 ## NO VALIDATION semantics
 
@@ -146,9 +146,9 @@ NO VALIDATION is a **LAST RESORT — never the default**: before that verdict is
 written, the exhaustion ladder must be run (the PR's own test suites on the live
 system, try to install the missing software for real, test the real behavior with the
 real tools, and record a PARTIAL with the real evidence):
-`skills/omarchy-eval-oracle/SKILL.md`.
+`.agents/skills/omarchy-eval-oracle/SKILL.md`.
 
-## The ORACLE rules and tier routing (condensed — full detail in `skills/omarchy-eval-oracle/SKILL.md` and `skills/omarchy-eval-tiers/SKILL.md`)
+## The ORACLE rules and tier routing (condensed — full detail in `.agents/skills/omarchy-eval-oracle/SKILL.md` and `.agents/skills/omarchy-eval-tiers/SKILL.md`)
 
 - **ORACLE marker rule (mandatory):** a PR-specific check marker MUST be a
   **diff-ADDED token** (a string in the PR's added lines, never a word that
@@ -163,8 +163,8 @@ real tools, and record a PARTIAL with the real evidence):
   service behavior) MUST be evaluated on a live VM (Tier-2), not just the container —
   the container tier alone is insufficient for these classes.
 - Full detail: the apply seam + ORACLE TEMPLATE (§Template) + check-plan contract +
-  NO VALIDATION ladder → `skills/omarchy-eval-oracle/SKILL.md`; tier semantics + strict
-  prohibition + honesty about testing → `skills/omarchy-eval-tiers/SKILL.md`.
+  NO VALIDATION ladder → `.agents/skills/omarchy-eval-oracle/SKILL.md`; tier semantics + strict
+  prohibition + honesty about testing → `.agents/skills/omarchy-eval-tiers/SKILL.md`.
 
 ## The publication gate
 
@@ -184,10 +184,10 @@ No report is finalized and no comment is posted until ALL hold:
 | Topic | File |
 |---|---|
 | Standing rules 1–10 | this file |
-| Tier semantics, routing rule, strict prohibition, honesty about testing | `skills/omarchy-eval-tiers/SKILL.md` |
-| The apply seam (pr-apply), ORACLE TEMPLATE (§Template), ORACLE marker/path rules, check-plan contract, NO VALIDATION ladder | `skills/omarchy-eval-oracle/SKILL.md` |
-| Orphan sequencing, HARD lane-sequencing gate, launch sequencing, run preflight, concurrency guidance (16/32-lane), host/guest responsibility split, expected-phase budget | `skills/omarchy-eval-sequencing/SKILL.md` |
-| Checks-visible-in-recordings, THREE-artifact media contract, media-density rule, media assembly, media directory contract | `skills/omarchy-eval-media/SKILL.md` |
-| ONE golden-backed lane mechanics, provision/re-provision dual-state, keeper-run protocol, per-PR clone + RED-PROBE twins, head freshness | `skills/omarchy-eval-golden/SKILL.md` |
-| COLD-READER RUBRIC, vision-deterministic cross-check (GNOME trap), adversarial self-test, calibration, judge rule, per-eval stats contract, RCA stats-signature discipline, deep-eval tool protocol | `skills/omarchy-eval-cold-reader/SKILL.md` |
+| Tier semantics, routing rule, strict prohibition, honesty about testing | `.agents/skills/omarchy-eval-tiers/SKILL.md` |
+| The apply seam (pr-apply), ORACLE TEMPLATE (§Template), ORACLE marker/path rules, check-plan contract, NO VALIDATION ladder | `.agents/skills/omarchy-eval-oracle/SKILL.md` |
+| Orphan sequencing, HARD lane-sequencing gate, launch sequencing, run preflight, concurrency guidance (16/32-lane), host/guest responsibility split, expected-phase budget | `.agents/skills/omarchy-eval-sequencing/SKILL.md` |
+| Checks-visible-in-recordings, THREE-artifact media contract, media-density rule, media assembly, media directory contract | `.agents/skills/omarchy-eval-media/SKILL.md` |
+| ONE golden-backed lane mechanics, provision/re-provision dual-state, keeper-run protocol, per-PR clone + RED-PROBE twins, head freshness | `.agents/skills/omarchy-eval-golden/SKILL.md` |
+| COLD-READER RUBRIC, vision-deterministic cross-check (GNOME trap), adversarial self-test, calibration, judge rule, per-eval stats contract, RCA stats-signature discipline, deep-eval tool protocol | `.agents/skills/omarchy-eval-cold-reader/SKILL.md` |
 | Dated RCA narratives, experiments, measurements (archived) | `CHANGELOG/2026.250.1700.md` |

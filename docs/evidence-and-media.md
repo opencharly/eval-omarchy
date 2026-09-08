@@ -17,7 +17,7 @@
 
 Every evaluation produces a terminal asciinema `.cast` AND a full-screen video (desktop
 or VM-display recording) AND the check output surfaced on the desktop and visible in the
-recording frames. The binding detail lives in skills/omarchy-eval-media/SKILL.md.
+recording frames. The binding detail lives in .agents/skills/omarchy-eval-media/SKILL.md.
 
 ## Retention
 
@@ -32,5 +32,5 @@ and the same calver run re-creates them from the committed beds.
 ## Update triggers
 
 - A change to the recording/evidence steps in the oracle template → update
-skills/omarchy-eval-media/SKILL.md and this page together.
+.agents/skills/omarchy-eval-media/SKILL.md and this page together.
 - A change to what eval/evidence/ commits (e.g. a new artifact type) → this page.

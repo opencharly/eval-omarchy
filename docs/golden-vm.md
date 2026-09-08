@@ -3,7 +3,7 @@
 - Status: **active** — the operator contract for the golden test environments.
 - Owner: eval-omarchy maintainers; the config lives in charly.yml (the single source).
 - Source of truth: this page for the OPERATOR view; the binding lane rules in
-skills/omarchy-eval-golden/SKILL.md; VM mechanics in /charly-vm:vm and
+.agents/skills/omarchy-eval-golden/SKILL.md; VM mechanics in /charly-vm:vm and
 /charly-internals:disposable.
 
 ## The chain
@@ -31,7 +31,7 @@ Disposability is a DEPLOY property, never a VM-entity field (/charly-internals:d
 ## Provision / re-provision operator loop (condensed)
 
 The BINDING rules (dual-state delete-before-recapture, libvirt metadata, stop-after-capture,
-golden-presence verification) are in skills/omarchy-eval-golden/SKILL.md — run that contract.
+golden-presence verification) are in .agents/skills/omarchy-eval-golden/SKILL.md — run that contract.
 Operator summary: clear BOTH the charly store snapshot AND the libvirt metadata, destroy the
 old bed domain, run the FRESH lane (check-omarchy-eval-base → check-omarchy-eval-base-inst),
 stop the domain so the golden is never held exclusively, then VERIFY
@@ -46,6 +46,6 @@ snapshots/golden/disk.qcow2 exists — a missing golden after capture is a BLOCK
 
 ## Update triggers
 
-- charly.yml golden chain changes → this page + skills/omarchy-eval-golden/SKILL.md.
+- charly.yml golden chain changes → this page + .agents/skills/omarchy-eval-golden/SKILL.md.
 - VM snapshot/clone/disposability semantics change → the skills (/charly-vm:vm,
   /charly-internals:disposable), referenced here, never restated.

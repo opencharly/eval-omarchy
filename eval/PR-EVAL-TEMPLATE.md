@@ -64,7 +64,7 @@ All test environments above ran on testing tool version <version>; base provenan
 
 Every PR evaluation records BOTH lanes — this is mandatory, not optional. The recording
 steps are authored in the per-PR test environment (per the lane doc's "Standing rules"
-and the media contract in `skills/omarchy-eval-media/SKILL.md`), then referenced here:
+and the media contract in `.agents/skills/omarchy-eval-media/SKILL.md`), then referenced here:
 
 - **Terminal lane (asciinema):** `.cast` of the flow — `record: start` → `record: run|cmd` →
   `record: stop` with `artifact:` + `artifact_min_bytes`/`artifact_min_cast_events`; playback on
