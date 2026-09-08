@@ -16,7 +16,7 @@ always the linked file.
 |---|---|---|
 | Understand the evaluation boundary | VISION.md | CONTRIBUTING.md |
 | Set up a checkout + requirements | CONTRIBUTING.md | docs/golden-vm.md (provision the golden) |
-| Run one PR evaluation | eval/PR-EVAL-LANE.md (the lane contract) | the pi-agent lane (/pi-omarchy-eval) |
+| Run one PR evaluation | eval/PR-EVAL-LANE.md (the lane contract) | eval/references/full-loop.md (the grading/redo loop) |
 | Understand the golden test environments | docs/golden-vm.md | /charly-vm:vm |
 | Interpret evidence + media | docs/evidence-and-media.md | eval/references/media-contract.md |
 | Land a change to this repo | CONTRIBUTING.md (PR contract) | AGENTS.md |

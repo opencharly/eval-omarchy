@@ -34,6 +34,9 @@ evidence → revert.
 
 Hardware-class VM configs + the full golden mechanics: `references/golden-mechanics.md`.
 Batch/concurrency sequencing: `references/lane-sequencing.md`.
+THE FULL LOOP — every stage grades the previous stage and can trigger a change
+(redo-plan / redo-run / redo-read / escalate; the runner CONFIG AUDIT; the loop guard):
+`references/full-loop.md`. Agent contracts point here, never restate.
 
 ## Standing rules (every PR evaluation)
 
