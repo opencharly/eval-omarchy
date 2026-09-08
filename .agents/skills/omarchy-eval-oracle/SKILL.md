@@ -62,6 +62,10 @@ changed files, `## Verification` claim, known-red markers) and authors
 is the single artifact (the M4-era `pr-plans/eval-plan-<N>.json` orchestrator files
 were removed in the legacy cut — the charly.yml is the only plan artifact).
 
+> REDO-INFRA CLASS (measured 2026-08-08): a vm-build `Failed to get "write" lock`
+> (the shared-overlay race between overlapping lanes) is an INFRA redo-run trigger,
+> never a bed or oracle defect — re-gate the lane per the sequencing skill.
+>
 > RUNTIME-FIXED (measured 2026-08-08): the clone-ENTITY grammar (source.kind: clone +
 > from_vm/from_snapshot/ram/cpu) VALIDATES but is REJECTED at RUNTIME vm-build on the
 > current charly ("source.from_snapshot is required for clone" — the verification run
