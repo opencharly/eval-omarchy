@@ -16,9 +16,9 @@ always the linked file.
 |---|---|---|
 | Understand the evaluation boundary | VISION.md | CONTRIBUTING.md |
 | Set up a checkout + requirements | CONTRIBUTING.md | docs/golden-vm.md (provision the golden) |
-| Run one PR evaluation | skills/omarchy-eval-lane/SKILL.md (the lane contract) | skills/omarchy-eval-full-loop/SKILL.md (the grading/redo loop) |
+| Run one PR evaluation | .agents/skills/omarchy-eval-lane/SKILL.md (the lane contract) | .agents/skills/omarchy-eval-full-loop/SKILL.md (the grading/redo loop) |
 | Understand the golden test environments | docs/golden-vm.md | /charly-vm:vm |
-| Interpret evidence + media | docs/evidence-and-media.md | skills/omarchy-eval-media/SKILL.md |
+| Interpret evidence + media | docs/evidence-and-media.md | .agents/skills/omarchy-eval-media/SKILL.md |
 | Land a change to this repo | CONTRIBUTING.md (PR contract) | AGENTS.md |
 
 ## Document lifecycle
@@ -36,11 +36,11 @@ The relevant pages move in the same change when any of these surfaces move:
 
 | Surface | Pages to review in the same change |
 |---|---|
-| charly.yml golden chain entities | docs/golden-vm.md + skills/omarchy-eval-golden/SKILL.md |
+| charly.yml golden chain entities | docs/golden-vm.md + .agents/skills/omarchy-eval-golden/SKILL.md |
 | distro-omarchy import pin bump / channel state change | docs/golden-vm.md (re-provision trigger) |
-| oracle generation template (pr-beds/pr-<N>) | skills/omarchy-eval-oracle/SKILL.md + docs/golden-vm.md |
+| oracle generation template (pr-beds/pr-<N>) | .agents/skills/omarchy-eval-oracle/SKILL.md + docs/golden-vm.md |
 | The lane state machine / standing rules | eval/PR-EVAL-LANE.md + VISION.md |
-| Recording/evidence steps | skills/omarchy-eval-media/SKILL.md + docs/evidence-and-media.md |
+| Recording/evidence steps | .agents/skills/omarchy-eval-media/SKILL.md + docs/evidence-and-media.md |
 | Schema floor bump | CONTRIBUTING.md (charly migrate) + README.md |
 | Posting/publication policy | VISION.md + CONTRIBUTING.md |
 

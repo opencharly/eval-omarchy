@@ -64,8 +64,8 @@ comment is the operator's call, outside the repo's automated flows.
 
 ## Which skills to load
 
-The lane instructions are the proper skills under `skills/` — see the index in
-`skills/omarchy-eval-lane/SKILL.md` (entry) and AGENTS.md R0. Load the entry + the
+The lane instructions are the proper skills under `.agents/skills/` — see the index in
+`.agents/skills/omarchy-eval-lane/SKILL.md` (entry) and AGENTS.md R0. Load the entry + the
 skills your task touches (oracle for authoring beds, golden for provisioning, media
 for evidence, cold-reader for grading, full-loop for the redo contract) before any
 eval work.
