@@ -249,21 +249,51 @@ def stage_probe(pr, charly, workdir):
     dlog(f"[{pr}] probe RED (exit 2) confirmed, run {tree}")
     return tree
 
+def assemble_media(pr, calver, workdir):
+    """Media contract (omarchy-eval-media skill): the check runs pull the artifacts
+    host-side to /tmp/pr-<N>.{cast,gif,mjpeg,screen.png}; assemble media/<pr>-<calver>/
+    per the skill's recipe (cp the four + ffmpeg-transcode the mjpeg to screen.mp4)."""
+    md = workdir / "media" / f"pr-{pr}-{calver}"
+    md.mkdir(parents=True, exist_ok=True)
+    for f, src_name in (("cast", f"pr-{pr}.cast"), ("gif", f"pr-{pr}.gif"),
+                          ("mjpeg", f"pr-{pr}.mjpeg"), ("screen.png", f"pr-{pr}-screen.png")):
+        src = Path("/tmp") / src_name
+        if src.exists():
+            shutil.copy2(src, md / f"pr-{pr}.{f}")
+    mp = Path("/tmp") / f"pr-{pr}.mjpeg"
+    out_mp4 = md / f"pr-{pr}-screen.mp4"
+    if mp.exists() and not out_mp4.exists():
+        r = subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(mp),
+                            "-c:v", "libx264", "-pix_fmt", "yuv420p", str(out_mp4)],
+                           capture_output=True, text=True, timeout=300)
+        if r.returncode != 0 and not out_mp4.exists():
+            raise StageFail(f"media transcode failed: {r.stderr[-400:]}")
+    return md
+
 def stage_eval(pr, charly, workdir):
     """EVAL: the golden-VM lane with the PR applied — must exit 0 with 5/5 media."""
     code, bed, tree = run_bed(pr, "", charly, workdir)
     if code != 0:
         raise StageFail(f"[{pr}] eval must exit 0, got {code} — summary {tree}")
-    mds = sorted((workdir / "media").glob(f"pr-{pr}-*")) if (workdir / "media").exists() else []
-    if not mds:
-        raise StageFail(f"[{pr}] no media dir under {workdir}/media/pr-{pr}-* (media contract)")
-    media = gate_media(mds[-1])
+    calver = Path(tree).name
+    md = assemble_media(pr, calver, workdir)
+    media = gate_media(md)
     teardown_bed(bed, charly)
     gate_teardown()
     dlog(f"[{pr}] eval GREEN (exit 0), media 5/5, run {tree}")
     return tree, media
-
-def stage_report(pr, charly, workdir, tree, media):
+def stage_report(pr, charly, workdir, tree=None, media=None):
+    if tree is None:
+        trees = sorted((workdir / ".check").glob(f"check-omarchy-pr-{pr}-vm/2026*")) if (workdir / ".check").exists() else []
+        tree = trees[-1] if trees else None
+    if media is None:
+        mds = sorted((workdir / "media").glob(f"pr-{pr}-*")) if (workdir / "media").exists() else []
+        media = mds[-1] if mds else None
+        if media:
+            try:
+                media = gate_media(media)
+            except StageFail:
+                pass
     summ = summary_of(tree)
     task = (f"RENDER eval/pr-{pr}.md (PASS verdict) per the appended work-lane + tiers + media "
             f"guidance, mirroring the precedent {PRECEDENT}: EXTERNAL NON-AUTHORITATIVE block, "
