@@ -1,0 +1,63 @@
+{
+  "pr": "10136",
+  "headSha": "4e022c0940ab2630e8d0ac46c597dc94b2981ce8",
+  "calver": "2026.251.1418",
+  "verdict": "PASS",
+  "probeExit": 2,
+  "evalExit": 0,
+  "lockIncidents": 0,
+  "media5of5": true,
+  "phases": [
+    {
+      "name": "vm-build",
+      "duration_seconds": 3,
+      "ok": true
+    },
+    {
+      "name": "vm-create",
+      "duration_seconds": 2,
+      "ok": true
+    },
+    {
+      "name": "deploy-add",
+      "duration_seconds": 21,
+      "ok": true
+    },
+    {
+      "name": "bring-up-members",
+      "duration_seconds": 0,
+      "ok": true
+    },
+    {
+      "name": "check-live",
+      "duration_seconds": 23,
+      "ok": true
+    },
+    {
+      "name": "gate-restart-stop",
+      "duration_seconds": 1,
+      "ok": true
+    },
+    {
+      "name": "gate-restart-start",
+      "duration_seconds": 1,
+      "ok": true
+    },
+    {
+      "name": "check-live-rebuild",
+      "duration_seconds": 22,
+      "ok": true
+    },
+    {
+      "name": "cleanup",
+      "duration_seconds": 6,
+      "ok": true
+    },
+    {
+      "name": "cleanup-members",
+      "duration_seconds": 0,
+      "ok": true
+    }
+  ],
+  "total_seconds": 80
+}

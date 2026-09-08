@@ -1,0 +1,108 @@
+{
+  "pr": "10125",
+  "headSha": "399665b58a317c50ff134555a9d9188d10ab4c9e",
+  "calver": "2026.251.1419",
+  "probeExit": 2,
+  "evalExit": 0,
+  "subject": "PASS",
+  "probeSummary": "/tmp/redo-wave2/eval/evidence/REDO-WAVE/runs/pr-10125-probe-summary.yml",
+  "evalSummary": "/tmp/redo-wave2/eval/evidence/REDO-WAVE/runs/pr-10125-eval-summary.yml",
+  "mediaDir": "/tmp/redo-wave2/media/pr-10125-2026.251.1419",
+  "media5of5": true,
+  "artifactSizes": {
+    "cast": 1209,
+    "gif": 23738,
+    "mjpeg": 1382844,
+    "mp4": 104379,
+    "screenPng": 1251709
+  },
+  "lockIncidents": 0,
+  "evalPhases": [
+    [
+      "vm-build",
+      2,
+      true
+    ],
+    [
+      "vm-create",
+      2,
+      true
+    ],
+    [
+      "deploy-add",
+      22,
+      true
+    ],
+    [
+      "bring-up-members",
+      0,
+      true
+    ],
+    [
+      "check-live",
+      24,
+      true
+    ],
+    [
+      "gate-restart-stop",
+      1,
+      true
+    ],
+    [
+      "gate-restart-start",
+      1,
+      true
+    ],
+    [
+      "check-live-rebuild",
+      24,
+      true
+    ],
+    [
+      "cleanup",
+      7,
+      true
+    ],
+    [
+      "cleanup-members",
+      0,
+      true
+    ]
+  ],
+  "probePhases": [
+    [
+      "vm-build",
+      64,
+      true
+    ],
+    [
+      "vm-create",
+      2,
+      true
+    ],
+    [
+      "deploy-add",
+      18,
+      true
+    ],
+    [
+      "bring-up-members",
+      0,
+      true
+    ],
+    [
+      "check-live",
+      7,
+      false
+    ]
+  ],
+  "evalTotalSeconds": 81,
+  "probeTotalSeconds": 91,
+  "ts": {
+    "probe-start": "1788876988.452",
+    "probe-end": "1788877113.135",
+    "orphan-clean": "1788877133.639",
+    "eval-start": "1788877139.962",
+    "eval-end": "1788877272.275"
+  }
+}
