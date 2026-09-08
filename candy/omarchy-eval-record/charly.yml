@@ -24,7 +24,7 @@ omarchy-eval-record:
               timeout: 10m   # bounded: the pacman mirror-refresh can hang indefinitely (measured)
               command: |
                   set -eu
-                  pacman -Syu --noconfirm
+                  OMARCHY_ALLOW_DIRECT_PACMAN=1 pacman -Syu --noconfirm
                   pacman -S --needed --noconfirm tmux asciinema acpid qemu-guest-agent
                   systemctl enable --now acpid
                   systemctl enable qemu-guest-agent

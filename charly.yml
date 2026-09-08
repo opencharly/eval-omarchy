@@ -130,7 +130,7 @@ check-omarchy-eval-base-inst:
         plan:
             - run: full system upgrade + omarchy channel update (bakes the current channel state into the golden)
               id: inst-full-upgrade
-              command: 'pacman -Syu --noconfirm && omarchy-channel-update 2>/dev/null || true'
+              command: 'OMARCHY_ALLOW_DIRECT_PACMAN=1 pacman -Syu --noconfirm && omarchy-channel-update 2>/dev/null || true'
               context: [runtime]
             - run: clean the pacman cache (keeps the golden lean)
               id: inst-clean-cache
