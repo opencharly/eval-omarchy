@@ -1,3 +1,9 @@
+---
+name: omarchy-eval-oracle
+description: |-
+  undefined
+---
+
 # Oracle rules — the apply seam, the ORACLE TEMPLATE, the check-plan contract
 
 ## The apply seam — the ONE runtime seam (pr-apply), no nested templates

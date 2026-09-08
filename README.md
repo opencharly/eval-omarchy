@@ -41,7 +41,7 @@ fails); a pod-only eval is not a validation.
 | `charly.yml` | The stable hand-authored config: the omarchy VM template, the golden bases (`check-omarchy-eval-base`, `check-omarchy-eval-base-inst`), and the shared clone entity. Per-PR test environments are **oracle-generated** into `pr-beds/pr-<N>/` (eval + RED-PROBE beds) |
 | `eval/PR-EVAL-TEMPLATE.md` | **The PR-eval template** — every evaluation report (`eval/pr-<N>.md`) and every posted PR comment is rendered from it, in user-testing voice, carrying its EXTERNAL, NON-AUTHORITATIVE disclaimer verbatim and the Assisted-by footer |
 | `eval/PR-EVAL-LANE.md` | The eval lane entry — Goal, the lane state machine, the 10 standing rules, the NO VALIDATION semantics, the publication gate, and the index to the references |
-| `eval/references/` | The lane rules in detail (entry: `eval/PR-EVAL-LANE.md`): tier semantics, oracle rules + §Template, lane sequencing, media contract, golden mechanics, cold-reader rubric |
+| `skills/` | The eval lane as PROPER SKILLS — entry `skills/omarchy-eval-lane/SKILL.md` (standing rules, class-based §Template, full-loop index) + `omarchy-eval-{tiers,oracle,golden,sequencing,media,cold-reader,work-lane,full-loop}` |
 | `eval/pr-<N>.md` | Per-PR evaluation reports (what I tested, how it went, what I ran, what I noticed) |
 | `eval/evidence/` | Committed small evidence (summary.yml + per-check logs per pr+run-date) |
 | `media/` | Recording artifacts (asciinema `.cast` + full-screen video per pr+run-date) — **gitignored** |

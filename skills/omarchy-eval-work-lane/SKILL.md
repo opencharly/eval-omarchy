@@ -1,3 +1,9 @@
+---
+name: omarchy-eval-work-lane
+description: |-
+  undefined
+---
+
 # Work-lane schema — eval/pr-<N>.md frontmatter
 
 Binding route: the eval lane contract lives in eval/PR-EVAL-LANE.md (the entry) and

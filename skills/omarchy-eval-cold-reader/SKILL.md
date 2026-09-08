@@ -1,3 +1,9 @@
+---
+name: omarchy-eval-cold-reader
+description: |-
+  undefined
+---
+
 ## COLD-READER RUBRIC (M6, permanent) — the grading contract for every eval result
 
 A cold read is a FRESH-CONTEXT validation of the eval evidence (the report + the media

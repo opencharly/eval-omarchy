@@ -2,7 +2,7 @@
 
 - Status: **active** — the evidence/artifact contract for every evaluation.
 - Owner: the omarchy eval lane (opencharly/opencharly .pi/agents/omarchy-eval-runner.md).
-- Source of truth: the lane contract — eval/PR-EVAL-LANE.md + eval/references/*.md (media-contract.md).
+- Source of truth: the lane contract — eval/PR-EVAL-LANE.md + skills/*.md (media-contract.md).
 
 ## What lives where
 
@@ -17,7 +17,7 @@
 
 Every evaluation produces a terminal asciinema `.cast` AND a full-screen video (desktop
 or VM-display recording) AND the check output surfaced on the desktop and visible in the
-recording frames. The binding detail lives in eval/references/media-contract.md.
+recording frames. The binding detail lives in skills/omarchy-eval-media/SKILL.md.
 
 ## Retention
 
@@ -32,5 +32,5 @@ and the same calver run re-creates them from the committed beds.
 ## Update triggers
 
 - A change to the recording/evidence steps in the oracle template → update
-eval/references/media-contract.md and this page together.
+skills/omarchy-eval-media/SKILL.md and this page together.
 - A change to what eval/evidence/ commits (e.g. a new artifact type) → this page.

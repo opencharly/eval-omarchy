@@ -49,7 +49,7 @@ known-red fixture): a probe that passes without the PR proves nothing.
 tense, in the lane contract — and what merely happened (dated RCA narratives,
 measured runs) belongs in the CHANGELOG, never on the standing pages.
    → charly's cookbook tenet (charly/VISION.md tenet 10), the lane-split
-   convention (eval/PR-EVAL-LANE.md + eval/references/).
+   convention (eval/PR-EVAL-LANE.md + skills/).
 
 7. **The bench evaluates itself.** The pipeline is pi agents driving disposable
 charly beds — the evaluation loop is part of the factory that builds the factory:

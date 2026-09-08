@@ -1,3 +1,9 @@
+---
+name: omarchy-eval-golden
+description: |-
+  undefined
+---
+
 # Golden mechanics — the ONE golden-backed lane, provision, keepers, clones
 
 ## The ONE eval lane — golden-backed VM (mandatory, R5)

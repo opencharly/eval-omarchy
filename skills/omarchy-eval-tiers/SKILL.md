@@ -1,3 +1,9 @@
+---
+name: omarchy-eval-tiers
+description: |-
+  undefined
+---
+
 ## What each tier proves (honest semantics)
 
 A claim in a report is only as strong as the tier that produced it. Never claim

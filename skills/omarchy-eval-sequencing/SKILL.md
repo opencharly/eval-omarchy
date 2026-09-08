@@ -1,3 +1,9 @@
+---
+name: omarchy-eval-sequencing
+description: |-
+  undefined
+---
+
 # Lane sequencing — orphans, gates, launch, preflight, concurrency
 
 ### The RUNNER orphan-sequencing rule (mandatory)

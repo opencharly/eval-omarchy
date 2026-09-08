@@ -1,3 +1,9 @@
+---
+name: omarchy-eval-media
+description: |-
+  undefined
+---
+
 # Media contract — recordings, artifacts, density, assembly
 
 ## Checks visible to the user AND in screen recordings (lane rule)
