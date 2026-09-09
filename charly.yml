@@ -175,7 +175,7 @@ eval-lane:
       self-checks. The pipeline itself is the eval-lane-plan kind:pipeline entity in
       this file — every stage, prompt, template, and schema INLINE.
     candy:
-      - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.252.1416'
+      - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.252.1502'
       - '@github.com/opencharly/plugin-review/candy/plugin-review:v2026.251.1939'
     var:
       EVAL_LANES: "16"
@@ -363,7 +363,7 @@ eval-lane-plan:
         kind: agent
         skill:
           - '@github.com/opencharly/distro-omarchy:v2026.251.1654'
-          - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.252.1416'
+          - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.252.1502'
         tools: [pr, resolve_channel, ledger]
         prompt: |-
           You are the Config Oracle for the omarchy PR-eval lane. You decide WHAT to
@@ -444,7 +444,7 @@ eval-lane-plan:
         kind: agent
         skill:
           - '@github.com/opencharly/distro-omarchy:v2026.251.1654'
-          - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.252.1416'
+          - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.252.1502'
         tools: [ledger]
         outputs: [tests]
         prompt: |-
@@ -465,7 +465,7 @@ eval-lane-plan:
         kind: agent
         skill:
           - '@github.com/opencharly/distro-omarchy:v2026.251.1654'
-          - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.252.1416'
+          - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.252.1502'
         tools: [ledger, read]
         max_turns: 30
         outputs: [verdict, suggestions]
