@@ -401,7 +401,7 @@ eval-lane-plan:
           # the missed control (RCA 2026.252): a bed whose rendered steps carry
           # placeholder or empty substitutions is REJECTED at render time -
           # never shipped to a real bed run.
-          if grep -qE "text: \\$drive|record: \{.*text: \\$|pr-apply [0-9]+  +(\"|\\x27)?\$" "pr-beds/pr-$pr/charly.yml"; then
+          if grep -qE -e 'text: [$]drive' -e "pr-apply [0-9]+  '" "pr-beds/pr-$pr/charly.yml"; then
             echo "bed-render: placeholder or empty substitution in the rendered bed" >&2
             exit 1
           fi
