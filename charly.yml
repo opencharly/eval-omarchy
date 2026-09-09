@@ -163,7 +163,8 @@ check-omarchy-eval-base-inst:
                   file: /usr/local/bin/pr-apply
                   exists: true
 
-# ---- the omarchy PR-eval lane (folded from the retired eval-charly repo) ----
+# ---- the omarchy PR-eval lane (folded from the retired eval-charly repo;
+#      the DETERMINISTIC contract: the check stage's exit drives the verdict) ----
 eval-lane:
   candy:
     version: 2026.251.0000
@@ -292,10 +293,6 @@ eval-lane-plan:
                 id: pr-apply
                 context: [runtime]
                 command: 'pr-apply $pr ${sha} ${files}'
-              - check: stamp the apply marker (the RED->GREEN probe evidence)
-                id: mark-applied
-                context: [runtime]
-                command: 'touch /var/tmp/omarchy-pr-$pr-applied'
               - check: the PR's OWN test suite passes on the applied system
                 id: pr-tests
                 context: [runtime]
@@ -341,21 +338,6 @@ eval-lane-plan:
                 id: rec-mp4
                 context: [runtime]
                 command: 'ffmpeg -y -loglevel error -i /tmp/pr-$pr.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/pr-$pr.mp4'
-        # the RED-PROBE twin: the SAME golden WITHOUT the PR (no apply/marker/media).
-        # On the pristine golden the marker is absent -> the check FAILS -> the
-        # check run exits 2 (known-red contract, legacy driver parity). Pre-apply
-        # the bed must be RED; post-apply (marker stamped) it must be GREEN.
-        check-omarchy-pr-$pr-vm-probe:
-          vm:
-            from: ${golden}
-            disposable: true
-            lifecycle: dev
-            update_gate: restart-only
-            plan:
-              - check: the PR apply marker must be ABSENT on the pristine golden (KNOWN-RED)
-                id: pr-not-applied
-                context: [runtime]
-                command: 'test -e /var/tmp/omarchy-pr-$pr-applied'
     stages:
       - id: channel-select
         kind: probe
@@ -417,18 +399,12 @@ eval-lane-plan:
         verbs: [config_audit]
         input: { bed: "pr-beds/pr-$pr/charly.yml", pr: "$pr" }
         redo: { on_fail: bed-render }
-      - id: red-probe
-        kind: check
-        bed: check-omarchy-pr-$pr-vm-probe
-        expect_exit: "2"
-        teardown: probe
       - id: eval
-        kind: check
+        kind: ade
         bed: check-omarchy-pr-$pr-vm
-        # 0 = the PR passed its behavior checks; 2 = genuine failures recorded
-        # (the report grades both — the checks' results are the verdict data).
-        expect_exit: "any"
-        teardown: true
+        # the org-wide ADE: the bed's plan carries the oracle's agent-check:
+        # steps, graded by the live agent in the venue (the SDK ADE surface) -
+        # no custom bed-runner, no known-red contracts.
       - id: assemble-media
         kind: media
         assemble: true
