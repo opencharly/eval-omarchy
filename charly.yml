@@ -156,6 +156,21 @@ check-omarchy-eval-base-inst:
               id: inst-agg-present
               context: [runtime]
               command: 'test -s /usr/local/bin/agg && /usr/local/bin/agg --version'
+            - run: install an always-on shell launcher unit (the omarchy shell is launched ONLY by the first-run onboarding - the golden bakes the COMPLETED first-run state, so clones never launch the shell and every capture goes bare; RCA 2026.252 - the bed ran 3x with a bare 0x111111 desktop)
+              id: inst-shell-unit
+              context: [runtime]
+              command: |
+                  set -eu
+                  printf '%s\n' '[Unit]' 'Description=Omarchy eval shell (always-on for eval beds)' 'PartOf=graphical-session.target' 'After=graphical-session.target' '' '[Service]' 'ExecStart=/usr/bin/quickshell -p /usr/share/omarchy/shell' '' '[Install]' 'WantedBy=graphical-session.target' > /etc/systemd/user/omarchy-eval-shell.service
+                  systemctl --global enable omarchy-eval-shell.service
+            - check: the always-on shell unit is enabled for every future user session
+              id: inst-shell-unit-enabled
+              context: [runtime]
+              command: 'systemctl --global is-enabled omarchy-eval-shell.service | grep -q enabled'
+            - check: the agg gif generator is installed and runnable (the rec-gif step depends on it)
+              id: inst-agg-present
+              context: [runtime]
+              command: 'test -s /usr/local/bin/agg && /usr/local/bin/agg --version'
             - check: the instrumented golden reaches the FULL desktop (the shell stack required - Hyprland alone is a bare 0x111111 background that blanks every capture)
               id: inst-autologin
               context: [runtime]
