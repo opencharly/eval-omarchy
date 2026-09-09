@@ -43,8 +43,8 @@ omarchy-vm:
         source:
             kind: iso
             distro: omarchy
-            url: https://iso.omarchy.org/omarchy-4.0.1.iso
-            checksum: {type: sha256}
+            url: https://iso.omarchy.org/omarchy-4.0.3.iso
+            checksum: {type: sha256, value: 03d60bc74306dca51f96e1a84b690871d8d606826b260edd0208962da8507d14}
             installer:
                 username: user
                 password: user
@@ -162,3 +162,308 @@ check-omarchy-eval-base-inst:
               file:
                   file: /usr/local/bin/pr-apply
                   exists: true
+
+# ---- the omarchy PR-eval lane (folded from the retired eval-charly repo;
+#      the DETERMINISTIC contract: the check stage's exit drives the verdict) ----
+eval-lane:
+  candy:
+    version: 2026.251.0000
+    description: |
+      The omarchy PR-eval lane wiring: composes the generic pipeline engine + the
+      PR-tool plugin, declares the complete env/secret contract, and carries the ADE
+      self-checks. The pipeline itself is the eval-lane-plan kind:pipeline entity in
+      this file — every stage, prompt, template, and schema INLINE.
+    candy:
+      - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.251.2226'
+      - '@github.com/opencharly/plugin-review/candy/plugin-review:v2026.251.1939'
+    var:
+      EVAL_LANES: "16"
+      EVAL_CHANNEL: stable
+      EVAL_MAX_REDO: "2"
+      EVAL_REDO_ESCALATE: "3"
+      EVAL_REPO: omacom/omarchy
+    env_require:
+      - name: EVAL_LLM_BASE_URL
+        description: "LLM chat-completions base URL (the agent endpoint)"
+      - name: EVAL_LLM_MODEL
+        description: "LLM model id"
+      - name: EVAL_UMBRELLA
+        description: "Path to the opencharly umbrella checkout"
+        default: ""
+    env_accept:
+      - name: EVAL_LLM_SYSTEM_PROMPT
+        description: "Optional per-run system prompt override"
+      - name: EVAL_LLM_PROVIDER
+        description: "LLM provider name"
+      - name: EVAL_DRY_RUN
+        description: "Dry-run flag"
+      - name: EVAL_DEBUG
+        description: "Verbose run debugging"
+      - name: EVAL_CHANNEL
+        description: "Channel override (stable/rc/edge/dev)"
+      - name: EVAL_LANES
+        description: "Concurrency lanes"
+      - name: EVAL_MAX_REDO
+        description: "Redo bound"
+      - name: EVAL_PUBLISH
+        description: "approve -> the publication gate posts"
+      - name: PIPELINE_SKILLS
+        description: "Comma-separated @github candy refs for the agent skills"
+      - name: PIPELINE_CORPUS_DIR
+        description: "Marketplace corpus dir (rendered skill content)"
+      - name: BARE_PROMPT
+        description: "Inline prompt for the standalone agent surface"
+    secret_accept:
+      - name: EVAL_LLM_API_KEY
+        description: "LLM provider API key"
+        key: charly/api-key/eval-llm
+    plan:
+      - check: the pipeline executor self-tests
+        id: ade-pipeline-present
+        context: [runtime]
+        command: charly pipeline --self-test
+        exit_status: 0
+      - check: the pipeline entity validates against #PipelineInput
+        id: ade-pipeline-valid
+        context: [runtime]
+        command: charly pipeline validate eval-lane-plan
+        exit_status: 0
+
+ade-grader:
+  agent:
+    description: "The ADE in-bed grader (bare agent with the PR tools)"
+    command: [charly, pipeline, agent, --system-prompt, "${PROMPT}", --tools, pr]
+    prompt_via: argv
+    timeout: 5m
+    env:
+      PIPELINE_SKILLS: '@github.com/opencharly/distro-omarchy:v2026.251.1654'
+    credential:
+      - {src: charly/api-key/eval-llm, dst: EVAL_LLM_API_KEY}
+
+eval-lane-plan:
+  pipeline:
+    gates: [sequencing, lock_audit]
+    redo: { max: 2, escalate_after: 3 }
+    concurrency: { lanes: 16 }
+    channels:
+      stable: { golden: check-omarchy-eval-base-inst:golden, provision: eval-lane-plan-channel-stable }
+      rc:     { golden: check-charly-omarchy-rc-vm:golden,     provision: eval-lane-plan-channel-rc }
+      edge:   { golden: check-charly-omarchy-edge-vm:golden,   provision: eval-lane-plan-channel-edge }
+      dev:    { golden: check-charly-omarchy-dev-vm:golden,    provision: eval-lane-plan-channel-dev }
+    media:
+      files: [cast, gif, mjpeg, mp4, png]
+      min: { cast: 200, gif: 1024, mjpeg: 4096, mp4: 4096, png: 1024 }
+      dir: "media/pr-$pr-$calver"
+    report:
+      template: |-
+        ---
+        verdict: ${verdict}
+        triage: ${class}
+        channel: ${channel}
+        tier: ${tier}
+        ---
+        # I tested omacom/omarchy#$pr
+        *Rendered by the charly PR-eval lane — every section filled; N/A with a reason.*
+        > ## EXTERNAL, NON-AUTHORITATIVE evaluation — read first
+        > This is an EXTERNAL, NON-AUTHORITATIVE evaluation performed by opencharly.ai.
+        > **Results can go STALE**: compare with the PR's current head before acting.
+        ## What was tested and how
+        **Overall:** @cold-read.verdict
+        **Head tested:** $pr — **results can go STALE**.
+        ## Recordings
+        - Terminal lane: ${cast}
+        - Full-screen lane: ${mp4} (${mjpeg}, ${png}, ${gif})
+        *Assisted-by: <Harness> <Provider Full Model Name> (<confidence>)*
+      frontmatter_schema: |-
+        { "type": "object", "required": [pr, verdict, triage, channel, tier, posted],
+          "properties": { "verdict": { "enum": [PASS, FAIL, NO_VALIDATION] } } }
+      bed_template: |-
+        version: 2026.249.2125
+        check-omarchy-pr-$pr-vm:
+          vm:
+            from: ${golden}
+            disposable: true
+            lifecycle: dev
+            update_gate: restart-only
+            add_candy:
+              - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+              - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+            plan:
+              - check: apply PR $pr via the single apply seam
+                id: pr-apply
+                context: [runtime]
+                command: 'pr-apply $pr ${sha} ${files}'
+              - check: the PR's OWN test suite passes on the applied system
+                id: pr-tests
+                context: [runtime]
+                command: 'for t in ${tests}; do bash "$t" || exit 1; done'
+              ${checks}
+              - check: start a terminal recording
+                id: rec-start
+                context: [runtime]
+                record: {method: start, record_mode: terminal, record_name: pr-$pr}
+              - check: start the SPICE display video capture
+                id: rec-spice-start
+                eventually: 25s
+                retry_interval: 3s
+                context: [runtime]
+                spice: {method: record, action: start, record_name: pr-$pr, fps: 5}
+              - check: drive the PR key command inside the recording
+                id: rec-drive
+                context: [runtime]
+                record: {method: run, record_name: pr-$pr, text: $drive, settle_ms: 1000}
+              - check: capture the VM display via SPICE
+                id: rec-screen-spice
+                eventually: 25s
+                retry_interval: 3s
+                context: [runtime]
+                spice: {method: screenshot, artifact: /tmp/pr-$pr.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+              - check: stop the SPICE capture and pull the MJPEG stream
+                id: rec-spice-stop
+                eventually: 25s
+                retry_interval: 3s
+                context: [runtime]
+                spice: {method: record, action: stop, record_name: pr-$pr, artifact: /tmp/pr-$pr.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+              - check: stop the terminal recording and pull the .cast
+                id: rec-stop
+                context: [runtime]
+                record: {method: stop, record_name: pr-$pr, artifact: /tmp/pr-$pr.cast, artifact_min_bytes: 200}
+              - check: render the .cast to an animated GIF
+                id: rec-gif
+                eventually: 25s
+                retry_interval: 3s
+                context: [runtime]
+                record: {method: gif, record_name: pr-$pr, artifact: /tmp/pr-$pr.gif, artifact_min_bytes: 100}
+              - run: transcode the SPICE MJPEG capture to MP4
+                id: rec-mp4
+                context: [runtime]
+                command: 'ffmpeg -y -loglevel error -i /tmp/pr-$pr.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/pr-$pr.mp4'
+    stages:
+      - id: channel-select
+        kind: probe
+        verbs: [resolve_channel]
+        input:
+          channels:
+            stable: { golden: check-omarchy-eval-base-inst:golden, provision: eval-lane-plan-channel-stable }
+            rc:     { golden: check-charly-omarchy-rc-vm:golden,     provision: eval-lane-plan-channel-rc }
+            edge:   { golden: check-charly-omarchy-edge-vm:golden,   provision: eval-lane-plan-channel-edge }
+            dev:    { golden: check-charly-omarchy-dev-vm:golden,    provision: eval-lane-plan-channel-dev }
+          default: "$env.EVAL_CHANNEL"
+        outputs: [channel]
+      - id: triage
+        kind: agent
+        skill:
+          - '@github.com/opencharly/distro-omarchy:v2026.251.1654'
+          - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.251.2226'
+        tools: [pr, resolve_channel, ledger]
+        prompt: |-
+          You are the Config Oracle for the omarchy PR-eval lane. You decide WHAT to
+          test and HOW — never DO the testing. TRIAGE (useful? new insight? testable
+          on this hardware? tier?) then PLAN. NEVER run a bed.
+          Your ENTIRE reply MUST be ONE JSON object, no prose, no markdown fences, no
+          trailing text:
+          {"class": "system|packaging|visual", "channel": "stable", "tier": "vm",
+          "sha": "<the PR head sha>",
+          "files": "<the PR's changed file paths, space-separated (use the PR tools)",
+          "drive": "<one shell command that exercises the PR's key behavior>",
+          "tests": "<the PR's OWN changed test/shell.d/*.sh files, space-separated ABSOLUTE paths in the applied system (resolve them from the PR file list - NEVER invent tests; if the PR adds/changes tests, those are the tests)>"
+          "checks": [{"id": "<slug>", "what": "<one-line behavior assertion>",
+          "assertion": "<exact shell snippet, exit nonzero on failure, that proves the
+          PR's behavior on the live system>", "knownRed": "<why it fails on the pristine
+          golden>"}], "record": true, "visual": true}.
+          Scripts may NOT be +x after apply: invoke script files via their interpreter 
+          (bash <abs path>, python3 <abs path>); use command -v for binaries; keep 
+          assertions idempotent and fast.
+          The checks run INSIDE the applied VM (the PR was applied to the live OS at
+          its system paths): use ABSOLUTE paths ONLY (/usr/share/omarchy/..., /etc/...,
+          ~/.config/...), never relative repo paths. Reference example that works:
+          grep -qi Wallclock /usr/share/omarchy/shell/plugins/panels/clock/BarWidget.qml
+          If the PR is a draft or WIP, reply {"class": "skip", "record": false}.
+        outputs: [plan-json]
+      - id: bed-render
+        kind: generate
+        template: "$report.bed_template"
+        vars:
+          pr: "$pr"
+          golden: "@channel-select.golden"
+          sha: "$env.PR_HEAD_SHA"
+          files: "@triage.plan-json.files"
+          drive: "@triage.plan-json.drive"
+          channel: "@channel-select.channel"
+          checks: "@triage.plan-json.checks"
+          tests: "@triage.plan-json.tests"
+        out: "pr-beds/pr-$pr/charly.yml"
+        validate: charly-box-validate
+      - id: config-audit
+        kind: probe
+        verbs: [config_audit]
+        input: { bed: "pr-beds/pr-$pr/charly.yml", pr: "$pr" }
+        redo: { on_fail: bed-render }
+      - id: eval
+        kind: ade
+        bed: check-omarchy-pr-$pr-vm
+        # the org-wide ADE: the bed's plan carries the oracle's agent-check:
+        # steps, graded by the live agent in the venue (the SDK ADE surface) -
+        # no custom bed-runner, no known-red contracts.
+      - id: assemble-media
+        kind: media
+        assemble: true
+        transcode: mjpeg:mp4
+      - id: evidence-audit
+        kind: probe
+        verbs: [media_gate, lock_audit]
+        input:
+          media_gate: { dir: "media/pr-$pr-$calver", files: [cast, gif, mjpeg, mp4, png], min: {cast: 200, gif: 1024, mjpeg: 4096, mp4: 4096, png: 1024} }
+          lock_audit: { trees: ["$workdir/.check"] }
+        redo: { on_fail: [eval, assemble-media] }
+      - id: report
+        kind: agent
+        skill:
+          - '@github.com/opencharly/distro-omarchy:v2026.251.1654'
+          - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.251.2226'
+        tools: [pr, ledger]
+        prompt: |-
+          Render eval/pr-$pr.md from the ledger per the template: first-person What I
+          tested, the step matrices from the run summaries, the media table, the
+          EXTERNAL NON-AUTHORITATIVE disclaimer verbatim, the Assisted-by footer.
+          Do NOT post.
+      - id: cold-read
+        kind: agent
+        skill:
+          - '@github.com/opencharly/distro-omarchy:v2026.251.1654'
+          - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.251.2226'
+        tools: [ledger, read]
+        max_turns: 30
+        outputs: [verdict]
+        prompt: |-
+          Fresh-context validation of the evidence packet: SUBJECT (PASS/FAIL/
+          NO_VALIDATION) + PROCESS.
+          After at most TWO tool calls, emit your final verdict JSON ONLY:
+          {"verdict": "PASS|FAIL|NO_VALIDATION", "subject": "...", "process": "..."}.
+          Never call a tool more than twice; always end with the verdict. (known-red, tier compliance, claims scoped, media
+          non-empty + showing the commands, Assisted-by present). Every material
+          vision claim corroborated by a deterministic source. Map findings to
+          triggers: redo-plan / redo-run / redo-read / escalate.
+        redo:
+          triggers: { redo-plan: bed-render, redo-run: eval, redo-read: cold-read }
+      - id: render-report
+        kind: generate
+        template: "$report.template"
+        vars:
+          pr: "$pr"
+          cold_read: "@cold-read.verdict"
+          verdict: "@eval.verdict"
+          class: "@triage.plan-json.class"
+          channel: "@channel-select.channel"
+          tier: "@triage.plan-json.tier"
+          cast: "media/pr-$pr-$calver/pr-$pr.cast"
+          mp4: "media/pr-$pr-$calver/pr-$pr.mp4"
+          mjpeg: "media/pr-$pr-$calver/pr-$pr.mjpeg"
+          png: "media/pr-$pr-$calver/pr-$pr.png"
+          gif: "media/pr-$pr-$calver/pr-$pr.gif"
+        out: "eval/pr-$pr.md"
+        validate: report-frontmatter
+      - id: publish
+        kind: gate
+        condition: "$env.EVAL_PUBLISH == approve"
+
