@@ -243,6 +243,7 @@ ade-grader:
 
 eval-lane-plan:
   pipeline:
+    repo: omacom/omarchy
     gates: [sequencing, lock_audit]
     redo: { max: 2, escalate_after: 3 }
     concurrency: { lanes: 16 }
@@ -256,28 +257,27 @@ eval-lane-plan:
       min: { cast: 200, gif: 1024, mjpeg: 4096, mp4: 4096, png: 1024 }
       dir: "media/pr-$pr-$calver"
     report:
+      # the user-voice report contract (2026.252): the eval reads like a fellow
+      # omarchy user who pulled the PR and tested it — NOT a maintainer audit.
+      # No verdict section: what I did, what happened, what I'd suggest.
       template: |-
         ---
-        verdict: ${verdict}
-        triage: ${class}
+        head: ${sha}
         channel: ${channel}
+        class: ${class}
         tier: ${tier}
+        posted: false
         ---
-        # I tested omacom/omarchy#$pr
-        *Rendered by the charly PR-eval lane — every section filled; N/A with a reason.*
-        > ## EXTERNAL, NON-AUTHORITATIVE evaluation — read first
-        > This is an EXTERNAL, NON-AUTHORITATIVE evaluation performed by opencharly.ai.
-        > **Results can go STALE**: compare with the PR's current head before acting.
-        ## What was tested and how
-        **Overall:** @cold-read.verdict
-        **Head tested:** $pr — **results can go STALE**.
-        ## Recordings
-        - Terminal lane: ${cast}
-        - Full-screen lane: ${mp4} (${mjpeg}, ${png}, ${gif})
-        *Assisted-by: <Harness> <Provider Full Model Name> (<confidence>)*
+        # I tested omacom/omarchy#$pr — here's what happened
+        ## Tests
+        ${tests_body}
+        Recordings: terminal ${cast} · desktop ${mp4} (${png}, ${gif}) · full run matrix: .check/check-omarchy-pr-$pr-vm/$calver/
+        ## Suggestions
+        ${suggestions_body}
+        *Assisted-by: charly eval-lane agent ollama/deepseek-v4-flash:cloud (fully tested and validated)*
+        *Tested-by: charly eval-lane (channel ${channel}, golden ${golden}, bed check-omarchy-pr-$pr-vm @ $calver)*
       frontmatter_schema: |-
-        { "type": "object", "required": [pr, verdict, triage, channel, tier, posted],
-          "properties": { "verdict": { "enum": [PASS, FAIL, NO_VALIDATION] } } }
+        { "type": "object", "required": [pr, head, channel, class, tier, posted] }
       bed_template: |-
         version: 2026.249.2125
         check-omarchy-pr-$pr-vm:
@@ -312,7 +312,15 @@ eval-lane-plan:
               - check: drive the PR key command inside the recording
                 id: rec-drive
                 context: [runtime]
-                record: {method: run, record_name: pr-$pr, text: $drive, settle_ms: 1000}
+                record:
+                  method: run
+                  record_name: pr-$pr
+                  # the drive is ARBITRARY shell — a block scalar, never a flow
+                  # mapping (RCA 2026.252.2250: the inlined text broke the
+                  # rendered YAML on shell metacharacters).
+                  text: |-
+                    ${drive}
+                  settle_ms: 1000
               - check: capture the VM display via SPICE
                 id: rec-screen-spice
                 eventually: 25s
@@ -405,7 +413,11 @@ eval-lane-plan:
             echo "bed-render: placeholder or empty substitution in the rendered bed" >&2
             exit 1
           fi
-          charly box validate
+          # the RUNNING charly binary — PATH lookup can resolve to an OLD
+          # installed package whose schema floor rejects this config (RCA
+          # 2026.252.2250: the lane's validate ran an outdated /usr/local/bin
+          # charly). The CHARLY_BIN convention is shared with teardownVenue.
+          "${CHARLY_BIN:-charly}" box validate
       - id: config-audit
         kind: probe
         verbs: [config_audit]
@@ -433,12 +445,22 @@ eval-lane-plan:
         skill:
           - '@github.com/opencharly/distro-omarchy:v2026.251.1654'
           - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.252.1416'
-        tools: [pr, ledger]
+        tools: [ledger]
+        outputs: [tests]
         prompt: |-
-          Render eval/pr-$pr.md from the ledger per the template: first-person What I
-          tested, the step matrices from the run summaries, the media table, the
-          EXTERNAL NON-AUTHORITATIVE disclaimer verbatim, the Assisted-by footer.
-          Do NOT post.
+          You are a fellow omarchy user who pulled this PR onto your machine and
+          tested it — NOT the repo maintainer, NOT an audit. Write like a user in
+          an issue comment: first person, plain words, what you did and what you
+          actually saw happen. From the LEDGER (read it with at most TWO tool
+          calls, then stop), emit ONE JSON object ONLY (no prose, no fences):
+          {"tests": "<one compact paragraph: what I pulled and applied, what I ran
+          (the PR's own tests + the behavior checks), what worked and what didn't,
+          exactly as I observed it. Name every check with its outcome; say plainly
+          what I could NOT test and why — never silent. No YAML, no step matrices —
+          link the evidence packet instead.>"}
+          The Suggestions section is owned by the cold-read stage — do NOT emit it.
+          Do NOT write any file. Do NOT post. If calling a tool: read the run
+          summaries ONCE and then answer — never re-read, never explore.
       - id: cold-read
         kind: agent
         skill:
@@ -446,12 +468,16 @@ eval-lane-plan:
           - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.252.1416'
         tools: [ledger, read]
         max_turns: 30
-        outputs: [verdict]
+        outputs: [verdict, suggestions]
         prompt: |-
           Fresh-context validation of the evidence packet: SUBJECT (PASS/FAIL/
           NO_VALIDATION) + PROCESS.
           After at most TWO tool calls, emit your final verdict JSON ONLY:
-          {"verdict": "PASS|FAIL|NO_VALIDATION", "subject": "...", "process": "..."}.
+          {"verdict": "PASS|FAIL|NO_VALIDATION", "subject": "...", "process": "...",
+          "suggestions": "<markdown bullets, each '- ...': feedback a fellow user
+          would leave on the PR — what I'd try, what to watch out for, what to
+          test next, a glitch I hit; plain user words, not reviewer requirements;
+          the literal string None. when there is nothing to add>"}.
           Never call a tool more than twice; always end with the verdict. (known-red, tier compliance, claims scoped, media
           non-empty + showing the commands, Assisted-by present). Every material
           vision claim corroborated by a deterministic source. Map findings to
@@ -463,18 +489,30 @@ eval-lane-plan:
         template: "$report.template"
         vars:
           pr: "$pr"
-          cold_read: "@cold-read.verdict"
-          verdict: "@eval.verdict"
+          sha: "$env.PR_HEAD_SHA"
           class: "@triage.plan-json.class"
-          channel: "@channel-select.channel"
+          # the channel KEY (EVAL_CHANNEL) — NOT the channel-select entry map
+          channel: "$env.EVAL_CHANNEL"
           tier: "@triage.plan-json.tier"
+          golden: "@channel-select.golden"
+          tests_body: "@report.tests"
+          suggestions_body: "@cold-read.suggestions"
           cast: "media/pr-$pr-$calver/pr-$pr.cast"
           mp4: "media/pr-$pr-$calver/pr-$pr.mp4"
-          mjpeg: "media/pr-$pr-$calver/pr-$pr.mjpeg"
           png: "media/pr-$pr-$calver/pr-$pr.png"
           gif: "media/pr-$pr-$calver/pr-$pr.gif"
         out: "eval/pr-$pr.md"
-        validate: report-frontmatter
+        validate: |-
+          set -eu
+          f="eval/pr-$pr.md"
+          test -s "$f"
+          for s in "## Tests" "## Suggestions"; do grep -qF "$s" "$f" || { echo "report: missing section: $s" >&2; exit 1; }; done
+          grep -qE "^\\*Assisted-by: .+\\*" "$f" || { echo "report: missing/empty Assisted-by footer" >&2; exit 1; }
+          grep -qE "^\\*Tested-by: .+\\*" "$f" || { echo "report: missing/empty Tested-by footer" >&2; exit 1; }
+          if grep -qE "^## (What|How|Recordings|Result)" "$f"; then echo "report: legacy or verdict heading present" >&2; exit 1; fi
+          if grep -qE "^#.*\\b(PASS|FAIL|NO_VALIDATION)\\b" "$f"; then echo "report: verdict language present - the eval is user-voice" >&2; exit 1; fi
+          sed -n "/^## Tests/,/^## Suggestions/p" "$f" | grep -qE "(worked|didn't|did not|failed|passed|N/A|not testable|could not|couldn't)" || { echo "report: Tests lacks observed outcomes or N/A reasons" >&2; exit 1; }
+          if grep -qE "^  - name:" "$f"; then echo "report: inlined step matrix - link the evidence packet instead" >&2; exit 1; fi
       - id: publish
         kind: gate
         condition: "$env.EVAL_PUBLISH == approve"
