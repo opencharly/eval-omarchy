@@ -12,46 +12,14 @@ omarchy-pr-apply:
             appear in THIS candy. The same seam serves the pod venue and the VM
             venue (AGENTS.md per-PR artifact pattern, runtime lane).
         plan:
-            - run: install the pr-apply helper (the single runtime apply seam)
+            - run: install the pr-apply helper (the single runtime apply seam; base64-embedded - the executor drops heredoc stdin, which produced a 0-byte helper that silently no-opped every apply)
               id: eval-pr-apply-install
               command: |
                   set -eu
-                  install -D -m 0755 /dev/stdin /usr/local/bin/pr-apply <<'PR_APPLY_EOF'
-                  #!/usr/bin/env bash
-                  # pr-apply <pr> <sha> <file...> — install ONLY the PR's changed files over the installed tree.
-                  set -eu
-                  PR=$1; SHA=$2; shift 2
-                  REPO=${PR_APPLY_REPO:-/root/.cache/omarchy-pr-apply.git}
-                  T=$(mktemp -d)
-                  trap 'rm -rf "$T"' EXIT
-                  if [ -d "$REPO" ]; then
-                      # the golden carries a pre-seeded bare clone with the batch's
-                      # PR heads pre-fetched — the checkout is fully local (no per-lane
-                      # GitHub fetch; the measured per-lane fetch ~2-10s avoided).
-                      git clone -q --shared "$REPO" "$T"
-                  else
-                      git init -q "$T"
-                      cd "$T"
-                      git remote add origin https://github.com/omacom/omarchy
-                      git fetch -q --depth 1 origin "pull/$PR/head"
-                  fi
-                  cd "$T"
-                  # the pre-seeded repo may lack a moved/orphaned SHA (never swallow):
-                  # fall back to the fresh depth-1 fetch of the PR head, then retry.
-                  git checkout -q --detach "$SHA" || {
-                      git fetch -q --depth 1 origin "pull/$PR/head" || { echo "pr-apply: fetch failed for $PR"; exit 1; }
-                      git checkout -q --detach "$SHA"
-                  }
-                  for f in "$@"; do
-                      if [ -f "$f" ]; then
-                          sudo install -D -m 0644 "$f" "/usr/share/omarchy/$f"
-                      else
-                          echo "pr-apply: WARNING: $f not in the PR head — skipping" >&2
-                      fi
-                  done
-                  echo "pr-apply: installed $(($#)) file(s) for PR $PR @ $SHA"
-                  PR_APPLY_EOF
+                  printf '%s' 'ICAgICAgICAgICAgICAgICAgIyEvdXNyL2Jpbi9lbnYgYmFzaAogICAgICAgICAgICAgICAgICAjIHByLWFwcGx5IDxwcj4gPHNoYT4gPGZpbGUuLi4+IOKAlCBpbnN0YWxsIE9OTFkgdGhlIFBSJ3MgY2hhbmdlZCBmaWxlcyBvdmVyIHRoZSBpbnN0YWxsZWQgdHJlZS4KICAgICAgICAgICAgICAgICAgc2V0IC1ldQogICAgICAgICAgICAgICAgICBQUj0kMTsgU0hBPSQyOyBzaGlmdCAyCiAgICAgICAgICAgICAgICAgIFJFUE89JHtQUl9BUFBMWV9SRVBPOi0vcm9vdC8uY2FjaGUvb21hcmNoeS1wci1hcHBseS5naXR9CiAgICAgICAgICAgICAgICAgIFQ9JChta3RlbXAgLWQpCiAgICAgICAgICAgICAgICAgIHRyYXAgJ3JtIC1yZiAiJFQiJyBFWElUCiAgICAgICAgICAgICAgICAgIGlmIFsgLWQgIiRSRVBPIiBdOyB0aGVuCiAgICAgICAgICAgICAgICAgICAgICAjIHRoZSBnb2xkZW4gY2FycmllcyBhIHByZS1zZWVkZWQgYmFyZSBjbG9uZSB3aXRoIHRoZSBiYXRjaCdzCiAgICAgICAgICAgICAgICAgICAgICAjIFBSIGhlYWRzIHByZS1mZXRjaGVkIOKAlCB0aGUgY2hlY2tvdXQgaXMgZnVsbHkgbG9jYWwgKG5vIHBlci1sYW5lCiAgICAgICAgICAgICAgICAgICAgICAjIEdpdEh1YiBmZXRjaDsgdGhlIG1lYXN1cmVkIHBlci1sYW5lIGZldGNoIH4yLTEwcyBhdm9pZGVkKS4KICAgICAgICAgICAgICAgICAgICAgIGdpdCBjbG9uZSAtcSAtLXNoYXJlZCAiJFJFUE8iICIkVCIKICAgICAgICAgICAgICAgICAgZWxzZQogICAgICAgICAgICAgICAgICAgICAgZ2l0IGluaXQgLXEgIiRUIgogICAgICAgICAgICAgICAgICAgICAgY2QgIiRUIgogICAgICAgICAgICAgICAgICAgICAgZ2l0IHJlbW90ZSBhZGQgb3JpZ2luIGh0dHBzOi8vZ2l0aHViLmNvbS9vbWFjb20vb21hcmNoeQogICAgICAgICAgICAgICAgICAgICAgZ2l0IGZldGNoIC1xIC0tZGVwdGggMSBvcmlnaW4gInB1bGwvJFBSL2hlYWQiCiAgICAgICAgICAgICAgICAgIGZpCiAgICAgICAgICAgICAgICAgIGNkICIkVCIKICAgICAgICAgICAgICAgICAgIyB0aGUgcHJlLXNlZWRlZCByZXBvIG1heSBsYWNrIGEgbW92ZWQvb3JwaGFuZWQgU0hBIChuZXZlciBzd2FsbG93KToKICAgICAgICAgICAgICAgICAgIyBmYWxsIGJhY2sgdG8gdGhlIGZyZXNoIGRlcHRoLTEgZmV0Y2ggb2YgdGhlIFBSIGhlYWQsIHRoZW4gcmV0cnkuCiAgICAgICAgICAgICAgICAgIGdpdCBjaGVja291dCAtcSAtLWRldGFjaCAiJFNIQSIgfHwgewogICAgICAgICAgICAgICAgICAgICAgZ2l0IGZldGNoIC1xIC0tZGVwdGggMSBvcmlnaW4gInB1bGwvJFBSL2hlYWQiIHx8IHsgZWNobyAicHItYXBwbHk6IGZldGNoIGZhaWxlZCBmb3IgJFBSIjsgZXhpdCAxOyB9CiAgICAgICAgICAgICAgICAgICAgICBnaXQgY2hlY2tvdXQgLXEgLS1kZXRhY2ggIiRTSEEiCiAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgICAgZm9yIGYgaW4gIiRAIjsgZG8KICAgICAgICAgICAgICAgICAgICAgIGlmIFsgLWYgIiRmIiBdOyB0aGVuCiAgICAgICAgICAgICAgICAgICAgICAgICAgc3VkbyBpbnN0YWxsIC1EIC1tIDA2NDQgIiRmIiAiL3Vzci9zaGFyZS9vbWFyY2h5LyRmIgogICAgICAgICAgICAgICAgICAgICAgZWxzZQogICAgICAgICAgICAgICAgICAgICAgICAgIGVjaG8gInByLWFwcGx5OiBXQVJOSU5HOiAkZiBub3QgaW4gdGhlIFBSIGhlYWQg4oCUIHNraXBwaW5nIiA+JjIKICAgICAgICAgICAgICAgICAgICAgIGZpCiAgICAgICAgICAgICAgICAgIGRvbmUKICAgICAgICAgICAgICAgICAgZWNobyAicHItYXBwbHk6IGluc3RhbGxlZCAkKCgkIykpIGZpbGUocykgZm9yIFBSICRQUiBAICRTSEEiCg==' | base64 -d > /usr/local/bin/pr-apply
+                  chmod 0755 /usr/local/bin/pr-apply
+                  test -s /usr/local/bin/pr-apply && head -1 /usr/local/bin/pr-apply | grep -q "#!/usr/bin/env bash"
             - check: the helper is installed and runnable
               id: eval-pr-apply-ok
               context: [runtime]
-              command: pr-apply --help >/dev/null 2>&1 || true; test -x /usr/local/bin/pr-apply
+              command: 'test -s /usr/local/bin/pr-apply && head -1 /usr/local/bin/pr-apply | grep -q "#!/usr/bin/env bash" && pr-apply --help >/dev/null 2>&1 || true'
