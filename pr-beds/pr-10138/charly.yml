@@ -12,12 +12,35 @@ check-omarchy-pr-10138-vm:
       - check: apply PR 10138 via the single apply seam
         id: pr-apply
         context: [runtime]
-        command: 'pr-apply 10138 87f2bf1e72e60de3a49531f0e65aeb7c5d4f5f02 '
+        command: 'pr-apply 10138 87f2bf1e72e60de3a49531f0e65aeb7c5d4f5f02 docs/omarchy-shell.md shell/Commons/Wallclock.qml shell/Commons/WallclockMath.js shell/Commons/qmldir shell/plugins/panels/clock/BarWidget.qml shell/plugins/panels/clock/Panel.qml test/shell.d/clock-test.sh'
       - check: the PR's OWN test suite passes on the applied system
         id: pr-tests
         context: [runtime]
-        command: 'for t in ; do bash "$t" || exit 1; done'
-      
+        command: 'for t in /usr/share/omarchy/test/shell.d/clock-test.sh; do bash "$t" || exit 1; done'
+      - agent-check: >-
+          WallclockMath.isDiscontinuity flags a stepped clock and ignores an on-time tick - verify with: node -e "const m=require('/usr/share/omarchy/shell/Commons/WallclockMath.js'); if(!m.isDiscontinuity(4000,1000,3000)) process.exit(1); if(m.isDiscontinuity(1000,1000,3000)) process.exit(1); if(!m.isDiscontinuity(-5000,1000,3000)) process.exit(1);"
+        id: behavior-1
+        context: [runtime]
+      - agent-check: >-
+          Wallclock is registered as a qs.Commons singleton in qmldir - verify with: grep -q 'singleton Wallclock 1.0 Wallclock.qml' /usr/share/omarchy/shell/Commons/qmldir
+        id: behavior-2
+        context: [runtime]
+      - agent-check: >-
+          Wallclock.qml reports a step through the tested isDiscontinuity predicate - verify with: grep -q 'isDiscontinuity(elapsed, root.interval, root.threshold)' /usr/share/omarchy/shell/Commons/Wallclock.qml
+        id: behavior-3
+        context: [runtime]
+      - agent-check: >-
+          Wallclock.resync forces a re-read by toggling SystemClock.enabled off and back on - verify with: grep -q 'clock.enabled = false' /usr/share/omarchy/shell/Commons/Wallclock.qml && grep -q 'clock.enabled = true' /usr/share/omarchy/shell/Commons/Wallclock.qml
+        id: behavior-4
+        context: [runtime]
+      - agent-check: >-
+          Clock bar widget resyncs its SystemClock when Wallclock reports a step - verify with: grep -q 'Wallclock.resync(clock)' /usr/share/omarchy/shell/plugins/panels/clock/BarWidget.qml
+        id: behavior-5
+        context: [runtime]
+      - agent-check: >-
+          Calendar panel resyncs its SystemClock on a wall-clock step - verify with: grep -q 'Wallclock.resync(clock)' /usr/share/omarchy/shell/plugins/panels/clock/Panel.qml
+        id: behavior-6
+        context: [runtime]
       - check: start a terminal recording
         id: rec-start
         context: [runtime]
@@ -38,7 +61,7 @@ check-omarchy-pr-10138-vm:
           # mapping (RCA 2026.252.2250: the inlined text broke the
           # rendered YAML on shell metacharacters).
           text: |-
-            
+            node -e "const m=require('/usr/share/omarchy/shell/Commons/WallclockMath.js'); process.exit(m.isDiscontinuity(8*60*60*1000,1000,3000)&&!m.isDiscontinuity(1000,1000,3000)?0:1)"
           settle_ms: 1000
       - check: capture the VM display via SPICE
         id: rec-screen-spice

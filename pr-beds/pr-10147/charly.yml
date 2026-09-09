@@ -18,24 +18,16 @@ check-omarchy-pr-10147-vm:
         context: [runtime]
         command: 'for t in /usr/share/omarchy/test/shell.d/menu-test.sh; do bash "$t" || exit 1; done'
       - agent-check: >-
-          Install > AI menu defines the vibecad-preview entry - verify with: grep -q '"install.ai.vibecad-preview"' /usr/share/omarchy/omarchy-menu.jsonc
+          Install > AI menu offers VibeCAD Preview with the preview package guard and launch action - verify with: grep -q '"install.ai.vibecad-preview"' /usr/share/omarchy/omarchy-menu.jsonc && grep -q '"label":"VibeCAD Preview"' /usr/share/omarchy/omarchy-menu.jsonc && grep -q 'omarchy-pkg-present vibecad-preview-bin' /usr/share/omarchy/omarchy-menu.jsonc && grep -q "omarchy-install-and-launch 'VibeCAD Preview' vibecad-preview-bin vibecad" /usr/share/omarchy/omarchy-menu.jsonc
         id: behavior-1
         context: [runtime]
       - agent-check: >-
-          entry is labeled 'VibeCAD Preview' - verify with: grep -q 'VibeCAD Preview' /usr/share/omarchy/omarchy-menu.jsonc
+          No stable VibeCAD install entry is offered before upstream publishes one - verify with: ! grep -q '"install.ai.vibecad"' /usr/share/omarchy/omarchy-menu.jsonc
         id: behavior-2
         context: [runtime]
       - agent-check: >-
-          entry uses the vibecad-preview-bin package-present guard - verify with: grep -q 'omarchy-pkg-present vibecad-preview-bin' /usr/share/omarchy/omarchy-menu.jsonc
+          menu-test.sh asserts the Preview label, package guard, launch command, and absence of a stable entry - verify with: grep -q 'vibecad-preview' /usr/share/omarchy/test/shell.d/menu-test.sh && grep -q 'does not offer a stable VibeCAD package' /usr/share/omarchy/test/shell.d/menu-test.sh
         id: behavior-3
-        context: [runtime]
-      - agent-check: >-
-          entry installs and launches vibecad-preview-bin via vibecad desktop entry - verify with: grep -q "omarchy-install-and-launch 'VibeCAD Preview' vibecad-preview-bin vibecad" /usr/share/omarchy/omarchy-menu.jsonc
-        id: behavior-4
-        context: [runtime]
-      - agent-check: >-
-          no premature stable vibecad install entry exists - verify with: ! grep -q '"install.ai.vibecad"' /usr/share/omarchy/omarchy-menu.jsonc
-        id: behavior-5
         context: [runtime]
       - check: start a terminal recording
         id: rec-start
@@ -57,7 +49,7 @@ check-omarchy-pr-10147-vm:
           # mapping (RCA 2026.252.2250: the inlined text broke the
           # rendered YAML on shell metacharacters).
           text: |-
-            bash /usr/share/omarchy/test/shell.d/menu-test.sh
+            grep -q 'install.ai.vibecad-preview' /usr/share/omarchy/omarchy-menu.jsonc
           settle_ms: 1000
       - check: capture the VM display via SPICE
         id: rec-screen-spice

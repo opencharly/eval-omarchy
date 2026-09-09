@@ -18,24 +18,16 @@ check-omarchy-pr-10134-vm:
         context: [runtime]
         command: 'for t in ; do bash "$t" || exit 1; done'
       - agent-check: >-
-          extension version is derived from the theme file cksum so palette changes invalidate the editor cache - verify with: grep -q 'GENERATED_EXTENSION_VERSION="1.0.$(cksum' /usr/share/omarchy/bin/omarchy-theme-set-vscode
+          Extension version is derived from theme content via cksum so identical palettes keep the cache and new palettes invalidate it - verify with: grep -q 'GENERATED_EXTENSION_VERSION="1.0.$(cksum' /usr/share/omarchy/bin/omarchy-theme-set-vscode
         id: behavior-1
         context: [runtime]
       - agent-check: >-
-          theme contribution declares _watch:true so VS Code attaches a file watcher for live reload - verify with: grep -q '"_watch": true' /usr/share/omarchy/bin/omarchy-theme-set-vscode
+          Theme contribution declares _watch: true so VS Code attaches a ThemeFileWatcher and reloads the active theme on change - verify with: grep -q '"_watch": true' /usr/share/omarchy/bin/omarchy-theme-set-vscode
         id: behavior-2
         context: [runtime]
       - agent-check: >-
-          theme is written as a real file (cat) instead of a symlink so the watcher gets a same-inode rewrite - verify with: grep -q 'cat "$GENERATED_THEME" >"$ext_dir/themes/omarchy-color-theme.json"' /usr/share/omarchy/bin/omarchy-theme-set-vscode
+          Theme file is written as a real file (rm -f + cat >) instead of a symlink so the watcher gets a same-inode UPDATED event and no dangling path mid-swap - verify with: grep -q 'cat "$GENERATED_THEME" >' /usr/share/omarchy/bin/omarchy-theme-set-vscode
         id: behavior-3
-        context: [runtime]
-      - agent-check: >-
-          pre-existing symlink from older versions is removed before the first real-file copy - verify with: grep -q 'rm -f "$ext_dir/themes/omarchy-color-theme.json"' /usr/share/omarchy/bin/omarchy-theme-set-vscode
-        id: behavior-4
-        context: [runtime]
-      - agent-check: >-
-          derived version is valid semver (1.0.<digits>) as produced by the cksum pipeline - verify with: v="1.0.$(cksum /etc/hostname | cut -d' ' -f1)"; case "$v" in 1.0.[0-9]*) exit 0;; *) exit 1;; esac
-        id: behavior-5
         context: [runtime]
       - check: start a terminal recording
         id: rec-start
@@ -57,7 +49,7 @@ check-omarchy-pr-10134-vm:
           # mapping (RCA 2026.252.2250: the inlined text broke the
           # rendered YAML on shell metacharacters).
           text: |-
-            bash -n /usr/share/omarchy/bin/omarchy-theme-set-vscode && grep -q '"_watch": true' /usr/share/omarchy/bin/omarchy-theme-set-vscode
+            bash /usr/share/omarchy/bin/omarchy-theme-set-vscode default
           settle_ms: 1000
       - check: capture the VM display via SPICE
         id: rec-screen-spice

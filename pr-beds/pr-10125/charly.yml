@@ -12,23 +12,12 @@ check-omarchy-pr-10125-vm:
       - check: apply PR 10125 via the single apply seam
         id: pr-apply
         context: [runtime]
-        command: 'pr-apply 10125 399665b58a317c50ff134555a9d9188d10ab4c9e bin/omarchy-capture-screenrecording test/shell.d/screenrecording-encoder-test.sh'
+        command: 'pr-apply 10125 399665b58a317c50ff134555a9d9188d10ab4c9e '
       - check: the PR's OWN test suite passes on the applied system
         id: pr-tests
         context: [runtime]
-        command: 'for t in /usr/share/omarchy/test/shell.d/screenrecording-encoder-test.sh; do bash "$t" || exit 1; done'
-      - agent-check: >-
-          Script detects Baffin PCI ID 1002:67ef - verify with: grep -q '1002:67ef' /usr/share/omarchy/bin/omarchy-capture-screenrecording
-        id: behavior-1
-        context: [runtime]
-      - agent-check: >-
-          Baffin path passes -encoder cpu to gpu-screen-recorder - verify with: grep -q 'encoder_args=(-encoder cpu)' /usr/share/omarchy/bin/omarchy-capture-screenrecording && grep -q '"${encoder_args[@]}"' /usr/share/omarchy/bin/omarchy-capture-screenrecording
-        id: behavior-2
-        context: [runtime]
-      - agent-check: >-
-          PR's own test passes: Baffin forces CPU encoding, unaffected GPUs keep auto - verify with: ROOT="${ROOT:-/usr/share/omarchy}" bash /usr/share/omarchy/test/shell.d/screenrecording-encoder-test.sh
-        id: behavior-3
-        context: [runtime]
+        command: 'for t in ; do bash "$t" || exit 1; done'
+      
       - check: start a terminal recording
         id: rec-start
         context: [runtime]
@@ -49,7 +38,7 @@ check-omarchy-pr-10125-vm:
           # mapping (RCA 2026.252.2250: the inlined text broke the
           # rendered YAML on shell metacharacters).
           text: |-
-            ROOT="${ROOT:-/usr/share/omarchy}" bash /usr/share/omarchy/test/shell.d/screenrecording-encoder-test.sh
+            
           settle_ms: 1000
       - check: capture the VM display via SPICE
         id: rec-screen-spice

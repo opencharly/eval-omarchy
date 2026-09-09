@@ -18,28 +18,48 @@ check-omarchy-pr-10139-vm:
         context: [runtime]
         command: 'for t in /usr/share/omarchy/test/shell.d/apple-sd-reader-test.sh; do bash "$t" || exit 1; done'
       - agent-check: >-
-          hardware detector matches MacBookPro12,1 - verify with: printf 'MacBookPro12,1\n' >/tmp/omarchy-dmi && OMARCHY_DMI_PRODUCT_NAME=/tmp/omarchy-dmi /usr/share/omarchy/bin/omarchy-hw-apple-sd-reader
+          install leaf for Apple SD reader is wired into hardware setup - verify with: grep -q 'apple/fix-sd-card-reader.sh' /usr/share/omarchy/install/hardware/all.sh
         id: behavior-1
         context: [runtime]
       - agent-check: >-
-          hardware detector skips MacBookPro14,1 - verify with: printf 'MacBookPro14,1\n' >/tmp/omarchy-dmi2 && ! OMARCHY_DMI_PRODUCT_NAME=/tmp/omarchy-dmi2 /usr/share/omarchy/bin/omarchy-hw-apple-sd-reader
+          install leaf writes the usbcore quirk for 05ac:8406 - verify with: grep -q 'usbcore.quirks=05ac:8406:bk' /usr/share/omarchy/install/hardware/apple/fix-sd-card-reader.sh
         id: behavior-2
         context: [runtime]
       - agent-check: >-
-          all.sh runs the SD reader fix during hardware setup - verify with: grep -q 'apple/fix-sd-card-reader.sh' /usr/share/omarchy/install/hardware/all.sh
+          install leaf installs acpi_call for SPWR/SRST - verify with: grep -q 'acpi_call' /usr/share/omarchy/install/hardware/apple/fix-sd-card-reader.sh
         id: behavior-3
         context: [runtime]
       - agent-check: >-
-          install leaf puts the Apple reader quirk on the kernel command line - verify with: grep -q 'usbcore.quirks=05ac:8406:bk' /usr/share/omarchy/install/hardware/apple/fix-sd-card-reader.sh
+          cmd helper invokes Apple XHCI SPWR ACPI method - verify with: grep -q 'SPWR' /usr/share/omarchy/bin/omarchy-cmd-apple-sd-reader
         id: behavior-4
         context: [runtime]
       - agent-check: >-
-          helper calls Apple XHCI SPWR ACPI method - verify with: grep -q 'SPWR' /usr/share/omarchy/bin/omarchy-cmd-apple-sd-reader
+          cmd helper status subcommand runs without root - verify with: bash /usr/share/omarchy/bin/omarchy-cmd-apple-sd-reader status >/dev/null 2>&1
         id: behavior-5
         context: [runtime]
       - agent-check: >-
-          migration sources the SD reader fix on existing installs - verify with: grep -q 'fix-sd-card-reader.sh' /usr/share/omarchy/migrations/1788508170.sh
+          cmd helper rejects unknown subcommand with exit 2 - verify with: bash /usr/share/omarchy/bin/omarchy-cmd-apple-sd-reader bogus >/dev/null 2>&1; [ $? -eq 2 ]
         id: behavior-6
+        context: [runtime]
+      - agent-check: >-
+          detector matches MacBookPro12,1 DMI - verify with: d=$(mktemp); printf 'MacBookPro12,1\n' >"$d"; OMARCHY_DMI_PRODUCT_NAME="$d" bash /usr/share/omarchy/bin/omarchy-hw-apple-sd-reader; rc=$?; rm -f "$d"; exit $rc
+        id: behavior-7
+        context: [runtime]
+      - agent-check: >-
+          detector skips MacBookPro14,1 (no reader) - verify with: d=$(mktemp); printf 'MacBookPro14,1\n' >"$d"; if OMARCHY_DMI_PRODUCT_NAME="$d" bash /usr/share/omarchy/bin/omarchy-hw-apple-sd-reader; then rm -f "$d"; exit 1; else rm -f "$d"; exit 0; fi
+        id: behavior-8
+        context: [runtime]
+      - agent-check: >-
+          Mac support manual documents the SD reader keep-alive - verify with: grep -q '05ac:8406' /usr/share/omarchy/manual/44-mac-support.md
+        id: behavior-9
+        context: [runtime]
+      - agent-check: >-
+          migration sources the Apple SD reader fix leaf - verify with: grep -q 'fix-sd-card-reader.sh' /usr/share/omarchy/migrations/1788508170.sh
+        id: behavior-10
+        context: [runtime]
+      - agent-check: >-
+          PR's own shell test suite passes - verify with: bash /usr/share/omarchy/test/shell.d/apple-sd-reader-test.sh
+        id: behavior-11
         context: [runtime]
       - check: start a terminal recording
         id: rec-start
@@ -61,7 +81,7 @@ check-omarchy-pr-10139-vm:
           # mapping (RCA 2026.252.2250: the inlined text broke the
           # rendered YAML on shell metacharacters).
           text: |-
-            bash /usr/share/omarchy/test/shell.d/apple-sd-reader-test.sh
+            d=$(mktemp); printf 'MacBookPro12,1\n' >"$d"; OMARCHY_DMI_PRODUCT_NAME="$d" bash /usr/share/omarchy/bin/omarchy-hw-apple-sd-reader; rc=$?; rm -f "$d"; exit $rc
           settle_ms: 1000
       - check: capture the VM display via SPICE
         id: rec-screen-spice

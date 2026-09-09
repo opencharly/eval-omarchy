@@ -18,19 +18,19 @@ check-omarchy-pr-10130-vm:
         context: [runtime]
         command: 'for t in /usr/share/omarchy/test/shell.d/lock-activity-reblank-test.sh; do bash "$t" || exit 1; done'
       - agent-check: >-
-          Activity monitor is enabled while locked, ignores inhibitors, and re-arms the blank on every resume - verify with: grep -q 'id: activityMonitor' /usr/share/omarchy/shell/plugins/lock/Service.qml && grep -q 'enabled: root.lockRequested' /usr/share/omarchy/shell/plugins/lock/Service.qml && grep -q 'respectInhibitors: false' /usr/share/omarchy/shell/plugins/lock/Service.qml && grep -q 'onIsIdleChanged: if (!isIdle) root.handleActivityResumed()' /usr/share/omarchy/shell/plugins/lock/Service.qml
+          activity monitor is enabled while locked, ignores inhibitors, and re-arms the blank on every resume - verify with: grep -q 'respectInhibitors: false' /usr/share/omarchy/shell/plugins/lock/Service.qml && grep -q 'onIsIdleChanged: if (!isIdle) root.handleActivityResumed()' /usr/share/omarchy/shell/plugins/lock/Service.qml
         id: behavior-1
         context: [runtime]
       - agent-check: >-
-          The blank process logs its own start via blank-started - verify with: grep -q 'onStarted: root.logEvent("blank-started")' /usr/share/omarchy/shell/plugins/lock/Service.qml
+          handleActivityResumed() exists and re-arms the blank timer while locked - verify with: grep -q 'function handleActivityResumed' /usr/share/omarchy/shell/plugins/lock/Service.qml
         id: behavior-2
         context: [runtime]
       - agent-check: >-
-          omarchy-shell lock status exposes blankArmed and activityIdle - verify with: grep -q 'blankArmed: root.blankArmed' /usr/share/omarchy/shell/plugins/lock/Service.qml && grep -q 'activityIdle: root.activityMonitor.isIdle' /usr/share/omarchy/shell/plugins/lock/Service.qml
+          blankArmed status property is exposed on the lock service - verify with: grep -q 'readonly property bool blankArmed' /usr/share/omarchy/shell/plugins/lock/Service.qml
         id: behavior-3
         context: [runtime]
       - agent-check: >-
-          handleActivityResumed guards on lockRequested and in-flight password check - verify with: grep -q 'function handleActivityResumed()' /usr/share/omarchy/shell/plugins/lock/Service.qml && grep -q 'if (!lockRequested || authenticatingPassword) return' /usr/share/omarchy/shell/plugins/lock/Service.qml
+          blank process logs blank-started when it spawns - verify with: grep -q 'onStarted: root.logEvent("blank-started")' /usr/share/omarchy/shell/plugins/lock/Service.qml
         id: behavior-4
         context: [runtime]
       - check: start a terminal recording

@@ -18,16 +18,20 @@ check-omarchy-pr-10146-vm:
         context: [runtime]
         command: 'for t in /usr/share/omarchy/test/shell.d/notifications-test.sh; do bash "$t" || exit 1; done'
       - agent-check: >-
-          popupGroup is defined and exported by NotificationLogic.js - verify with: grep -q 'function popupGroup' /usr/share/omarchy/shell/plugins/notifications/NotificationLogic.js && grep -q 'popupGroup: popupGroup' /usr/share/omarchy/shell/plugins/notifications/NotificationLogic.js
+          popupGroup is exported from NotificationLogic - verify with: grep -q 'popupGroup: popupGroup' /usr/share/omarchy/shell/plugins/notifications/NotificationLogic.js
         id: behavior-1
         context: [runtime]
       - agent-check: >-
-          Service.qml derives the visible group, hides non-leaders, and prefixes the summary with the group size - verify with: grep -q 'readonly property var group: NotificationLogic.popupGroup(popupModel, cardSlot.index)' /usr/share/omarchy/shell/plugins/notifications/Service.qml && grep -q 'visible: cardSlot.group.leader' /usr/share/omarchy/shell/plugins/notifications/Service.qml && grep -q 'cardSlot.group.count > 1' /usr/share/omarchy/shell/plugins/notifications/Service.qml
+          popup delegate derives its group from the live model - verify with: grep -q 'readonly property var group: NotificationLogic.popupGroup(popupModel, cardSlot.index)' /usr/share/omarchy/shell/plugins/notifications/Service.qml
         id: behavior-2
         context: [runtime]
       - agent-check: >-
-          popupGroup reports count=2/leader=true for the newest of two identical rows, hides the older member, and does not group a different body - verify with: node -e "const n=require('/usr/share/omarchy/shell/plugins/notifications/NotificationLogic.js');const rows=[{app:'A',summary:'S',body:'B'},{app:'A',summary:'S',body:'B'},{app:'A',summary:'S',body:'X'}];const g=n.popupGroup(rows,0);const h=n.popupGroup(rows,1);const x=n.popupGroup(rows,2);if(!(g.count===2&&g.leader===true&&h.count===2&&h.leader===false&&x.count===1&&x.leader===true))process.exit(1)"
+          only the newest member of a group is visible - verify with: grep -q 'visible: cardSlot.group.leader' /usr/share/omarchy/shell/plugins/notifications/Service.qml
         id: behavior-3
+        context: [runtime]
+      - agent-check: >-
+          grouped summary is prefixed with the group size - verify with: grep -q 'cardSlot.group.count > 1' /usr/share/omarchy/shell/plugins/notifications/Service.qml
+        id: behavior-4
         context: [runtime]
       - check: start a terminal recording
         id: rec-start

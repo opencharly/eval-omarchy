@@ -18,19 +18,27 @@ check-omarchy-pr-10129-vm:
         context: [runtime]
         command: 'for t in /usr/share/omarchy/test/shell.d/hyprland-window-restore-presentation-test.sh; do bash "$t" || exit 1; done'
       - agent-check: >-
-          restore-presentation helper script is installed at the system path - verify with: test -f /usr/share/omarchy/bin/omarchy-hyprland-window-restore-presentation
+          The restore-presentation helper script is installed at its system path and targets the presentation terminal class. - verify with: test -f /usr/share/omarchy/bin/omarchy-hyprland-window-restore-presentation && grep -q 'org.omarchy.terminal' /usr/share/omarchy/bin/omarchy-hyprland-window-restore-presentation
         id: behavior-1
         context: [runtime]
       - agent-check: >-
-          the PR's own shell test for the restore helper passes - verify with: bash /usr/share/omarchy/test/shell.d/hyprland-window-restore-presentation-test.sh
+          Running the helper with a mocked hyprctl re-applies float, 875x600 resize, center, and focus to a presentation terminal. - verify with: tmp=$(mktemp -d); mkdir -p "$tmp/bin"; cat >"$tmp/bin/hyprctl" <<SH
+          #!/bin/bash
+          if [[ \$1 == "clients" ]]; then printf '%s\n' '[{"address":"0xabc","class":"org.omarchy.terminal","initialClass":"org.omarchy.terminal"}]'; else printf '%s\n' "\$*" >>"\$HYPRCTL_LOG"; fi
+          SH
+          chmod +x "$tmp/bin/hyprctl"; HYPRCTL_LOG="$tmp/log" PATH="$tmp/bin:$PATH" bash /usr/share/omarchy/bin/omarchy-hyprland-window-restore-presentation; grep -q 'window = "address:0xabc"' "$tmp/log" && grep -q 'x = 875, y = 600' "$tmp/log" && grep -q 'center' "$tmp/log" && grep -q 'focus' "$tmp/log"
         id: behavior-2
         context: [runtime]
       - agent-check: >-
-          omarchy-restart-shell invokes the restore helper after the new shell answers ping - verify with: grep -q 'omarchy-hyprland-window-restore-presentation' /usr/share/omarchy/bin/omarchy-restart-shell
+          The helper is a no-op (issues no hyprctl dispatch) when no presentation terminal client exists. - verify with: tmp=$(mktemp -d); mkdir -p "$tmp/bin"; cat >"$tmp/bin/hyprctl" <<SH
+          #!/bin/bash
+          if [[ \$1 == "clients" ]]; then printf '%s\n' '[]'; else printf '%s\n' "\$*" >>"\$HYPRCTL_LOG"; fi
+          SH
+          chmod +x "$tmp/bin/hyprctl"; HYPRCTL_LOG="$tmp/log" PATH="$tmp/bin:$PATH" bash /usr/share/omarchy/bin/omarchy-hyprland-window-restore-presentation; test ! -s "$tmp/log"
         id: behavior-3
         context: [runtime]
       - agent-check: >-
-          restore helper re-applies float, 875x600 size, center, and focus to org.omarchy.terminal clients - verify with: grep -q 'hl.dsp.window.float' /usr/share/omarchy/bin/omarchy-hyprland-window-restore-presentation && grep -q 'width=875' /usr/share/omarchy/bin/omarchy-hyprland-window-restore-presentation && grep -q 'hl.dsp.window.center' /usr/share/omarchy/bin/omarchy-hyprland-window-restore-presentation && grep -q 'hl.dsp.focus' /usr/share/omarchy/bin/omarchy-hyprland-window-restore-presentation
+          omarchy-restart-shell invokes the restore helper after the new shell answers ping. - verify with: grep -q 'omarchy-hyprland-window-restore-presentation' /usr/share/omarchy/bin/omarchy-restart-shell
         id: behavior-4
         context: [runtime]
       - check: start a terminal recording

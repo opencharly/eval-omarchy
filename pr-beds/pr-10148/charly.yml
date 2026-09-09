@@ -18,16 +18,24 @@ check-omarchy-pr-10148-vm:
         context: [runtime]
         command: 'for t in /usr/share/omarchy/test/shell.d/audient-soft-mixer-migration-test.sh; do bash "$t" || exit 1; done'
       - agent-check: >-
-          Audient soft-mixer WirePlumber rule ships with the vendor match and soft-mixer prop - verify with: grep -q 'device.vendor.id = "0x2708"' /usr/share/omarchy/config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf && grep -q 'api.alsa.soft-mixer = true' /usr/share/omarchy/config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf
+          WirePlumber rule matches Audient vendor id 0x2708 - verify with: grep -q '0x2708' /usr/share/omarchy/config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf
         id: behavior-1
         context: [runtime]
       - agent-check: >-
-          Migration script 1788513270.sh ships at the system path - verify with: test -f /usr/share/omarchy/migrations/1788513270.sh
+          Rule sets api.alsa.soft-mixer=true on the device - verify with: grep -q 'api.alsa.soft-mixer = true' /usr/share/omarchy/config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf
         id: behavior-2
         context: [runtime]
       - agent-check: >-
-          PR's own migration test passes on the applied system - verify with: bash /usr/share/omarchy/test/shell.d/audient-soft-mixer-migration-test.sh
+          Migration seeds the shipped rule via omarchy-refresh-config - verify with: grep -q 'omarchy-refresh-config wireplumber/wireplumber.conf.d/audient-soft-mixer.conf' /usr/share/omarchy/migrations/1788513270.sh
         id: behavior-3
+        context: [runtime]
+      - agent-check: >-
+          Migration resets Speaker element to 100% on Audient cards - verify with: grep -q 'sset Speaker 100%' /usr/share/omarchy/migrations/1788513270.sh
+        id: behavior-4
+        context: [runtime]
+      - agent-check: >-
+          PR's own migration test passes end-to-end - verify with: bash /usr/share/omarchy/test/shell.d/audient-soft-mixer-migration-test.sh
+        id: behavior-5
         context: [runtime]
       - check: start a terminal recording
         id: rec-start
@@ -49,7 +57,7 @@ check-omarchy-pr-10148-vm:
           # mapping (RCA 2026.252.2250: the inlined text broke the
           # rendered YAML on shell metacharacters).
           text: |-
-            bash /usr/share/omarchy/test/shell.d/audient-soft-mixer-migration-test.sh
+            grep -q '0x2708' /usr/share/omarchy/config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf && grep -q 'api.alsa.soft-mixer = true' /usr/share/omarchy/config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf
           settle_ms: 1000
       - check: capture the VM display via SPICE
         id: rec-screen-spice

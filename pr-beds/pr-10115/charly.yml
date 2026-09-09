@@ -18,20 +18,24 @@ check-omarchy-pr-10115-vm:
         context: [runtime]
         command: 'for t in /usr/share/omarchy/test/shell.d/notifications-test.sh; do bash "$t" || exit 1; done'
       - agent-check: >-
-          NotificationCard reserves bottom room for a countdown only on timed cards - verify with: grep -q 'readonly property real countdownReservedHeight: showCountdown ? Style.space(12) : 0' /usr/share/omarchy/shell/plugins/notifications/components/NotificationCard.qml
+          NotificationCard reserves room for a countdown only when showCountdown is set - verify with: grep -q 'readonly property real countdownReservedHeight: showCountdown ? Style.space(12) : 0' /usr/share/omarchy/shell/plugins/notifications/components/NotificationCard.qml
         id: behavior-1
         context: [runtime]
       - agent-check: >-
-          NotificationCard renders a countdown track whose fill tracks remainingLifetime and is gated by showCountdown - verify with: grep -q 'visible: root.showCountdown' /usr/share/omarchy/shell/plugins/notifications/components/NotificationCard.qml && grep -q 'width: parent.width * root.remainingLifetime' /usr/share/omarchy/shell/plugins/notifications/components/NotificationCard.qml
+          NotificationCard renders a countdown track whose fill tracks remainingLifetime - verify with: grep -q 'width: parent.width \* root.remainingLifetime' /usr/share/omarchy/shell/plugins/notifications/components/NotificationCard.qml
         id: behavior-2
         context: [runtime]
       - agent-check: >-
-          Service.qml passes remainingLifetime and showCountdown (lifetime>0) to the notification card - verify with: grep -q 'remainingLifetime: cardSlot.remainingLifetime' /usr/share/omarchy/shell/plugins/notifications/Service.qml && grep -q 'showCountdown: cardSlot.lifetime > 0' /usr/share/omarchy/shell/plugins/notifications/Service.qml
+          countdown track is gated by showCountdown so persistent cards stay unchanged - verify with: grep -q 'visible: root.showCountdown' /usr/share/omarchy/shell/plugins/notifications/components/NotificationCard.qml
         id: behavior-3
         context: [runtime]
       - agent-check: >-
-          The PR's own notifications test suite passes on the applied system - verify with: bash /usr/share/omarchy/test/shell.d/notifications-test.sh
+          Service.qml passes remainingLifetime and showCountdown to the notification card - verify with: grep -q 'showCountdown: cardSlot.lifetime > 0' /usr/share/omarchy/shell/plugins/notifications/Service.qml
         id: behavior-4
+        context: [runtime]
+      - agent-check: >-
+          notifications-test.sh asserts the new countdown behavior - verify with: grep -q 'countdownReservedHeight' /usr/share/omarchy/test/shell.d/notifications-test.sh
+        id: behavior-5
         context: [runtime]
       - check: start a terminal recording
         id: rec-start

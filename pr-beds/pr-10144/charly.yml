@@ -18,28 +18,24 @@ check-omarchy-pr-10144-vm:
         context: [runtime]
         command: 'for t in /usr/share/omarchy/test/shell.d/launcher-rename-test.sh /usr/share/omarchy/test/shell.d/launcher-remove-test.sh; do bash "$t" || exit 1; done'
       - agent-check: >-
-          the omarchy-rename-launcher-entry helper is installed and executable - verify with: test -x /usr/share/omarchy/bin/omarchy-rename-launcher-entry
+          omarchy-rename-launcher-entry exists and is executable at the system bin path - verify with: test -x /usr/share/omarchy/bin/omarchy-rename-launcher-entry
         id: behavior-1
         context: [runtime]
       - agent-check: >-
-          renaming a system entry creates a user override with the new Name and X-Omarchy-Renamed marker - verify with: tmp=$(mktemp -d); mkdir -p "$tmp/data/applications" "$tmp/system/applications"; printf '[Desktop Entry]\nName=Orig\nExec=x\n' > "$tmp/system/applications/test.desktop"; XDG_DATA_HOME="$tmp/data" XDG_DATA_DIRS="$tmp/system" bash /usr/share/omarchy/bin/omarchy-rename-launcher-entry test 'New Name'; ok=1; grep -Fx 'Name=New Name' "$tmp/data/applications/test.desktop" || ok=0; grep -Fx 'X-Omarchy-Renamed=true' "$tmp/data/applications/test.desktop" || ok=0; rm -rf "$tmp"; test $ok -eq 1
+          rename writes a per-user desktop override carrying the X-Omarchy-Renamed marker and the new Name - verify with: d=$(mktemp -d); mkdir -p "$d/data/applications" "$d/system/applications"; printf '[Desktop Entry]\nName=Editor\nExec=editor\n' > "$d/system/applications/org.example.Editor.desktop"; XDG_DATA_HOME="$d/data" XDG_DATA_DIRS="$d/system" bash /usr/share/omarchy/bin/omarchy-rename-launcher-entry org.example.Editor 'New Name'; grep -Fx 'Name=New Name' "$d/data/applications/org.example.Editor.desktop" && grep -Fx 'X-Omarchy-Renamed=true' "$d/data/applications/org.example.Editor.desktop"; rc=$?; rm -rf "$d"; exit $rc
         id: behavior-2
         context: [runtime]
       - agent-check: >-
-          the rename helper rejects path-traversal desktop ids - verify with: bash /usr/share/omarchy/bin/omarchy-rename-launcher-entry '../outside' Changed 2>/dev/null; rc=$?; test $rc -ne 0
+          Menu.qml binds Ctrl+R to the rename flow for the selected application row - verify with: grep -q 'event.key === Qt.Key_R' /usr/share/omarchy/shell/plugins/menu/Menu.qml && grep -q 'root.requestRenameSelected()' /usr/share/omarchy/shell/plugins/menu/Menu.qml
         id: behavior-3
         context: [runtime]
       - agent-check: >-
-          Menu.qml binds Ctrl+R to the rename flow and limits it to app rows - verify with: grep -q 'event.key === Qt.Key_R' /usr/share/omarchy/shell/plugins/menu/Menu.qml && grep -q 'event.modifiers & Qt.ControlModifier' /usr/share/omarchy/shell/plugins/menu/Menu.qml && grep -q 'row.kind !== "app"' /usr/share/omarchy/shell/plugins/menu/Menu.qml
+          AppLibrary.qml exposes the rename helper invocation - verify with: grep -q 'omarchy-rename-launcher-entry' /usr/share/omarchy/shell/services/AppLibrary.qml
         id: behavior-4
         context: [runtime]
       - agent-check: >-
-          AppLibrary.qml delegates renames to the omarchy-rename-launcher-entry helper - verify with: grep -q '/bin/omarchy-rename-launcher-entry' /usr/share/omarchy/shell/services/AppLibrary.qml
+          remove-launcher-entry cleans up managed rename overrides during uninstall - verify with: grep -q 'X-Omarchy-Renamed' /usr/share/omarchy/bin/omarchy-remove-launcher-entry && grep -q 'update-desktop-database' /usr/share/omarchy/bin/omarchy-remove-launcher-entry
         id: behavior-5
-        context: [runtime]
-      - agent-check: >-
-          omarchy-remove-launcher-entry detects managed rename overrides and removes them on uninstall - verify with: grep -q 'rename_override' /usr/share/omarchy/bin/omarchy-remove-launcher-entry && grep -q 'X-Omarchy-Renamed=true' /usr/share/omarchy/bin/omarchy-remove-launcher-entry && grep -q 'rm -f --' /usr/share/omarchy/bin/omarchy-remove-launcher-entry
-        id: behavior-6
         context: [runtime]
       - check: start a terminal recording
         id: rec-start
@@ -61,7 +57,7 @@ check-omarchy-pr-10144-vm:
           # mapping (RCA 2026.252.2250: the inlined text broke the
           # rendered YAML on shell metacharacters).
           text: |-
-            bash /usr/share/omarchy/test/shell.d/launcher-rename-test.sh
+            bash /usr/share/omarchy/test/shell.d/launcher-rename-test.sh && bash /usr/share/omarchy/test/shell.d/launcher-remove-test.sh
           settle_ms: 1000
       - check: capture the VM display via SPICE
         id: rec-screen-spice

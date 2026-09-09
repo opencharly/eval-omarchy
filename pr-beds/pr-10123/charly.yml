@@ -18,8 +18,16 @@ check-omarchy-pr-10123-vm:
         context: [runtime]
         command: 'for t in ; do bash "$t" || exit 1; done'
       - agent-check: >-
-          Installed manual documents the Steam window tiling override with the exact rule snippet - verify with: grep -qi 'Tile the Steam window' /usr/share/omarchy/manual/42-common-tweaks.md && grep -qiF 'o.window({ class = "steam", title = "Steam" }, { tile = true })' /usr/share/omarchy/manual/42-common-tweaks.md
+          Manual documents the 'Tile the Steam window' section - verify with: grep -q 'Tile the Steam window' /usr/share/omarchy/manual/42-common-tweaks.md
         id: behavior-1
+        context: [runtime]
+      - agent-check: >-
+          Manual contains the o.window tile=true snippet - verify with: grep -q 'o.window({ class = "steam", title = "Steam" }, { tile = true })' /usr/share/omarchy/manual/42-common-tweaks.md
+        id: behavior-2
+        context: [runtime]
+      - agent-check: >-
+          Manual explains the last-match-wins scoping of the override - verify with: grep -qi 'last match wins' /usr/share/omarchy/manual/42-common-tweaks.md
+        id: behavior-3
         context: [runtime]
       - check: start a terminal recording
         id: rec-start
@@ -41,7 +49,7 @@ check-omarchy-pr-10123-vm:
           # mapping (RCA 2026.252.2250: the inlined text broke the
           # rendered YAML on shell metacharacters).
           text: |-
-            grep -qi 'Tile the Steam window' /usr/share/omarchy/manual/42-common-tweaks.md
+            grep -q 'Tile the Steam window' /usr/share/omarchy/manual/42-common-tweaks.md
           settle_ms: 1000
       - check: capture the VM display via SPICE
         id: rec-screen-spice
