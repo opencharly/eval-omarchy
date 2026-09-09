@@ -184,14 +184,14 @@ eval-lane:
       EVAL_REDO_ESCALATE: "3"
       EVAL_REPO: omacom/omarchy
     env_require:
-      - name: EVAL_LLM_BASE_URL
-        description: "LLM chat-completions base URL (the agent endpoint)"
-      - name: EVAL_LLM_MODEL
-        description: "LLM model id"
       - name: EVAL_UMBRELLA
         description: "Path to the opencharly umbrella checkout"
         default: ""
     env_accept:
+      - name: EVAL_LLM_BASE_URL
+        description: "LLM chat-completions base URL (default: the local ollama server)"
+      - name: EVAL_LLM_MODEL
+        description: "LLM model id (default: deepseek-v4-flash:cloud on the local ollama)"
       - name: EVAL_LLM_SYSTEM_PROMPT
         description: "Optional per-run system prompt override"
       - name: EVAL_LLM_PROVIDER
@@ -362,6 +362,7 @@ eval-lane-plan:
           test and HOW — never DO the testing. TRIAGE (useful? new insight? testable
           on this hardware? tier?) then PLAN. NEVER run a bed.
           Your ENTIRE reply MUST be ONE JSON object, no prose, no markdown fences, no
+          NEVER emit placeholder strings (like $drive or sha/sha-here): every field must be a real resolved value from your tools; a placeholder in any field fails the whole lane at render time.
           trailing text:
           {"class": "system|packaging|visual", "channel": "stable", "tier": "vm",
           "sha": "<the PR head sha>",
@@ -394,7 +395,17 @@ eval-lane-plan:
           checks: "@triage.plan-json.checks"
           tests: "@triage.plan-json.tests"
         out: "pr-beds/pr-$pr/charly.yml"
-        validate: charly-box-validate
+        validate: |
+          set -eu
+          test -s "pr-beds/pr-$pr/charly.yml"
+          # the missed control (RCA 2026.252): a bed whose rendered steps carry
+          # placeholder or empty substitutions is REJECTED at render time -
+          # never shipped to a real bed run.
+          if grep -qE -e 'text: [$]drive' -e "pr-apply [0-9]+  '" "pr-beds/pr-$pr/charly.yml"; then
+            echo "bed-render: placeholder or empty substitution in the rendered bed" >&2
+            exit 1
+          fi
+          charly box validate
       - id: config-audit
         kind: probe
         verbs: [config_audit]
