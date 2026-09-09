@@ -144,12 +144,20 @@ check-omarchy-eval-base-inst:
               id: inst-warm-charly-cache
               command: 'charly box list >/dev/null 2>&1; charly box validate /root >/dev/null 2>&1 || true; find /root/.cache/charly -type f 2>/dev/null | head -1'
               context: [runtime]
-            - check: the instrumented golden reaches the desktop
+            - run: disable every screenlocker path in the golden (the eval drives the desktop itself - a lock overlay blanks the SPICE capture; RCA 2026.252 - the golden VM sat at a rendered lock screen while a cloned bed showed the bare 0x111111 background)
+              id: inst-disable-screenlock
+              context: [runtime]
+              command: 'systemctl --global mask omarchy-sleep-lock.service 2>/dev/null || true; systemctl --global mask hyprlock.service 2>/dev/null || true; systemctl --user disable --now hypridle.service 2>/dev/null || true; true'
+            - check: the instrumented golden reaches the FULL desktop (the shell stack required - Hyprland alone is a bare 0x111111 background that blanks every capture)
               id: inst-autologin
               context: [runtime]
-              command: 'pgrep -fx quickshell >/dev/null || pgrep -f hyprland >/dev/null'
+              command: 'pgrep -x quickshell >/dev/null'
               eventually: 240s
               retry_interval: 10s
+            - check: the screenlocker is disabled in the golden (no active sleep-lock, no hypridle running)
+              id: inst-screenlock-disabled
+              context: [runtime]
+              command: '! pgrep -x hypridle >/dev/null && ! systemctl is-active omarchy-sleep-lock.service >/dev/null 2>&1'
             - check: acpid is enabled (ACPI power-off handling present in the golden)
               id: inst-acpid
               context: [runtime]
