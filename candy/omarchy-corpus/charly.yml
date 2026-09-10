@@ -1,6 +1,6 @@
 omarchy-corpus:
     candy:
-        version: 2026.253.2200
+        version: 2026.253.2300
         description: |-
             The charly-native equivalents of omarchy's own tests - the
             declarative translation of the omacom/omarchy test corpus into
@@ -55,7 +55,7 @@ omarchy-corpus:
               context: [runtime]
               command: 'jq -r ".bar.layout.center[].formatAlt? // empty" /usr/share/omarchy/config/omarchy/shell.json | grep -q "ww yyyy"'
             # === test/acceptance.d - the ocr surface assertion (the wl: ocr method's live proof) ===
-            - check: the ocr reads the shell's update prompt off the screen (grim at 2x + tesseract; the always-on shell unit renders it — the retry rides the shell's render window)
+            - check: the ocr reads the shell's update prompt off the screen (the native-res capture + tesseract; the always-on shell unit renders it — the retry rides the shell's render window)
               id: ocr-screen-text
               context: [runtime]
               eventually: 120s
