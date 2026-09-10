@@ -1,0 +1,61 @@
+omarchy-corpus:
+    candy:
+        version: 2026.253.1700
+        description: |-
+            The charly-native equivalents of omarchy's own tests - the
+            declarative translation of the omacom/omarchy test corpus into
+            check plans served by the charly verb catalog. One check step per
+            upstream assertion, grouped by feature. registry.yaml maps every
+            omarchy test file to its covering steps; a test file with no step
+            is a registry gap (a SETUP_DEFECT record, never a faked pass).
+            The corpus runs against the eval VM (the installed product after
+            pr-apply) via the lane's check-live surface - a corpus result is a
+            live-system claim (tier-2).
+        distro:
+            arch:
+                package: [jq, tesseract]
+        plan:
+            # === test/cli - the omarchy CLI suite ===
+            - check: the omarchy CLI main help renders the command-center banner
+              id: cli-help-renders
+              context: [runtime]
+              omarchy:
+                  args: --help
+              stdout:
+                  - contains: Omarchy command center
+            - check: the omarchy CLI main help includes the hardware group
+              id: cli-help-hw
+              context: [runtime]
+              omarchy:
+                  args: --help
+              stdout:
+                  - contains: hw
+            - check: the omarchy CLI main help includes the package group
+              id: cli-help-pkg
+              context: [runtime]
+              omarchy:
+                  args: --help
+              stdout:
+                  - contains: pkg
+            # === test/shell.d/config-test.sh - the default shell.json ===
+            - check: the default shell.json is valid JSON
+              id: shell-config-valid-json
+              context: [runtime]
+              command: 'jq empty /usr/share/omarchy/config/omarchy/shell.json'
+            - check: the default shell.json has a version-1 bar layout
+              id: shell-config-version-1
+              context: [runtime]
+              command: 'jq -e ".version == 1" /usr/share/omarchy/config/omarchy/shell.json'
+            - check: the default shell.json bar layout carries left/center/right arrays
+              id: shell-config-bar-layouts
+              context: [runtime]
+              command: 'jq -e ".bar.layout.left | length > 0" /usr/share/omarchy/config/omarchy/shell.json && jq -e ".bar.layout.center | length > 0" /usr/share/omarchy/config/omarchy/shell.json && jq -e ".bar.layout.right | length > 0" /usr/share/omarchy/config/omarchy/shell.json'
+            - check: the default clock carries the week-format alt date (no leading zero)
+              id: shell-config-clock-format
+              context: [runtime]
+              command: 'jq -r ".bar.layout.center[].formatAlt? // empty" /usr/share/omarchy/config/omarchy/shell.json | grep -q "ww yyyy"'
+            # === test/shell.d/notifications-test.sh - the notifications logic ===
+            - check: the notifications logic module is installed with the chromium-derived heuristic
+              id: notifications-logic-present
+              context: [runtime]
+              command: 'test -s /usr/share/omarchy/shell/plugins/notifications/NotificationLogic.js && grep -q isChromiumDerived /usr/share/omarchy/shell/plugins/notifications/NotificationLogic.js'

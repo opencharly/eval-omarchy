@@ -122,7 +122,8 @@ check-omarchy-eval-base-inst:
             - '@github.com/opencharly/layer-asciinema:v2026.246.1622'
             - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
             - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
-            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1500'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.0930'
+            - omarchy-corpus
         install_opts:
             allow_repo_changes: true
             allow_root_tasks: true
@@ -352,7 +353,7 @@ eval-lane-plan:
     stages:
       - id: triage
         kind: agent
-        skill: [omarchy-eval-lane, omarchy-eval-oracle, omarchy-eval-tiers]
+        skill: [omarchy-eval-lane, omarchy-eval-oracle, omarchy-eval-tiers, omarchy-eval-tests]
         tools: [pr, ledger]
         max_turns: 10
         # the informed retry: a typed-output contract violation fails the stage
@@ -372,6 +373,8 @@ eval-lane-plan:
           files: { type: string_list, description: "the PR's changed file paths" }
           drive: { type: string, description: "one shell command exercising the PR's key behavior" }
           tests: { type: string_list, description: "the PR's own test files, absolute paths in the applied system" }
+          corpus: { type: string_list, description: "the selected omarchy-corpus bed names (the charly-native equivalents that make sense for this PR)" }
+          corpus_note: { type: string, description: "one line WHY these corpus beds (or why empty)" }
           checks: { type: object, description: "the behavior checks: [{id, what, assertion, knownRed}]" }
           what: { type: string, description: "one line: what the PR does (its key behavior)" }
           record: { type: bool, description: "whether to record the eval" }
@@ -388,6 +391,8 @@ eval-lane-plan:
             files: [the PR's changed file paths]
             drive: one shell command exercising the PR's key behavior
             tests: [the PR's own test files, absolute paths in the applied system]
+            corpus: [the selected omarchy-corpus bed names, or [] if none make sense]
+            corpus_note: one line WHY these corpus beds (or why empty)
             checks: [ {id, what, assertion, knownRed}, ... ]   (OBJECTS — never bare strings)
             what: one line describing what the PR does (its key behavior)
             record: true | false   (a JSON boolean, never a string)
@@ -411,6 +416,16 @@ eval-lane-plan:
           The drive command: ONE shell command that exercises the PR's key behavior
           inside the recording.
           A draft or WIP PR is class "skip" — never a faked bed.
+          THE CORPUS CONTRACT (follow the omarchy-eval-tests skill): after the
+          PR's own test files, select the omarchy-corpus beds that make sense
+          for this PR (changed-file adjacency: bin/omarchy-* → the cli beds;
+          config/shell changes → the feature-matched shell beds; migration
+          PRs → their named beds; visual PRs → the acceptance beds). NEVER
+          select hardware-bound beds (hw-*, t2-*, brcmfmac-*) or nested-VM beds
+          (windows-vm-*) — record PARTIAL instead. NEVER select the whole
+          corpus. corpus_note says WHY (an empty corpus with an unexplained
+          note fails the lane). Corpus beds run after your checks, before the
+          drive recording; the acceptance beds last.
           The channel output is YOUR decision — the oracle picks the GOLDEN VM
           from the AVAILABLE channels (the registry): currently ONLY "stable"
           (the instrumented full desktop golden). A visual/desktop PR needs
