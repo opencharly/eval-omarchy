@@ -74,7 +74,7 @@ omarchy-corpus:
             - check: the default hyprland config applies without a lua syntax error (the installed bindings source)
               id: hyprland-default-config-parses
               context: [runtime]
-              command: 'test -s /usr/share/omarchy/config/default/hypr/bindings/applications.conf || test -s /usr/share/omarchy/config/hypr/hyprland.conf'
+              command: 'test -s /usr/share/omarchy/config/hypr/bindings.lua && test -s /usr/share/omarchy/config/hypr/hyprland.lua'
             # === test/shell.d/update-* - the update machinery ===
             - check: the omarchy update command center is discoverable (the CLI help names update)
               id: update-cli-discoverable
