@@ -122,10 +122,20 @@ check-omarchy-eval-edge-inst:
               command: 'OMARCHY_PATH=/usr/share/omarchy omarchy-channel-current'
               stdout:
                   - contains: edge
-            - check: the screenlocker is disabled in the golden
+            - check: apply the pending omarchy migrations (the edge channel's migration set — the golden must be fully provisioned for the accept corpus; channel-bootstrap's raw pacman update never runs them)
+              id: inst-migrate-apply
+              context: [runtime]
+              command: 'omarchy-migrate'
+              timeout: 10m
+            - check: no pending omarchy migrations remain (the golden is fully provisioned; the runner exits 1 when the queue is empty)
+              id: inst-migrate-pending
+              context: [runtime]
+              command: 'omarchy-migrate --pending'
+              exit_status: 1
+            - check: the screenlocker is disabled in the golden (the systemd paths AND the shell's own idle lock — the stay-awake state file; RCA 2026.253.2216 the shell's idle plugin locked the provision bed mid-run)
               id: inst-screenlock-disabled
               context: [runtime]
-              command: '! pgrep -x hypridle >/dev/null && ! systemctl is-active omarchy-sleep-lock.service >/dev/null 2>&1'
+              command: '! pgrep -x hypridle >/dev/null && ! systemctl is-active omarchy-sleep-lock.service >/dev/null 2>&1 && test -f ~/.local/state/omarchy/indicators/stay-awake'
             - check: the always-on shell unit is enabled for every future user session
               id: inst-shell-unit-enabled
               context: [runtime]
@@ -1040,12 +1050,16 @@ check-omarchy-accept-dev-migrations:
               id: a-dev-env
               context: [runtime]
               command: 'test -n "$PATH"'
-            - check: omarchy-migrate --pending lists the pending migrations
+            - check: the migration runner lists a pending migration (the stub surface — state-independent, mirrors the upstream migrate-wrapper test; the golden is fully provisioned so the real queue is empty)
               id: a-migrate-pending
               context: [runtime]
-              command: 'omarchy-migrate --pending'
+              command: |
+                  T=$(mktemp -d)
+                  mkdir -p "$T/omarchy/migrations" "$T/home"
+                  echo 'true' > "$T/omarchy/migrations/100-stub.sh"
+                  HOME="$T/home" OMARCHY_PATH="$T/omarchy" omarchy-migrate --pending
               stdout:
-                  - contains: .sh
+                  - contains: 100-stub.sh
             - check: the retired-installer sudoers artifact is absent
               id: a-retired
               context: [runtime]

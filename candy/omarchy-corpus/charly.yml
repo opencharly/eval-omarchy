@@ -75,7 +75,17 @@ omarchy-corpus:
               context: [runtime]
               command: 'jq -r ".bar.layout.center[].formatAlt? // empty" /usr/share/omarchy/config/omarchy/shell.json | grep -q "ww yyyy"'
             # === test/acceptance.d - the ocr surface assertion (the wl: ocr method's live proof) ===
-            - check: the ocr reads the shell's update prompt off the screen (the native-res capture + tesseract; the always-on shell unit renders it — the retry rides the shell's render window)
+            # The first-run "Update System" toast is a BOOT-TIME transient (sent once by
+            # announce_network; the provision bed's long channel-switch + migration steps
+            # outlive its display window, and a fully-provisioned golden has no update
+            # prompt at all). The probe is the deterministic surface: a fresh critical
+            # toast (never auto-dismisses) sent right before the ocr reads it — works on
+            # any golden state. RCA 2026.253.2216.
+            - check: send the OCR probe notification (the deterministic surface — a fresh critical toast the ocr step reads; the first-run "Update System" toast is a boot-time transient)
+              id: ocr-probe-send
+              context: [runtime]
+              command: 'DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus omarchy-notification-send -u critical -g test "OCR-PROBE" "probe body"'
+            - check: the ocr reads the probe notification off the screen (the native-res capture + tesseract; the critical toast persists until dismissed — the retry rides the shell's render window)
               id: ocr-screen-text
               context: [runtime]
               # the wl ocr verb's per-attempt never-hang bound is 2m — the 300s
@@ -85,7 +95,7 @@ omarchy-corpus:
               retry_interval: 5s
               wl:
                   method: ocr
-                  text: Update System
+                  text: OCR-PROBE
             # === test/shell.d/bar-test.sh - the bar QML invariants (the applied-tree scans) ===
             - check: bar module dragging leaves layout-managed slots in place (the Bar.qml scan)
               id: bar-drag-no-slot-mutation
