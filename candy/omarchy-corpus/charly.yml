@@ -1,6 +1,6 @@
 omarchy-corpus:
     candy:
-        version: 2026.253.2300
+        version: 2026.253.2400
         description: |-
             The charly-native equivalents of omarchy's own tests - the
             declarative translation of the omacom/omarchy test corpus into
@@ -86,6 +86,31 @@ omarchy-corpus:
               stdout:
                   - contains: update
 
+            # === test/acceptance.d/session-test.sh - the session health (the wl/quickshell surfaces) ===
+            - check: the omarchy shell responds to the quickshell IPC ping
+              id: accept-shell-ping
+              context: [runtime]
+              command: 'omarchy-shell shell ping'
+            - check: the bar and background layers are on screen (the shell layer surfaces)
+              id: accept-bar-background-layers
+              context: [runtime]
+              wl:
+                  method: hypr-layers
+              stdout:
+                  - contains: omarchy-bar
+            - check: the root filesystem is btrfs as installed
+              id: accept-root-btrfs
+              context: [runtime]
+              command: 'test "$(findmnt -no FSTYPE /)" = btrfs'
+            - check: omarchy-version works
+              id: accept-omarchy-version
+              context: [runtime]
+              omarchy:
+                  args: version
+            - check: pipewire is running (the audio stack)
+              id: accept-pipewire-running
+              context: [runtime]
+              command: 'wpctl status >/dev/null'
             # === test/shell.d/notifications-test.sh - the notifications logic ===
             - check: the notifications logic module is installed with the chromium-derived heuristic
               id: notifications-logic-present
