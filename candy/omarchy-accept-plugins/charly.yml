@@ -19,7 +19,7 @@ omarchy-accept-plugins:
             - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
             - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.251.1349'
         plan:
-            - check: the acceptance plugin meta-candy is present
+            - check: the acceptance plugin providers are registered (the meta-candy's composition)
               id: accept-plugins-present
               context: [runtime]
-              command: 'true'
+              command: 'charly plugin list 2>/dev/null | grep -qE "record|spice|omarchy|wl|quickshell|cdp|dbus|media"'
