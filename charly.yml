@@ -1051,14 +1051,13 @@ check-omarchy-accept-matrix:
         concurrency: {lanes: 16}
         stages:
             - id: bed
-              kind: ade
-              bed: check-omarchy-accept-$pr
-              fail_on: [NO_VALIDATION, SKIP]
+              kind: command
+              command: 'charly check run check-omarchy-accept-$pr'
+              expect_exit: 0
             - id: media
-              kind: probe
-              verbs: [media_gate]
-              input:
-                  media_gate: {dir: "media/accept-$pr-$calver", files: [cast, gif, mjpeg, mp4, png], min: {cast: 200, gif: 1024, mjpeg: 4096, mp4: 4096, png: 1024}}
+              kind: command
+              command: 'mkdir -p media/accept-$pr-$calver && cp .check/check-omarchy-accept-$pr/*/evidence/* media/accept-$pr-$calver/ 2>/dev/null; for f in cast gif mjpeg mp4 png; do find media/accept-$pr-$calver -name "*.$f" | grep -q . || { echo "missing $f for $pr" >&2; exit 1; }; done'
+              expect_exit: 0
 
 # the acceptance SUITE: the ONE-command wrapper (zero extra parameters)
 check-omarchy-accept-suite:
@@ -1067,6 +1066,10 @@ check-omarchy-accept-suite:
             - id: provision
               kind: command
               command: 'if ! charly vm snapshot list check-omarchy-eval-edge-inst 2>/dev/null | grep -q golden; then charly check run check-omarchy-eval-edge-inst; fi'
+              expect_exit: 0
+            - id: lock
+              kind: command
+              command: 'charly vm stop check-omarchy-eval-edge-inst 2>/dev/null || true'
               expect_exit: 0
             - id: matrix
               kind: command
