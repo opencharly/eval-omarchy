@@ -175,11 +175,10 @@ eval-lane:
       self-checks. The pipeline itself is the eval-lane-plan kind:pipeline entity in
       this file — every stage, prompt, template, and schema INLINE.
     candy:
-      - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.252.1503'
+      - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.253.1504'
       - '@github.com/opencharly/plugin-review/candy/plugin-review:v2026.251.1939'
     var:
       EVAL_LANES: "16"
-      EVAL_CHANNEL: stable
       EVAL_MAX_REDO: "2"
       EVAL_REDO_ESCALATE: "3"
       EVAL_REPO: omacom/omarchy
@@ -192,26 +191,18 @@ eval-lane:
         description: "LLM chat-completions base URL (default: the local ollama server)"
       - name: EVAL_LLM_MODEL
         description: "LLM model id (default: deepseek-v4-flash:cloud on the local ollama)"
-      - name: EVAL_LLM_SYSTEM_PROMPT
-        description: "Optional per-run system prompt override"
       - name: EVAL_LLM_PROVIDER
         description: "LLM provider name"
       - name: EVAL_DRY_RUN
         description: "Dry-run flag"
       - name: EVAL_DEBUG
         description: "Verbose run debugging"
-      - name: EVAL_CHANNEL
-        description: "Channel override (stable/rc/edge/dev)"
       - name: EVAL_LANES
         description: "Concurrency lanes"
       - name: EVAL_MAX_REDO
         description: "Redo bound"
       - name: EVAL_PUBLISH
         description: "approve -> the publication gate posts"
-      - name: PIPELINE_SKILLS
-        description: "Comma-separated @github candy refs for the agent skills"
-      - name: PIPELINE_CORPUS_DIR
-        description: "Marketplace corpus dir (rendered skill content)"
       - name: BARE_PROMPT
         description: "Inline prompt for the standalone agent surface"
     secret_accept:
@@ -230,20 +221,11 @@ eval-lane:
         command: charly pipeline validate eval-lane-plan
         exit_status: 0
 
-ade-grader:
-  agent:
-    description: "The ADE in-bed grader (bare agent with the PR tools)"
-    command: [charly, pipeline, agent, --system-prompt, "${PROMPT}", --tools, pr]
-    prompt_via: argv
-    timeout: 5m
-    env:
-      PIPELINE_SKILLS: '@github.com/opencharly/distro-omarchy:v2026.251.1654'
-    credential:
-      - {src: charly/api-key/eval-llm, dst: EVAL_LLM_API_KEY}
-
 eval-lane-plan:
   pipeline:
     repo: omacom/omarchy
+    skills:
+      corpus: "candy/eval-lane/skills"
     gates: [sequencing, lock_audit]
     redo: { max: 2, escalate_after: 3 }
     concurrency: { lanes: 16 }
@@ -271,7 +253,7 @@ eval-lane-plan:
         # I tested omacom/omarchy#$pr — here's what happened
         ## Tests
         ${tests_body}
-        Recordings: terminal ${cast} · desktop ${mp4} (${png}, ${gif}) · full run matrix: .check/check-omarchy-pr-$pr-vm/$calver/
+        Recordings: terminal ${cast} · desktop ${mp4} (${png}, ${gif}) · full run matrix: .check/check-omarchy-pr-$pr-vm/
         ## Suggestions
         ${suggestions_body}
         *Assisted-by: charly eval-lane agent ollama/deepseek-v4-flash:cloud (fully tested and validated)*
@@ -289,6 +271,9 @@ eval-lane-plan:
             add_candy:
               - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
               - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+              # the updated pr-apply (the test-context closure) overwrites the
+              # golden's baked script at deploy time — no golden re-provision.
+              - omarchy-pr-apply
             plan:
               - check: apply PR $pr via the single apply seam
                 id: pr-apply
@@ -347,61 +332,126 @@ eval-lane-plan:
                 id: rec-mp4
                 context: [runtime]
                 command: 'ffmpeg -y -loglevel error -i /tmp/pr-$pr.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/pr-$pr.mp4'
+      control_bed_template: |-
+        version: 2026.249.2125
+        check-omarchy-pr-$pr-control:
+          vm:
+            from: ${golden}
+            disposable: true
+            lifecycle: dev
+            update_gate: restart-only
+            plan:
+              # the NEGATIVE CONTROL: the negated checks on the PRISTINE golden.
+              # Every negated step must PASS (every original check failed without
+              # the PR = every knownRed claim holds). A control step failing means
+              # the original check passed without the PR — a FAKE assertion,
+              # caught at render, never shipped to a real eval.
+              ${checks}
+
     stages:
-      - id: channel-select
+      - id: triage
+        kind: agent
+        skill: [omarchy-eval-lane, omarchy-eval-oracle, omarchy-eval-tiers]
+        tools: [pr, ledger]
+        max_turns: 10
+        # the informed retry: a typed-output contract violation fails the stage
+        # with the redo-plan trigger; the chain restarts from triage and the
+        # retried agent sees the violation in the ledger facts. The budget is
+        # generous (the retry is cheap — no VM runs) while the VM redo edges
+        # stay tight.
+        redo:
+          max: 4
+          escalate_after: 5
+          triggers: { redo-plan: triage }
+        outputs:
+          class: { type: enum, enum: [system, packaging, visual, skip], description: "the PR's change class" }
+          tier: { type: enum, enum: [pod, vm, visual, gpu], description: "the evidence tier" }
+          channel: { type: enum, enum: [stable, rc, edge, dev], description: "the channel whose golden best fits the PR's class/tier — the oracle decides the venue" }
+          sha: { type: string, description: "the PR head sha" }
+          files: { type: string_list, description: "the PR's changed file paths" }
+          drive: { type: string, description: "one shell command exercising the PR's key behavior" }
+          tests: { type: string_list, description: "the PR's own test files, absolute paths in the applied system" }
+          checks: { type: object, description: "the behavior checks: [{id, what, assertion, knownRed}]" }
+          record: { type: bool, description: "whether to record the eval" }
+          visual: { type: bool, description: "whether the class is visual" }
+        prompt: |-
+          REPLY CONTRACT (read this FIRST): your ENTIRE reply is ONE JSON object
+          and NOTHING else. The first character is '{'. No prose, no preamble, no
+          markdown fences, no trailing text. The object carries EXACTLY these
+          fields, every one present:
+            class: "system" | "packaging" | "visual" | "skip"
+            tier: "pod" | "vm" | "visual" | "gpu"   (the ENUM KEY, never a prose label)
+            channel: "stable" | "rc" | "edge" | "dev"   (the GOLDEN VM selection — NOT the tier)
+            sha: the PR head sha
+            files: [the PR's changed file paths]
+            drive: one shell command exercising the PR's key behavior
+            tests: [the PR's own test files, absolute paths in the applied system]
+            checks: [ {id, what, assertion, knownRed}, ... ]   (OBJECTS — never bare strings)
+            record: true | false   (a JSON boolean, never a string)
+            visual: true | false
+          After you have the PR facts, produce the JSON immediately — do not call
+          more tools.
+          You are the Config Oracle for the omarchy PR-eval lane. You decide WHAT to
+          test and HOW — never DO the testing. TRIAGE (useful? new insight? testable
+          on this hardware? tier?) then PLAN. NEVER run a bed.
+          Follow the omarchy-eval-oracle skill: classify the diff, resolve the PR
+          head sha + changed files + the PR's OWN test files (never invent tests),
+          and author the behavior checks.
+          Every check is a shell assertion (grep/test) that PROVES the PR's behavior
+          on the live system at its ABSOLUTE system paths (/usr/share/omarchy/...,
+          /etc/..., ~/.config/...). Scripts may not be +x after apply: invoke them
+          via their interpreter (bash <abs path>). knownRed is a CONTRACT: the
+          control bed runs the negated assertion on the pristine golden — an
+          assertion that passes without the PR is a FAKE check and the lane
+          re-renders informed. Author assertions that are red by construction:
+          they reference the PR's own added lines.
+          The drive command: ONE shell command that exercises the PR's key behavior
+          inside the recording.
+          A draft or WIP PR is class "skip" — never a faked bed.
+          The channel output is YOUR decision — the oracle picks the GOLDEN VM
+          from the AVAILABLE channels (the registry): currently ONLY "stable"
+          (the instrumented full desktop golden). A visual/desktop PR needs
+          stable; a script/packaging PR can use it too. Never invent a channel
+          that is not in the registry — an unavailable channel fails the lane
+          and you re-author informed.
+          THE CONTROL CONTRACT: when the ledger facts show the control bed
+          FAILED (a negated check failed = an original check PASSED on the
+          pristine golden = a FAKE assertion), call run_outcomes on the control
+          bed FIRST — read the FAILING step — then RE-AUTHOR that check: remove
+          or replace the fake assertion (it must be red by construction: it
+          references the PR's own added lines). Never re-emit the same checks.
+          YOUR REPLY IS ALWAYS THE JSON OBJECT — even when you conclude the
+          control failure is environmental, the JSON carries the re-authored
+          checks (or the unchanged checks with the reasoning in knownRed).
+          NEVER reply with prose analysis — the analysis belongs in the JSON.
+      - id: channel-map
         kind: probe
         verbs: [resolve_channel]
         input:
           channels:
+            # the AVAILABLE VENUES: the channels whose goldens resolve in the
+            # vm from: (the qualified namespace refs are not from:-compatible).
+            # The oracle picks among these — the registry is the deterministic
+            # mapping, never an env var.
             stable: { golden: check-omarchy-eval-base-inst:golden, provision: eval-lane-plan-channel-stable }
-            rc:     { golden: check-charly-omarchy-rc-vm:golden,     provision: eval-lane-plan-channel-rc }
-            edge:   { golden: check-charly-omarchy-edge-vm:golden,   provision: eval-lane-plan-channel-edge }
-            dev:    { golden: check-charly-omarchy-dev-vm:golden,    provision: eval-lane-plan-channel-dev }
-          default: "$env.EVAL_CHANNEL"
-        outputs: [channel]
-      - id: triage
-        kind: agent
-        skill:
-          - '@github.com/opencharly/distro-omarchy:v2026.251.1654'
-          - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.252.1503'
-        tools: [pr, resolve_channel, ledger]
-        prompt: |-
-          You are the Config Oracle for the omarchy PR-eval lane. You decide WHAT to
-          test and HOW — never DO the testing. TRIAGE (useful? new insight? testable
-          on this hardware? tier?) then PLAN. NEVER run a bed.
-          Your ENTIRE reply MUST be ONE JSON object, no prose, no markdown fences, no
-          NEVER emit placeholder strings (like $drive or sha/sha-here): every field must be a real resolved value from your tools; a placeholder in any field fails the whole lane at render time.
-          trailing text:
-          {"class": "system|packaging|visual", "channel": "stable", "tier": "vm",
-          "sha": "<the PR head sha>",
-          "files": "<the PR's changed file paths, space-separated (use the PR tools)",
-          "drive": "<one shell command that exercises the PR's key behavior>",
-          "tests": "<the PR's OWN changed test/shell.d/*.sh files, space-separated ABSOLUTE paths in the applied system (resolve them from the PR file list - NEVER invent tests; if the PR adds/changes tests, those are the tests)>"
-          "checks": [{"id": "<slug>", "what": "<one-line behavior assertion>",
-          "assertion": "<exact shell snippet, exit nonzero on failure, that proves the
-          PR's behavior on the live system>", "knownRed": "<why it fails on the pristine
-          golden>"}], "record": true, "visual": true}.
-          Scripts may NOT be +x after apply: invoke script files via their interpreter 
-          (bash <abs path>, python3 <abs path>); use command -v for binaries; keep 
-          assertions idempotent and fast.
-          The checks run INSIDE the applied VM (the PR was applied to the live OS at
-          its system paths): use ABSOLUTE paths ONLY (/usr/share/omarchy/..., /etc/...,
-          ~/.config/...), never relative repo paths. Reference example that works:
-          grep -qi Wallclock /usr/share/omarchy/shell/plugins/panels/clock/BarWidget.qml
-          If the PR is a draft or WIP, reply {"class": "skip", "record": false}.
-        outputs: [plan-json]
+          channel: "@triage.channel"
+        outputs: [golden, provision]
+        # an unavailable channel is an informed redo: the triage re-authors
+        # with the ledger facts showing exactly which channels exist.
+        redo:
+          triggers: { redo-plan: triage }
       - id: bed-render
         kind: generate
         template: "$report.bed_template"
         vars:
           pr: "$pr"
-          golden: "@channel-select.golden"
+          golden: "@channel-map.golden"
           sha: "$env.PR_HEAD_SHA"
-          files: "@triage.plan-json.files"
-          drive: "@triage.plan-json.drive"
+          files: "@triage.files"
+          drive: "@triage.drive"
           channel: "@channel-select.channel"
-          checks: "@triage.plan-json.checks"
-          tests: "@triage.plan-json.tests"
+          checks: "@triage.checks"
+          tests: "@triage.tests"
         out: "pr-beds/pr-$pr/charly.yml"
         validate: |
           set -eu
@@ -413,22 +463,58 @@ eval-lane-plan:
             echo "bed-render: placeholder or empty substitution in the rendered bed" >&2
             exit 1
           fi
-          # the RUNNING charly binary — PATH lookup can resolve to an OLD
-          # installed package whose schema floor rejects this config (RCA
-          # 2026.252.2250: the lane's validate ran an outdated /usr/local/bin
-          # charly). The CHARLY_BIN convention is shared with teardownVenue.
+          # the checks are DETERMINISTIC command steps now — an inert agent-check
+          # step (the no-grader-bound SKIP era) is rejected at render time.
+          if grep -qE "agent-check|verify with" "pr-beds/pr-$pr/charly.yml"; then
+            echo "bed-render: an inert agent-check step rendered — the checks must be command steps" >&2
+            exit 1
+          fi
           "${CHARLY_BIN:-charly}" box validate
+      - id: control-render
+        kind: generate
+        template: "$report.control_bed_template"
+        negate_checks: true
+        vars:
+          pr: "$pr"
+          golden: "@channel-map.golden"
+          checks: "@triage.checks"
+        out: "pr-beds/pr-$pr-control/charly.yml"
+        validate: |
+          set -eu
+          test -s "pr-beds/pr-$pr-control/charly.yml"
+          if grep -qE "agent-check|verify with" "pr-beds/pr-$pr-control/charly.yml"; then
+            echo "control-render: an inert agent-check step rendered" >&2
+            exit 1
+          fi
+          "${CHARLY_BIN:-charly}" box validate
+      - id: control
+        kind: ade
+        bed: check-omarchy-pr-$pr-control
+        # the negative control: the negated checks must PASS on the pristine
+        # golden (every original check failed without the PR = every knownRed
+        # claim holds). A FAIL verdict = a FAKE assertion (an original check
+        # passed without the PR) -> the setup-defect record renders, naming the
+        # failing check (the control's summary) + the informed fix. The
+        # setup-defects ledger is the self-improving loop's memory — the
+        # cold-read reads it for informed suggestions.
+        fail_on: [FAIL]
+        redo:
+          triggers: { redo-plan: setup-defect }
       - id: config-audit
         kind: probe
         verbs: [config_audit]
         input: { bed: "pr-beds/pr-$pr/charly.yml", pr: "$pr" }
-        redo: { on_fail: bed-render }
+        redo:
+          triggers: { redo-plan: bed-render }
       - id: eval
         kind: ade
         bed: check-omarchy-pr-$pr-vm
-        # the org-wide ADE: the bed's plan carries the oracle's agent-check:
-        # steps, graded by the live agent in the venue (the SDK ADE surface) -
-        # no custom bed-runner, no known-red contracts.
+        # the verdict is a GATE: NO_VALIDATION/SKIP are LANE DEFECTS (the
+        # harness failed) — the stage fails and the setup-defect record renders
+        # instead of a worthless eval. PASS/FAIL are real outcomes and flow on.
+        fail_on: [NO_VALIDATION, SKIP]
+        redo:
+          triggers: { redo-plan: setup-defect }
       - id: assemble-media
         kind: media
         assemble: true
@@ -438,63 +524,110 @@ eval-lane-plan:
         verbs: [media_gate, lock_audit]
         input:
           media_gate: { dir: "media/pr-$pr-$calver", files: [cast, gif, mjpeg, mp4, png], min: {cast: 200, gif: 1024, mjpeg: 4096, mp4: 4096, png: 1024} }
-          lock_audit: { trees: ["$workdir/.check"] }
-        redo: { on_fail: [eval, assemble-media] }
+          # the lock audit scopes to THIS run's trees — the whole .check tree
+          # carries stale .lock files from unrelated historical runs.
+          lock_audit: { trees: ["$workdir/.check/check-omarchy-pr-$pr-vm", "$workdir/.check/check-omarchy-pr-$pr-control"] }
+        redo:
+          triggers: { redo-run: eval }
+      - id: ledger-gate
+        kind: probe
+        verbs: [ledger_gate]
+        input:
+          # bed_name/control_bed_name are ENTITY NAMES — the probe's path
+          # rooting (the bed/dir keys) would corrupt them into absolute paths.
+          bed_name: "check-omarchy-pr-$pr-vm"
+          control_bed_name: "check-omarchy-pr-$pr-control"
+          media_dir: "media/pr-$pr-$calver"
+        outputs: [executed_checks, control_ok, media_ok]
+      - id: setup-defect
+        kind: generate
+        template: |-
+          # SETUP DEFECT — $pr @ $calver
+          The lane could NOT evaluate this PR: the harness failed, not the PR.
+          This is the clear result for a setup failure — never a whiny eval.
+
+          - failing stage: @control.verdict (the control bed) or @eval.verdict (the eval bed)
+          - stderr signature: @control.summary @eval.summary
+          - classified cause: the check-run could not produce a verdict, or a
+            knownRed claim is unproven (a FAKE assertion — the control's FAIL
+            line names the check)
+          - informed fix: read the signature above; fix the setup (the golden,
+            the plugin refs, the discover paths, the triage's checks) and
+            re-run the lane
+        out: "setup-defects/$calver-pr-$pr.md"
+        skip_when: "@eval.verdict == PASS || @eval.verdict == FAIL"
       - id: report
         kind: agent
-        skill:
-          - '@github.com/opencharly/distro-omarchy:v2026.251.1654'
-          - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.252.1503'
+        skill: [omarchy-eval-lane, omarchy-eval-full-loop]
         tools: [ledger]
-        outputs: [tests]
+        max_turns: 6
+        skip_when: "@eval.verdict != PASS && @eval.verdict != FAIL"
+        # the informed retry: a typed-output contract violation (e.g. the tests
+        # field as an array instead of a string) fails with the redo-plan
+        # trigger; the chain restarts from report and the retried agent sees
+        # the violation in the ledger facts.
+        redo:
+          max: 3
+          escalate_after: 4
+          triggers: { redo-plan: report }
+        outputs:
+          tests: { type: string, description: "the user-voice Tests paragraph" }
         prompt: |-
           You are a fellow omarchy user who pulled this PR onto your machine and
           tested it — NOT the repo maintainer, NOT an audit. Write like a user in
           an issue comment: first person, plain words, what you did and what you
-          actually saw happen. From the LEDGER (read it with at most TWO tool
-          calls, then stop), emit ONE JSON object ONLY (no prose, no fences):
-          {"tests": "<one compact paragraph: what I pulled and applied, what I ran
-          (the PR's own tests + the behavior checks), what worked and what didn't,
-          exactly as I observed it. Name every check with its outcome; say plainly
-          what I could NOT test and why — never silent. No YAML, no step matrices —
-          link the evidence packet instead.>"}
+          actually saw happen.
+          The ledger facts in your user message carry the triage plan, the eval
+          verdict, and the executed step outcomes — narrate from THOSE facts, never
+          from guessing. Name every executed check with its observed outcome; say
+          plainly what you could NOT test and why — never silent, never a lament.
           The Suggestions section is owned by the cold-read stage — do NOT emit it.
-          Do NOT write any file. Do NOT post. If calling a tool: read the run
-          summaries ONCE and then answer — never re-read, never explore.
+          Do NOT write any file. Do NOT post.
+          REPLY CONTRACT: your ENTIRE reply is ONE JSON object and NOTHING else.
+          The first character is '{'. No prose, no preamble, no markdown fences
+          (never wrap the object in ```json — the fence breaks the parse). The
+          object carries EXACTLY the declared outputs: the "tests" field IS the
+          ENTIRE Tests section — one compact user-voice paragraph (what I pulled
+          and applied, what I ran, what worked and what didn't, exactly as
+          observed). Do NOT emit any other field (no "report", no "summary" —
+          the narrative goes IN the tests field).
       - id: cold-read
         kind: agent
-        skill:
-          - '@github.com/opencharly/distro-omarchy:v2026.251.1654'
-          - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.252.1503'
-        tools: [ledger, read]
-        max_turns: 30
-        outputs: [verdict, suggestions]
-        prompt: |-
-          Fresh-context validation of the evidence packet: SUBJECT (PASS/FAIL/
-          NO_VALIDATION) + PROCESS.
-          After at most TWO tool calls, emit your final verdict JSON ONLY:
-          {"verdict": "PASS|FAIL|NO_VALIDATION", "subject": "...", "process": "...",
-          "suggestions": "<markdown bullets, each '- ...': feedback a fellow user
-          would leave on the PR — what I'd try, what to watch out for, what to
-          test next, a glitch I hit; plain user words, not reviewer requirements;
-          the literal string None. when there is nothing to add>"}.
-          Never call a tool more than twice; always end with the verdict. (known-red, tier compliance, claims scoped, media
-          non-empty + showing the commands, Assisted-by present). Every material
-          vision claim corroborated by a deterministic source. Map findings to
-          triggers: redo-plan / redo-run / redo-read / escalate.
+        skill: [omarchy-eval-lane, omarchy-eval-cold-reader]
+        tools: [ledger]
+        max_turns: 6
+        skip_when: "@eval.verdict != PASS && @eval.verdict != FAIL"
         redo:
-          triggers: { redo-plan: bed-render, redo-run: eval, redo-read: cold-read }
+          max: 3
+          escalate_after: 4
+          triggers: { redo-plan: cold-read }
+        outputs:
+          verdict: { type: enum, enum: [PASS, FAIL, NO_VALIDATION], description: "the packet verdict" }
+          suggestions: { type: string, description: "the user-voice suggestions" }
+        prompt: |-
+          Fresh-context validation of the evidence packet against the ledger facts
+          in your user message — the deterministic gates first (executed_checks >= 1,
+          control_ok, media_ok from the ledger-gate stage), then the prose gates
+          (every material claim corroborated, user-voice, no verdict language, no
+          lament). A packet with zero executed checks is a SETUP_DEFECT — say so
+          plainly. The suggestions are actionable user words, informed by the
+          setup-defects ledger (what the lane already learned).
+          REPLY CONTRACT: your ENTIRE reply is ONE JSON object and NOTHING else.
+          The first character is '{'. No prose, no preamble, no markdown fences
+          (never wrap the object in ```json — the fence breaks the parse). The
+          object carries EXACTLY the declared outputs (verdict, suggestions).
+          The verdict is the PACKET verdict: PASS | FAIL | NO_VALIDATION — never
+          the lane state (SETUP_DEFECT is a lane classification, not a verdict).
       - id: render-report
         kind: generate
         template: "$report.template"
         vars:
           pr: "$pr"
           sha: "$env.PR_HEAD_SHA"
-          class: "@triage.plan-json.class"
-          # the channel KEY (EVAL_CHANNEL) — NOT the channel-select entry map
-          channel: "$env.EVAL_CHANNEL"
-          tier: "@triage.plan-json.tier"
-          golden: "@channel-select.golden"
+          class: "@triage.class"
+          channel: "@triage.channel"
+          tier: "@triage.tier"
+          golden: "@channel-map.golden"
           tests_body: "@report.tests"
           suggestions_body: "@cold-read.suggestions"
           cast: "media/pr-$pr-$calver/pr-$pr.cast"
@@ -502,7 +635,8 @@ eval-lane-plan:
           png: "media/pr-$pr-$calver/pr-$pr.png"
           gif: "media/pr-$pr-$calver/pr-$pr.gif"
         out: "eval/pr-$pr.md"
-        validate: |-
+        skip_when: "@eval.verdict != PASS && @eval.verdict != FAIL"
+        validate: |
           set -eu
           f="eval/pr-$pr.md"
           test -s "$f"
@@ -511,13 +645,20 @@ eval-lane-plan:
           grep -qE "^\\*Tested-by: .+\\*" "$f" || { echo "report: missing/empty Tested-by footer" >&2; exit 1; }
           if grep -qE "^## (What|How|Recordings|Result)" "$f"; then echo "report: legacy or verdict heading present" >&2; exit 1; fi
           if grep -qE "^#.*\\b(PASS|FAIL|NO_VALIDATION)\\b" "$f"; then echo "report: verdict language present - the eval is user-voice" >&2; exit 1; fi
+          # the SUBSTANCE validate (the anti-whine gate): the Tests section must
+          # name at least one executed check with an observed outcome, and the
+          # evidence paths must RESOLVE on the tree — a worthless eval fails here.
           sed -n "/^## Tests/,/^## Suggestions/p" "$f" | grep -qE "(worked|didn't|did not|failed|passed|N/A|not testable|could not|couldn't)" || { echo "report: Tests lacks observed outcomes or N/A reasons" >&2; exit 1; }
+          if grep -qE "no entity|ktree is not installed|harness failed|NO_VALIDATION" "$f"; then echo "report: harness-failure language - this is a SETUP_DEFECT, not an eval" >&2; exit 1; fi
+          for p in "media/pr-$pr-$calver/pr-$pr.cast" "media/pr-$pr-$calver/pr-$pr.mp4" "media/pr-$pr-$calver/pr-$pr.png" "media/pr-$pr-$calver/pr-$pr.gif"; do
+            test -s "$p" || { echo "report: evidence path missing: $p" >&2; exit 1; }
+          done
+          test -d ".check/check-omarchy-pr-$pr-vm" || { echo "report: the run matrix dir is missing" >&2; exit 1; }
           if grep -qE "^  - name:" "$f"; then echo "report: inlined step matrix - link the evidence packet instead" >&2; exit 1; fi
       - id: publish
         kind: gate
         condition: "$env.EVAL_PUBLISH == approve"
-        # the DESIGNED skip: no approval, no publication — the R10 gate must
+        # the designed skip: no approval, no publication — the R10 gate must
         # complete at ZERO failures (validator finding R10/B12), so the
         # unset-approval run reports a skip, never a fail.
         skip_when: "$env.EVAL_PUBLISH != approve"
-
