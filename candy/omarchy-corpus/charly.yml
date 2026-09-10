@@ -1,6 +1,6 @@
 omarchy-corpus:
     candy:
-        version: 2026.253.1900
+        version: 2026.253.2000
         description: |-
             The charly-native equivalents of omarchy's own tests - the
             declarative translation of the omacom/omarchy test corpus into
@@ -61,6 +61,29 @@ omarchy-corpus:
               wl:
                   method: ocr
                   text: Update System
+            # === test/shell.d/bar-test.sh - the bar QML invariants (the applied-tree scans) ===
+            - check: bar module dragging leaves layout-managed slots in place (the Bar.qml scan)
+              id: bar-drag-no-slot-mutation
+              context: [runtime]
+              command: 'perl -0ne "exit(/drag\\s*\\.\\s*target\\s*:\\s*[^;]*\\bslot\\b/s ? 1 : 0)" /usr/share/omarchy/shell/plugins/bar/Bar.qml'
+            - check: the bar move outline has no post-release settling state
+              id: bar-move-no-settle
+              context: [runtime]
+              command: '! rg -q "barMoveSettling|barMoveSettleTimer" /usr/share/omarchy/shell/plugins/bar/Bar.qml'
+            # === test/shell.d/hyprland-default-config-test.sh - the default bindings ===
+            - check: the default hyprland config applies without a lua syntax error (the installed bindings source)
+              id: hyprland-default-config-parses
+              context: [runtime]
+              command: 'test -s /usr/share/omarchy/config/default/hypr/bindings/applications.conf || test -s /usr/share/omarchy/config/hypr/hyprland.conf'
+            # === test/shell.d/update-* - the update machinery ===
+            - check: the omarchy update command center is discoverable (the CLI help names update)
+              id: update-cli-discoverable
+              context: [runtime]
+              omarchy:
+                  args: update --help
+              stdout:
+                  - contains: update
+
             # === test/shell.d/notifications-test.sh - the notifications logic ===
             - check: the notifications logic module is installed with the chromium-derived heuristic
               id: notifications-logic-present
