@@ -1,0 +1,86 @@
+version: 2026.249.2125
+check-omarchy-pr-10115-vm:
+  vm:
+    from: check-omarchy-eval-base-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    add_candy:
+      - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+      - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+      # the updated pr-apply (the test-context closure) overwrites the
+      # golden's baked script at deploy time — no golden re-provision.
+      - omarchy-pr-apply
+    plan:
+      - check: apply PR 10115 via the single apply seam
+        id: pr-apply
+        context: [runtime]
+        command: 'pr-apply 10115 16a6ede2687255e198281a11969152a33d1d337a shell/plugins/notifications/Service.qml shell/plugins/notifications/components/NotificationCard.qml test/shell.d/notifications-test.sh'
+      - check: the PR's OWN test suite passes on the applied system
+        id: pr-tests
+        context: [runtime]
+        command: 'for t in /usr/share/omarchy/test/shell.d/notifications-test.sh; do bash "$t" || exit 1; done'
+      - check: Service.qml passes the popup's remainingLifetime and a showCountdown flag (lifetime>0) to the notification card
+        id: behavior-1
+        context: [runtime]
+        command: 'grep -q ''remainingLifetime: cardSlot.remainingLifetime'' /usr/share/omarchy/shell/plugins/notifications/Service.qml && grep -q ''showCountdown: cardSlot.lifetime > 0'' /usr/share/omarchy/shell/plugins/notifications/Service.qml'
+      - check: NotificationCard reserves 12 style-space units of height only when showCountdown is true, leaving persistent cards unpadded
+        id: behavior-2
+        context: [runtime]
+        command: 'grep -q ''countdownReservedHeight: showCountdown ? Style.space(12) : 0'' /usr/share/omarchy/shell/plugins/notifications/components/NotificationCard.qml'
+      - check: NotificationCard renders a countdownTrack whose fill width tracks root.remainingLifetime
+        id: behavior-3
+        context: [runtime]
+        command: 'grep -q ''id: countdownTrack'' /usr/share/omarchy/shell/plugins/notifications/components/NotificationCard.qml && grep -q ''width: parent.width * root.remainingLifetime'' /usr/share/omarchy/shell/plugins/notifications/components/NotificationCard.qml'
+      - check: The PR's own notifications test asserts the countdown-reserved-height and countdown-track behavior
+        id: behavior-4
+        context: [runtime]
+        command: 'grep -q ''countdownReservedHeight'' /usr/share/omarchy/test/shell.d/notifications-test.sh && grep -q ''countdownTrack'' /usr/share/omarchy/test/shell.d/notifications-test.sh'
+      - check: start a terminal recording
+        id: rec-start
+        context: [runtime]
+        record: {method: start, record_mode: terminal, record_name: pr-10115}
+      - check: start the SPICE display video capture
+        id: rec-spice-start
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: record, action: start, record_name: pr-10115, fps: 5}
+      - check: drive the PR key command inside the recording
+        id: rec-drive
+        context: [runtime]
+        record:
+          method: run
+          record_name: pr-10115
+          # the drive is ARBITRARY shell — a block scalar, never a flow
+          # mapping (RCA 2026.252.2250: the inlined text broke the
+          # rendered YAML on shell metacharacters).
+          text: |-
+            bash /usr/share/omarchy/test/shell.d/notifications-test.sh
+          settle_ms: 1000
+      - check: capture the VM display via SPICE
+        id: rec-screen-spice
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: screenshot, artifact: /tmp/pr-10115.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+      - check: stop the SPICE capture and pull the MJPEG stream
+        id: rec-spice-stop
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: record, action: stop, record_name: pr-10115, artifact: /tmp/pr-10115.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+      - check: stop the terminal recording and pull the .cast
+        id: rec-stop
+        context: [runtime]
+        record: {method: stop, record_name: pr-10115, artifact: /tmp/pr-10115.cast, artifact_min_bytes: 200}
+      - check: render the .cast to an animated GIF
+        id: rec-gif
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        record: {method: gif, record_name: pr-10115, artifact: /tmp/pr-10115.gif, artifact_min_bytes: 100}
+      - run: transcode the SPICE MJPEG capture to MP4
+        id: rec-mp4
+        context: [runtime]
+        command: 'ffmpeg -y -loglevel error -i /tmp/pr-10115.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/pr-10115.mp4'

@@ -443,6 +443,9 @@ eval-lane-plan:
       - id: bed-render
         kind: generate
         template: "$report.bed_template"
+        # a class "skip" (a draft/WIP PR) never renders a bed — the
+        # NOT_TESTABLE_PR report renders instead.
+        skip_when: "@triage.class == skip"
         vars:
           pr: "$pr"
           golden: "@channel-map.golden"
@@ -474,6 +477,7 @@ eval-lane-plan:
         kind: generate
         template: "$report.control_bed_template"
         negate_checks: true
+        skip_when: "@triage.class == skip"
         vars:
           pr: "$pr"
           golden: "@channel-map.golden"
@@ -490,6 +494,7 @@ eval-lane-plan:
       - id: control
         kind: ade
         bed: check-omarchy-pr-$pr-control
+        skip_when: "@triage.class == skip"
         # the negative control: the negated checks must PASS on the pristine
         # golden (every original check failed without the PR = every knownRed
         # claim holds). A FAIL verdict = a FAKE assertion (an original check
@@ -504,6 +509,7 @@ eval-lane-plan:
         kind: probe
         verbs: [config_audit]
         input: { bed: "pr-beds/pr-$pr/charly.yml", pr: "$pr" }
+        skip_when: "@triage.class == skip"
         redo:
           triggers: { redo-plan: bed-render }
       - id: eval
@@ -522,9 +528,11 @@ eval-lane-plan:
         kind: media
         assemble: true
         transcode: mjpeg:mp4
+        skip_when: "@triage.class == skip"
       - id: evidence-audit
         kind: probe
         verbs: [media_gate, lock_audit]
+        skip_when: "@triage.class == skip"
         input:
           media_gate: { dir: "media/pr-$pr-$calver", files: [cast, gif, mjpeg, mp4, png], min: {cast: 200, gif: 1024, mjpeg: 4096, mp4: 4096, png: 1024} }
           # the lock audit scopes to THIS run's trees — the whole .check tree
@@ -535,6 +543,7 @@ eval-lane-plan:
       - id: ledger-gate
         kind: probe
         verbs: [ledger_gate]
+        skip_when: "@triage.class == skip"
         input:
           # bed_name/control_bed_name are ENTITY NAMES — the probe's path
           # rooting (the bed/dir keys) would corrupt them into absolute paths.
@@ -586,7 +595,7 @@ eval-lane-plan:
             the plugin refs, the discover paths, the triage's checks) and
             re-run the lane
         out: "setup-defects/$calver-pr-$pr.md"
-        skip_when: "@eval.verdict == PASS || @eval.verdict == FAIL"
+        skip_when: "@eval.verdict == PASS || @eval.verdict == FAIL || @triage.class == skip"
       - id: report
         kind: agent
         skill: [omarchy-eval-lane, omarchy-eval-full-loop]
@@ -679,7 +688,7 @@ eval-lane-plan:
           # the SUBSTANCE validate (the anti-whine gate): the Tests section must
           # name at least one executed check with an observed outcome, and the
           # evidence paths must RESOLVE on the tree — a worthless eval fails here.
-          sed -n "/^## Tests/,/^## Suggestions/p" "$f" | grep -qE "(worked|didn't|did not|failed|passed|N/A|not testable|could not|couldn't)" || { echo "report: Tests lacks observed outcomes or N/A reasons" >&2; exit 1; }
+          sed -n "/^## Tests/,/^## Suggestions/p" "$f" | grep -qiE "(worked|didn't|did not|failed|passed|N/A|not testable|could not|couldn't)" || { echo "report: Tests lacks observed outcomes or N/A reasons" >&2; exit 1; }
           if grep -qE "no entity|ktree is not installed|harness failed|NO_VALIDATION" "$f"; then echo "report: harness-failure language - this is a SETUP_DEFECT, not an eval" >&2; exit 1; fi
           for p in "media/pr-$pr-$calver/pr-$pr.cast" "media/pr-$pr-$calver/pr-$pr.mp4" "media/pr-$pr-$calver/pr-$pr.png" "media/pr-$pr-$calver/pr-$pr.gif"; do
             test -s "$p" || { echo "report: evidence path missing: $p" >&2; exit 1; }

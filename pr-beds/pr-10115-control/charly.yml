@@ -1,0 +1,29 @@
+version: 2026.249.2125
+check-omarchy-pr-10115-control:
+  vm:
+    from: check-omarchy-eval-base-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    plan:
+      # the NEGATIVE CONTROL: the negated checks on the PRISTINE golden.
+      # Every negated step must PASS (every original check failed without
+      # the PR = every knownRed claim holds). A control step failing means
+      # the original check passed without the PR — a FAKE assertion,
+      # caught at render, never shipped to a real eval.
+      - check: Service.qml passes the popup's remainingLifetime and a showCountdown flag (lifetime>0) to the notification card
+        id: behavior-1
+        context: [runtime]
+        command: '! ( grep -q ''remainingLifetime: cardSlot.remainingLifetime'' /usr/share/omarchy/shell/plugins/notifications/Service.qml && grep -q ''showCountdown: cardSlot.lifetime > 0'' /usr/share/omarchy/shell/plugins/notifications/Service.qml )'
+      - check: NotificationCard reserves 12 style-space units of height only when showCountdown is true, leaving persistent cards unpadded
+        id: behavior-2
+        context: [runtime]
+        command: '! ( grep -q ''countdownReservedHeight: showCountdown ? Style.space(12) : 0'' /usr/share/omarchy/shell/plugins/notifications/components/NotificationCard.qml )'
+      - check: NotificationCard renders a countdownTrack whose fill width tracks root.remainingLifetime
+        id: behavior-3
+        context: [runtime]
+        command: '! ( grep -q ''id: countdownTrack'' /usr/share/omarchy/shell/plugins/notifications/components/NotificationCard.qml && grep -q ''width: parent.width * root.remainingLifetime'' /usr/share/omarchy/shell/plugins/notifications/components/NotificationCard.qml )'
+      - check: The PR's own notifications test asserts the countdown-reserved-height and countdown-track behavior
+        id: behavior-4
+        context: [runtime]
+        command: '! ( grep -q ''countdownReservedHeight'' /usr/share/omarchy/test/shell.d/notifications-test.sh && grep -q ''countdownTrack'' /usr/share/omarchy/test/shell.d/notifications-test.sh )'
