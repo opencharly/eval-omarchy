@@ -1,0 +1,68 @@
+# the shared recording WRAPPER (R3: the 17x duplication collapsed into two
+# included candies). The record_name + artifact paths use ${INSTANCE} — the
+# per-deploy instance name (check-omarchy-accept-<fn>) — so parallel beds never
+# collide. R0 (start) is included BEFORE Phase A; R1 (stop) AFTER Phase B.
+omarchy-accept-rec-start:
+    candy:
+        version: 2026.253.2700
+        description: |-
+            The recording wrapper R0: start the terminal (asciinema) + SPICE
+            captures BEFORE the bed's Phase A checks. Included by every
+            acceptance bed (include: candy:omarchy-accept-rec-start).
+        distro:
+            arch:
+                package: [bash]
+        plan:
+            - check: start the terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: '${INSTANCE}'}
+            - check: start the SPICE display video capture
+              id: rec-spice-start
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: start, record_name: '${INSTANCE}', fps: 5}
+
+omarchy-accept-rec-stop:
+    candy:
+        version: 2026.253.2700
+        description: |-
+            The recording wrapper R1: capture the SPICE screenshot, stop the
+            SPICE + terminal captures, render the GIF, transcode the MP4, and
+            write the timeline manifest — AFTER the bed's Phase B checks.
+            Included by every acceptance bed (include: candy:omarchy-accept-rec-stop).
+        distro:
+            arch:
+                package: [bash]
+        plan:
+            - check: capture the VM display via SPICE
+              id: rec-screen-spice
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: screenshot, artifact: '/tmp/${INSTANCE}.png', artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the SPICE capture and pull the MJPEG stream
+              id: rec-spice-stop
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: stop, record_name: '${INSTANCE}', artifact: '/tmp/${INSTANCE}.mjpeg', artifact_min_bytes: 10000, artifact_not_uniform: true}
+            - check: stop the terminal recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: '${INSTANCE}', artifact: '/tmp/${INSTANCE}.cast', artifact_min_bytes: 200, artifact_min_cast_events: 5}
+            - check: render the .cast to an animated GIF
+              id: rec-gif
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              record: {method: gif, record_name: '${INSTANCE}', artifact: '/tmp/${INSTANCE}.gif', artifact_min_bytes: 1024}
+            - run: transcode the SPICE MJPEG capture to MP4
+              id: rec-mp4
+              context: [runtime]
+              command: 'ffmpeg -y -loglevel error -i /tmp/${INSTANCE}.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/${INSTANCE}.mp4'
+            - run: write the timeline manifest (the correlation contract, M10)
+              id: rec-timeline
+              context: [runtime]
+              command: 'ls -la /tmp/${INSTANCE}.* > /tmp/${INSTANCE}-timeline.txt'

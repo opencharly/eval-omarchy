@@ -1,0 +1,25 @@
+# the acceptance plugin meta-candy (R3): composes the 8 plugin providers the
+# acceptance beds need. Each bed's add_candy is just [omarchy-accept-plugins,
+# omarchy-corpus] — the 9-line list collapsed to one ref.
+omarchy-accept-plugins:
+    candy:
+        version: 2026.253.2700
+        description: |-
+            The acceptance plugin meta-candy: composes the record/spice/omarchy/
+            wl/quickshell/cdp/dbus/media plugin providers for the acceptance
+            beds. The providers register at check-run time (the 'no provider
+            registered' lesson — never baked).
+        candy:
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.253.1044'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.250.1422'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.251.1349'
+        plan:
+            - check: the acceptance plugin meta-candy is present
+              id: accept-plugins-present
+              context: [runtime]
+              command: 'true'
