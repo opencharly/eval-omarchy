@@ -1,6 +1,6 @@
 omarchy-corpus:
     candy:
-        version: 2026.253.1700
+        version: 2026.253.1800
         description: |-
             The charly-native equivalents of omarchy's own tests - the
             declarative translation of the omacom/omarchy test corpus into
