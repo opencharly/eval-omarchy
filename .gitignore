@@ -1,3 +1,4 @@
+# the per-run lane artifacts — regenerated every run, never committed
 .build/
 .check/
 .containerignore
@@ -7,10 +8,10 @@ output/
 *.bak*
 *.log
 .rollup-cache.json
-
 __pycache__/
 *.pyc
-pr-beds/ regenerated per run — never committed
-setup-defects/ the improvement ledger — committed
-stage-findings.yml — the per-run ledger dump
-metrics/ — the per-run lane metrics
+pr-beds/
+stage-findings.yml
+metrics/
+# the improvement ledger — committed
+setup-defects/
