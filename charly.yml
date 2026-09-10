@@ -111,10 +111,15 @@ check-omarchy-eval-edge-inst:
               command: 'pgrep -x quickshell >/dev/null'
               eventually: 240s
               retry_interval: 10s
+            - check: switch the base to the edge channel (channel-set + full update accepting downgrades)
+              id: inst-channel-switch
+              context: [runtime]
+              command: 'OMARCHY_PATH=/usr/share/omarchy channel-bootstrap edge'
+              timeout: 10m
             - check: the active channel is edge (the round-trip via the reader)
               id: inst-channel-edge
               context: [runtime]
-              command: omarchy-channel-current
+              command: 'OMARCHY_PATH=/usr/share/omarchy omarchy-channel-current'
               stdout:
                   - contains: edge
             - check: the screenlocker is disabled in the golden
@@ -157,6 +162,7 @@ check-omarchy-accept-session:
         update_gate: restart-only
         add_candy:
             - omarchy-accept-plugins
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.250.1422'
             - omarchy-corpus
         plan:
             # R0 — the recordings START here (the shared wrapper, ${INSTANCE}-keyed)

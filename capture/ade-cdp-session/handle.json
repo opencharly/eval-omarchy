@@ -1,0 +1,23 @@
+{
+  "session": "ade-cdp-session",
+  "state_dir": "capture/ade-cdp-session",
+  "transport": "setsid",
+  "pid": 257062,
+  "pidfile": "capture/ade-cdp-session/pid",
+  "command": [
+    "/home/atrawog/.cache/charly/plugins/github.com_opencharly_plugin-cdp_candy_plugin-cdp-7591851d777c9a45",
+    "__dummy-arg"
+  ],
+  "env": {
+    "CHARLY_CDP_ENDPOINT": "{\"url\":\"http://127.0.0.1:34265\"}",
+    "CHARLY_CDP_FPS": "2",
+    "CHARLY_CDP_RECORDER": "1",
+    "CHARLY_CDP_SESSION_ID": "ade-cdp-session",
+    "CHARLY_CDP_STATE_DIR": "/tmp/charly-session/ade-cdp-session",
+    "CHARLY_CDP_TAB": "1",
+    "CHARLY_CDP_VENUE": "ssh://charly-check-omarchy-eval-edge-inst"
+  },
+  "status": "stopped",
+  "started_at": "2026-09-10T18:41:44Z",
+  "stopped_at": "2026-09-10T18:41:44Z"
+}
