@@ -1,4 +1,4 @@
-# the acceptance plugin meta-candy (R3): composes the 8 plugin providers the
+# the acceptance plugin meta-candy (R3): composes the 7 plugin providers the
 # acceptance beds need. Each bed's add_candy is just [omarchy-accept-plugins,
 # omarchy-corpus] — the 9-line list collapsed to one ref.
 omarchy-accept-plugins:
@@ -6,9 +6,11 @@ omarchy-accept-plugins:
         version: 2026.253.2700
         description: |-
             The acceptance plugin meta-candy: composes the record/spice/omarchy/
-            wl/quickshell/cdp/dbus/media plugin providers for the acceptance
+            wl/quickshell/dbus/media plugin providers for the acceptance
             beds. The providers register at check-run time (the 'no provider
-            registered' lesson — never baked).
+            registered' lesson — never baked); the canary dispatches the omarchy
+            version verb through the host registry to prove the composition
+            registers.
         candy:
             - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
             - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
@@ -21,4 +23,6 @@ omarchy-accept-plugins:
             - check: the acceptance plugin providers are registered (the meta-candy's composition)
               id: accept-plugins-present
               context: [runtime]
-              command: 'charly plugin list 2>/dev/null | grep -qE "record|spice|omarchy|wl|quickshell|cdp|dbus|media"'
+              omarchy: {method: version}
+              stdout:
+                  - matches: '^[0-9]+.[0-9]+.[0-9]+'
