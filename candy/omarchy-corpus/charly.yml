@@ -60,13 +60,13 @@ omarchy-corpus:
               context: [runtime]
               wl:
                   method: exec
-                  command: 'hyprctl notify -1 20000 "OCRPROBE42" >/dev/null 2>&1; sleep 1; true'
+                  command: 'hyprctl notify -1 20000 "fontsize(80) OCRPROBE" >/dev/null 2>&1; sleep 1; true'
             - check: the ocr reads the probe text off the screen (grim at 2x + tesseract)
               id: ocr-screen-text
               context: [runtime]
               wl:
                   method: ocr
-                  text: OCRPROBE42
+                  text: OCRPROBE
             - check: dismiss the probe banner
               id: ocr-probe-dismiss
               context: [runtime]
