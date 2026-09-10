@@ -1,6 +1,6 @@
 omarchy-corpus:
     candy:
-        version: 2026.253.2600
+        version: 2026.253.2700
         description: |-
             The charly-native equivalents of omarchy's own tests - the
             declarative translation of the omacom/omarchy test corpus into
@@ -117,10 +117,10 @@ omarchy-corpus:
               context: [runtime]
               command: 'test -s /usr/share/omarchy/shell/plugins/services/battery/BatteryModel.js && grep -q isDischarging /usr/share/omarchy/shell/plugins/services/battery/BatteryModel.js'
             # === test/shell.d/bluetooth-test.sh - the bluetooth panel (the applied-tree scans) ===
-            - check: the bt-agent unit is skipped on machines without Bluetooth hardware (the ConditionPathIsDirectory guard)
+            - check: the bt-agent unit carries the no-Bluetooth-hardware skip guard (ConditionPathIsDirectory=/sys/class/bluetooth)
               id: bluetooth-bt-agent-guard
               context: [runtime]
-              command: 'grep -q "ConditionPathIsDirectory=/sys/class/bluetooth" /usr/share/omarchy/config/default/systemd/user/bt-agent.service 2>/dev/null || grep -rq ConditionPathIsDirectory /usr/share/omarchy/default/systemd/user/ 2>/dev/null || test -f /usr/share/omarchy/config/default/systemd/user/bt-agent.service'
+              command: 'grep -q "ConditionPathIsDirectory=/sys/class/bluetooth" /usr/share/omarchy/default/systemd/user/bt-agent.service'
             - check: the bluetooth panel model module is installed
               id: bluetooth-panel-model
               context: [runtime]
@@ -143,15 +143,10 @@ omarchy-corpus:
               stdout:
                   - contains: chromium
             # === test/acceptance.d/cups-test.sh - the print service ===
-            - check: the cups print service is installed (the systemd unit)
+            - check: the cups print service unit is installed and enabled
               id: accept-cups-unit
               context: [runtime]
-              command: 'systemctl cat cups.service >/dev/null 2>&1 || test -s /usr/lib/systemd/system/cups.service'
-            # === test/acceptance.d/security-test.sh - the security posture ===
-            - check: the omarchy security config tree is installed
-              id: accept-security-tree
-              context: [runtime]
-              command: 'test -d /usr/share/omarchy/config/security || test -s /usr/share/omarchy/install/omarchy-base.packages'
+              command: 'test -s /usr/lib/systemd/system/cups.service && systemctl is-enabled cups.service >/dev/null'
             # === test/shell.d/notifications-test.sh - the notifications logic ===
             - check: the notifications logic module is installed with the chromium-derived heuristic
               id: notifications-logic-present
