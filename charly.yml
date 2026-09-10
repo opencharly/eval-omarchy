@@ -442,6 +442,19 @@ eval-lane-plan:
           control failure is environmental, the JSON carries the re-authored
           checks (or the unchanged checks with the reasoning in knownRed).
           NEVER reply with prose analysis — the analysis belongs in the JSON.
+      - id: corpus-gate
+        kind: probe
+        # THE CORPUS GATE (the charly.yml single source): every oracle-selected
+        # corpus step id MUST exist as a step id: in the omarchy-corpus candy
+        # charly.yml — the CUE-validated single source. A selected id the plan
+        # does not carry is the oracle's gap; the informed redo re-authors.
+        # An empty selection is legal (the corpus_note says why).
+        verbs: [corpus_audit]
+        input:
+          corpus: "candy/omarchy-corpus/charly.yml"
+          ids: "@triage.corpus"
+        redo:
+          triggers: { redo-plan: triage }
       - id: channel-map
         kind: probe
         verbs: [resolve_channel]
