@@ -1,6 +1,6 @@
 omarchy-corpus:
     candy:
-        version: 2026.253.1700
+        version: 2026.253.2300
         description: |-
             The charly-native equivalents of omarchy's own tests - the
             declarative translation of the omacom/omarchy test corpus into
@@ -54,6 +54,38 @@ omarchy-corpus:
               id: shell-config-clock-format
               context: [runtime]
               command: 'jq -r ".bar.layout.center[].formatAlt? // empty" /usr/share/omarchy/config/omarchy/shell.json | grep -q "ww yyyy"'
+            # === test/acceptance.d - the ocr surface assertion (the wl: ocr method's live proof) ===
+            - check: the ocr reads the shell's update prompt off the screen (the native-res capture + tesseract; the always-on shell unit renders it — the retry rides the shell's render window)
+              id: ocr-screen-text
+              context: [runtime]
+              eventually: 120s
+              retry_interval: 5s
+              wl:
+                  method: ocr
+                  text: Update System
+            # === test/shell.d/bar-test.sh - the bar QML invariants (the applied-tree scans) ===
+            - check: bar module dragging leaves layout-managed slots in place (the Bar.qml scan)
+              id: bar-drag-no-slot-mutation
+              context: [runtime]
+              command: 'perl -0ne "exit(/drag\\s*\\.\\s*target\\s*:\\s*[^;]*\\bslot\\b/s ? 1 : 0)" /usr/share/omarchy/shell/plugins/bar/Bar.qml'
+            - check: the bar move outline has no post-release settling state
+              id: bar-move-no-settle
+              context: [runtime]
+              command: '! rg -q "barMoveSettling|barMoveSettleTimer" /usr/share/omarchy/shell/plugins/bar/Bar.qml'
+            # === test/shell.d/hyprland-default-config-test.sh - the default bindings ===
+            - check: the default hyprland config applies without a lua syntax error (the installed bindings source)
+              id: hyprland-default-config-parses
+              context: [runtime]
+              command: 'test -s /usr/share/omarchy/config/hypr/bindings.lua && test -s /usr/share/omarchy/config/hypr/hyprland.lua'
+            # === test/shell.d/update-* - the update machinery ===
+            - check: the omarchy update command center is discoverable (the CLI help names update)
+              id: update-cli-discoverable
+              context: [runtime]
+              omarchy:
+                  args: update --help
+              stdout:
+                  - contains: update
+
             # === test/shell.d/notifications-test.sh - the notifications logic ===
             - check: the notifications logic module is installed with the chromium-derived heuristic
               id: notifications-logic-present
