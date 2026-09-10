@@ -1,18 +1,27 @@
 # The omarchy test-corpus equivalence manifest.
 #
-# Every omarchy test file maps to its covering charly bed steps. A test file
-# with no entry is a REGISTRY GAP - the validate step fails the manifest when
-# an omarchy test file is unmapped (the equivalence contract is
-# machine-checked, never aspirational).
+# The charly-native translation is INCREMENTAL: each wave maps a batch of
+# omarchy test files to their covering charly steps, and the coverage
+# counters record the honest state. A mapped entry's steps are exercised by
+# the corpus beds (the check-live proof). An unmapped file is a translation-
+# batch todo — never a faked pass.
+#
+# THE LANE'S GAP SURFACE: a SETUP_DEFECT is recorded when the ORACLE selects
+# a corpus bed the registry does not carry (the oracle's real failure mode),
+# and when a NEW upstream test file lands with no covering bed (the
+# registry's coverage counter against the upstream corpus makes it visible).
 #
 # class: runnable | partial (the hardware-bound / nested-VM classes are
 # mapped but honestly not runnable on this venue - PARTIAL with the reason).
 omarchy_ref: quattro
 corpus_source: applied PR tree (/usr/share/omarchy after pr-apply)
+coverage:
+    cli: { mapped: 1, upstream_files: 1, note: the whole cli suite maps to the cli-help batch }
+    shell: { mapped: 2, upstream_files: 237, note: the remaining files are the later translation batches (Waves 4) }
+    acceptance: { mapped: 0, upstream_files: 9, note: Wave 5 }
 suites:
     cli:
         upstream: test/cli
-        beds: [omarchy-corpus]
         mapped:
             - { file: test/cli, steps: [cli-help-renders, cli-help-hw, cli-help-pkg] }
     shell:

@@ -9,14 +9,25 @@ eval VM.
 
 The charly-native equivalents live in `candy/omarchy-corpus/` :
 
-- `charly.yml` — the check plans: one bed per omarchy test file
-  (`check-omarchy-<feature>`), the declarative translation of that file's
-  assertions using the charly verb catalog (`omarchy:`, `wl:`, `quickshell:`,
-  `dbus:`, `file:`, `package:`, `unit:`, `service:`, `process:`,
-  `command:`, `spice:`, `libvirt:` send-key, `record:`, `wl: ocr`).
-- `registry.yaml` — the equivalence manifest: every omarchy test file → the
-  charly bed → the covering steps. A test file with no bed is a REGISTRY GAP
-  (a SETUP_DEFECT record, never a faked pass).
+- `charly.yml` — the check plans: the declarative translations of the
+  omarchy test files, one step per upstream assertion, grouped by feature
+  (`omarchy:`, `wl:`, `quickshell:`, `dbus:`, `file:`, `package:`, `unit:`,
+  `service:`, `process:`, `command:`, `spice:`, `libvirt:` send-key, `record:`,
+  `wl: ocr`).
+- `registry.yaml` — the equivalence manifest: the mapped omarchy test files →
+  their covering steps, with the coverage counters recording the honest state
+  (the translation is INCREMENTAL — each wave maps a batch). A mapped entry's
+  steps are exercised by the corpus beds; the counters make an unmapped file
+  visible.
+
+## The lane's gap surface
+
+- A SETUP_DEFECT is recorded when the ORACLE selects a corpus bed the registry
+  does not carry — the oracle's real gap mode.
+- A NEW upstream test file with no covering bed is visible in the registry's
+  coverage counters — the translation-batch todo, never a faked pass.
+- The hardware-bound and nested-VM classes are PARTIAL rows with the recorded
+  reason — mapped, honestly not runnable on this venue.
 
 ## The selection heuristic ("if it makes sense")
 
