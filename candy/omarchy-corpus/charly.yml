@@ -54,25 +54,13 @@ omarchy-corpus:
               id: shell-config-clock-format
               context: [runtime]
               command: 'jq -r ".bar.layout.center[].formatAlt? // empty" /usr/share/omarchy/config/omarchy/shell.json | grep -q "ww yyyy"'
-            # === test/acceptance.d - the ocr round-trip (the wl: ocr method's live proof) ===
-            - check: render the ocr probe banner (hyprctl notify, the deterministic on-screen text)
-              id: ocr-probe-render
-              context: [runtime]
-              wl:
-                  method: exec
-                  command: 'hyprctl notify 20000 "rgb(ffffff)" "fontsize(80) OCRPROBE" >/dev/null 2>&1; sleep 1; true'
-            - check: the ocr reads the probe text off the screen (grim at 2x + tesseract)
+            # === test/acceptance.d - the ocr surface assertion (the wl: ocr method's live proof) ===
+            - check: the ocr reads the shell's update prompt off the screen (grim at 2x + tesseract; the always-on shell unit renders it)
               id: ocr-screen-text
               context: [runtime]
               wl:
                   method: ocr
-                  text: OCRPROBE
-            - check: dismiss the probe banner
-              id: ocr-probe-dismiss
-              context: [runtime]
-              wl:
-                  method: exec
-                  command: 'hyprctl dismissnotify >/dev/null 2>&1 || true; true'
+                  text: Update System
             # === test/shell.d/notifications-test.sh - the notifications logic ===
             - check: the notifications logic module is installed with the chromium-derived heuristic
               id: notifications-logic-present
