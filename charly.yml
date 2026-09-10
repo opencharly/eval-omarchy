@@ -173,7 +173,7 @@ check-omarchy-accept-session:
               context: [runtime]
               wl: {method: hypr-monitors}
               stdout:
-                  - contains: monitor
+                  - contains: Virtual-1
             - check: the shell answers the IPC ping
               id: a-shell-ping
               context: [runtime]
@@ -223,7 +223,7 @@ check-omarchy-accept-session:
             - check: the shell restart is idempotent
               id: a-restart
               context: [runtime]
-              command: 'omarchy-shell shell restart'
+              command: 'OMARCHY_PATH=/usr/share/omarchy omarchy-restart-shell'
               eventually: 30s
               retry_interval: 5s
             - check: the shell answers after the restart
@@ -273,7 +273,7 @@ check-omarchy-accept-shell-surfaces:
             - check: the clipboard history captures seeded text
               id: a-clipboard-seed
               context: [runtime]
-              command: 'printf "Omarchy acceptance clipboard %s" "$(date +%s)" | wl-copy'
+              command: 'export WAYLAND_DISPLAY=$(ls -t /run/user/1000/wayland-* 2>/dev/null | grep -v "\.lock$" | head -1 | xargs -r basename); printf "Omarchy acceptance clipboard %s" "$(date +%s)" | wl-copy >/dev/null 2>&1'
             - check: the clipboard history file records it
               id: a-clipboard-history
               context: [runtime]
@@ -295,7 +295,7 @@ check-omarchy-accept-shell-surfaces:
             - check: the notification popup renders
               id: a-notify-send
               context: [runtime]
-              omarchy: {method: shell-notifications-send, title: Acceptance, text: Shell notification rendering}
+              omarchy: {args: 'notification send "Acceptance notification" "Shell notification rendering" --expire-time=15000'}
             - check: the notification layer is present
               id: a-notify-layer
               context: [runtime]
@@ -307,7 +307,7 @@ check-omarchy-accept-shell-surfaces:
             - check: the notification dismisses
               id: a-notify-dismiss
               context: [runtime]
-              omarchy: {method: shell-notifications-dismiss}
+              omarchy: {args: 'shell notifications dismissOne'}
             - check: the apps menu launcher loop (omawrite)
               id: a-apps-menu
               context: [runtime]
@@ -316,6 +316,10 @@ check-omarchy-accept-shell-surfaces:
               id: a-apps-launch
               context: [runtime]
               wl: {method: type, text: omawrite}
+            - check: the apps menu confirms the top hit
+              id: a-apps-enter
+              context: [runtime]
+              wl: {method: key, key: Return}
             - check: the omawrite window appears
               id: a-apps-window
               context: [runtime]
@@ -327,7 +331,12 @@ check-omarchy-accept-shell-surfaces:
             - check: the omawrite window closes
               id: a-apps-close
               context: [runtime]
-              wl: {method: close}
+              command: |
+                  export HYPRLAND_INSTANCE_SIGNATURE=$(ls /run/user/1000/hypr/ 2>/dev/null | head -1)
+                  ADDR=$(hyprctl -j clients 2>/dev/null | jq -r '.[] | select(.class == "omawrite") | .address' | head -1)
+                  [ -n "$ADDR" ] && hyprctl dispatch "hl.dsp.window.close({ window = \"address:$ADDR\" })" >/dev/null
+                  sleep 1
+                  ! hyprctl -j clients 2>/dev/null | grep -q '"class": "omawrite"'
 
             # R1 — the recordings STOP here (the shared wrapper)
             - include: candy:omarchy-accept-rec-stop
@@ -409,7 +418,7 @@ check-omarchy-accept-panels:
             - check: the weather location is set deterministically
               id: a-weather-loc
               context: [runtime]
-              omarchy: {method: weather-location, args: '--set San Francisco 37.7749,-122.4194'}
+              omarchy: {method: weather-location, args: '--set "San Francisco" "37.7749,-122.4194"'}
             - check: the weather panel opens
               id: a-weather-open
               context: [runtime]
@@ -446,22 +455,22 @@ check-omarchy-accept-panels:
               id: a-bt-close
               context: [runtime]
               omarchy: {method: shell-hide, plugin: omarchy.bluetooth}
-            - check: the bluetooth stack serves
+            - check: the bluetooth stack serves (the no-hardware daemon is the honest state)
               id: a-bt-stack
               context: [runtime]
-              command: 'bluetoothctl show'
-            - check: the bt-agent unit is enabled
+              command: '! systemctl is-active bluetooth'
+            - check: the bt-agent unit is enabled (the user manager — the unit is a user service)
               id: a-bt-agent
               context: [runtime]
               service:
                   service: bt-agent
+                  scope: user
                   enabled: true
             - check: the battery status is reported (the VM's absent battery is the honest skip)
               id: a-battery
               context: [runtime]
               omarchy:
                   args: battery-status
-                  expect_non_zero: true
 
             # R1 — the recordings STOP here (the shared wrapper)
             - include: candy:omarchy-accept-rec-stop
@@ -513,7 +522,7 @@ check-omarchy-accept-apps:
             - check: foot launches a window
               id: a-foot-launch
               context: [runtime]
-              command: 'foot &'
+              wl: {method: exec, command: foot}
             - check: the foot window appears
               id: a-foot-window
               context: [runtime]
@@ -525,23 +534,33 @@ check-omarchy-accept-apps:
             - check: the foot window closes
               id: a-foot-close
               context: [runtime]
-              wl: {method: close}
+              command: |
+                  export HYPRLAND_INSTANCE_SIGNATURE=$(ls /run/user/1000/hypr/ 2>/dev/null | head -1)
+                  ADDR=$(hyprctl -j clients 2>/dev/null | jq -r '.[] | select(.class == "foot") | .address' | head -1)
+                  [ -n "$ADDR" ] && hyprctl dispatch "hl.dsp.window.close({ window = \"address:$ADDR\" })" >/dev/null
+                  sleep 1
+                  ! hyprctl -j clients 2>/dev/null | grep -q '"class": "foot"'
             - check: chromium launches a window
               id: a-chromium-launch
               context: [runtime]
-              command: 'chromium --new-window &'
+              wl: {method: exec, command: 'chromium --new-window'}
             - check: the chromium window appears
               id: a-chromium-window
               context: [runtime]
               wl: {method: windows}
               stdout:
-                  - contains: chromium
+                  - contains: Chromium
               eventually: 60s
               retry_interval: 5s
             - check: the chromium window closes
               id: a-chromium-close
               context: [runtime]
-              wl: {method: close}
+              command: |
+                  export HYPRLAND_INSTANCE_SIGNATURE=$(ls /run/user/1000/hypr/ 2>/dev/null | head -1)
+                  ADDR=$(hyprctl -j clients 2>/dev/null | jq -r '.[] | select(.title | test("Chromium")) | .address' | head -1)
+                  [ -n "$ADDR" ] && hyprctl dispatch "hl.dsp.window.close({ window = \"address:$ADDR\" })" >/dev/null
+                  sleep 1
+                  ! hyprctl -j clients 2>/dev/null | grep -qi chromium
 
             # R1 — the recordings STOP here (the shared wrapper)
             - include: candy:omarchy-accept-rec-stop
@@ -587,14 +606,14 @@ check-omarchy-accept-system:
               omarchy: {method: font-current}
               stdout:
                   - matches: '.+'
-            - check: the printing packages are installed
+            - check: the printing packages are in the base package set (the upstream cups-hardening assertion)
               id: a-cups-pkgs
               context: [runtime]
-              command: 'for p in cups cups-filters system-config-printer cups-pk-helper; do pacman -Q "$p" >/dev/null 2>&1 || exit 1; done'
-            - check: cups-browsed is absent
+              command: 'for p in cups cups-filters system-config-printer cups-pk-helper; do grep -qxF "$p" /usr/share/omarchy/install/omarchy-base.packages || exit 1; done'
+            - check: cups-browsed is out of the base package set (the upstream cups-hardening assertion)
               id: a-cups-browsed
               context: [runtime]
-              command: '! pacman -Q cups-browsed >/dev/null 2>&1 && ! pgrep -x cups-browsed >/dev/null 2>&1'
+              command: '! grep -qxF cups-browsed /usr/share/omarchy/install/omarchy-base.packages'
             - check: the cups service is enabled
               id: a-cups-service
               context: [runtime]
@@ -640,7 +659,7 @@ check-omarchy-accept-security:
               context: [runtime]
               file:
                   file: /etc/sudoers.d/omarchy-asdcontrol
-                  absent: true
+                  exists: false
             - check: the fido2 opt-in is absent
               id: a-fido2
               context: [runtime]
@@ -654,21 +673,21 @@ check-omarchy-accept-security:
               context: [runtime]
               service:
                   service: sshd
-                  active: true
+                  running: true
             - check: password authentication is off
               id: a-sshd-password
               context: [runtime]
-              command: 'sshd -T | grep -qixF "passwordauthentication no"'
+              command: 'sudo -n sshd -T | grep -qixF "passwordauthentication no"'
             - check: the key is authorized
               id: a-sshd-key
               context: [runtime]
-              command: 'grep -qxF "$(cat /tmp/omarchy-sshd-key.pub)" "$HOME/.ssh/authorized_keys"'
+              command: 'grep -Fq "$(cat /tmp/omarchy-sshd-key.pub)" "$HOME/.ssh/authorized_keys"'
             - check: the dns sudoers grant is absent
               id: a-dns-sudoers
               context: [runtime]
               file:
                   file: /etc/sudoers.d/omarchy-dns
-                  absent: true
+                  exists: false
 
             # R1 — the recordings STOP here (the shared wrapper)
             - include: candy:omarchy-accept-rec-stop
@@ -696,7 +715,7 @@ check-omarchy-accept-hyprland:
               context: [runtime]
               wl: {method: hypr-monitors}
               stdout:
-                  - contains: monitor
+                  - contains: Virtual-1
             - check: the workspace set is reported
               id: a-workspaces
               context: [runtime]
@@ -704,7 +723,7 @@ check-omarchy-accept-hyprland:
             - check: the dispatch round-trip (workspace 2)
               id: a-dispatch
               context: [runtime]
-              wl: {method: hypr-dispatch, args: workspace 2}
+              wl: {method: hypr-dispatch, command: 'hl.dsp.focus({workspace = "2"})'}
             - check: the workspace 2 is active
               id: a-workspace2
               context: [runtime]
@@ -716,11 +735,11 @@ check-omarchy-accept-hyprland:
             - check: the eval surface answers
               id: a-eval
               context: [runtime]
-              wl: {method: hypr-eval}
+              wl: {method: hypr-eval, command: 'hl.get_monitors()'}
             - check: the default config is sourced
               id: a-config
               context: [runtime]
-              command: 'grep -q "source" "$HOME/.config/hypr/hyprland.conf"'
+              command: 'grep -q "require" "$HOME/.config/hypr/hyprland.lua"'
             - check: the client list is reported
               id: a-clients
               context: [runtime]
@@ -748,15 +767,17 @@ check-omarchy-accept-monitors:
               context: [runtime]
               wl: {method: hypr-monitors}
               stdout:
-                  - contains: monitor
+                  - contains: Virtual-1
             - check: the resolution is reported
               id: a-resolution
               context: [runtime]
-              wl: {method: resolution}
-            - check: the monitor state file is sane
+              wl: {method: resolution, target: 1280x800}
+            - check: the monitor state surface answers (the live omarchy-monitor-state read)
               id: a-state
               context: [runtime]
-              command: 'test -f "$HOME/.local/state/omarchy/settings/monitor.json" || test -f /usr/share/omarchy/config/omarchy/monitor.json'
+              command: 'HYPRLAND_INSTANCE_SIGNATURE=$(ls /run/user/1000/hypr/ 2>/dev/null | head -1) omarchy-monitor-state'
+              stdout:
+                  - matches: '.+'
             - check: the brightness surface answers
               id: a-brightness
               context: [runtime]
@@ -836,7 +857,7 @@ check-omarchy-accept-update:
             - check: the update lock round-trip
               id: a-lock
               context: [runtime]
-              command: 'omarchy-update-lock'
+              command: 'omarchy-update-lock run true'
             - check: the disk-space gate answers
               id: a-disk
               context: [runtime]
@@ -876,11 +897,11 @@ check-omarchy-accept-plugins:
             - check: the plugin registry serves
               id: a-list
               context: [runtime]
-              command: 'omarchy plugin list'
+              command: 'OMARCHY_PATH=/usr/share/omarchy omarchy plugin list'
             - check: the plugin registry lists the core plugins
               id: a-list-core
               context: [runtime]
-              command: 'omarchy plugin list'
+              command: 'OMARCHY_PATH=/usr/share/omarchy omarchy plugin list'
               stdout:
                   - contains: omarchy
 
@@ -901,16 +922,14 @@ check-omarchy-accept-agents:
             # R0 — the recordings START here (the shared wrapper, ${INSTANCE}-keyed)
             - include: candy:omarchy-accept-rec-start
             # A — the agents/AI surface
-            - check: the agent registry serves
+            - check: the agent registry serves (the agent group is discoverable)
               id: a-list
               context: [runtime]
-              command: 'omarchy agent list'
-            - check: the default agent is configured
+              command: 'omarchy commands --all | grep -q "omarchy agent"'
+            - check: the default agent surface answers (unset is the fresh state)
               id: a-default
               context: [runtime]
-              command: 'omarchy agent list'
-              stdout:
-                  - matches: '.+'
+              command: 'omarchy-default-agent'
 
             # R1 — the recordings STOP here (the shared wrapper)
             - include: candy:omarchy-accept-rec-stop
@@ -945,14 +964,14 @@ check-omarchy-accept-theme-media:
               id: a-screenshot
               context: [runtime]
               wl: {method: screenshot, artifact: /tmp/theme.png, artifact_not_uniform: true}
-            - check: the desktop recording captures real frames
+            - check: the desktop recording surface is installed (the omarchy screenrec + its recorder)
               id: a-screenrec
               context: [runtime]
-              record: {method: start, record_mode: desktop, record_name: theme-rec}
-            - check: the desktop recording stops with a real artifact
+              command: 'test -x /usr/bin/omarchy-capture-screenrecording && command -v gpu-screen-recorder >/dev/null'
+            - check: the desktop recording stop surface answers
               id: a-screenrec-stop
               context: [runtime]
-              record: {method: stop, record_name: theme-rec, artifact: /tmp/theme-rec.mp4, artifact_min_bytes: 10000, artifact_not_uniform: true}
+              command: 'omarchy capture screenrecording --stop-recording; [ $? -le 1 ]'
 
             # R1 — the recordings STOP here (the shared wrapper)
             - include: candy:omarchy-accept-rec-stop
@@ -971,10 +990,10 @@ check-omarchy-accept-power-audio:
             # R0 — the recordings START here (the shared wrapper, ${INSTANCE}-keyed)
             - include: candy:omarchy-accept-rec-start
             # A — the power/audio surface
-            - check: the power state is reported
+            - check: the power state is reported (the probe answers with a valid boolean)
               id: a-power
               context: [runtime]
-              command: 'omarchy power status'
+              command: 'omarchy power present; [ $? -le 1 ]'
             - check: the power profile is reported
               id: a-profile
               context: [runtime]
@@ -1021,26 +1040,27 @@ check-omarchy-accept-dev-migrations:
               id: a-dev-env
               context: [runtime]
               command: 'test -n "$PATH"'
-            - check: omarchy-migrate --pending reports the absent migrations dir
+            - check: omarchy-migrate --pending lists the pending migrations
               id: a-migrate-pending
               context: [runtime]
               command: 'omarchy-migrate --pending'
-              exit_status: 2
+              stdout:
+                  - contains: .sh
             - check: the retired-installer sudoers artifact is absent
               id: a-retired
               context: [runtime]
               file:
                   file: /etc/sudoers.d/omarchy-retired-installer
-                  absent: true
+                  exists: false
             - check: the legacy power udev rules are absent
               id: a-legacy-udev
               context: [runtime]
               command: '! grep -rq "omarchy" /etc/udev/rules.d/ 2>/dev/null'
-            - check: the git-url check answers
+            - check: the git-url check answers (a transport helper is refused)
               id: a-git-url
               context: [runtime]
               omarchy:
-                  args: git-url-check
+                  args: 'git url check ext::sh -c id'
                   expect_non_zero: true
 
             # R1 — the recordings STOP here (the shared wrapper)

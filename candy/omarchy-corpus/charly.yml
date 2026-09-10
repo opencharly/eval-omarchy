@@ -78,7 +78,10 @@ omarchy-corpus:
             - check: the ocr reads the shell's update prompt off the screen (the native-res capture + tesseract; the always-on shell unit renders it — the retry rides the shell's render window)
               id: ocr-screen-text
               context: [runtime]
-              eventually: 120s
+              # the wl ocr verb's per-attempt never-hang bound is 2m — the 300s
+              # eventually lets a slow attempt be killed and retried (the verb is
+              # fast in isolation; the parallel bed context slows it)
+              eventually: 300s
               retry_interval: 5s
               wl:
                   method: ocr
