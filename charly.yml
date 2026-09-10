@@ -256,6 +256,7 @@ eval-lane-plan:
         ## Tests
         ${tests_body}
         Recordings: terminal ${cast} · desktop ${mp4} (${png}, ${gif}) · full run matrix: .check/check-omarchy-pr-$pr-vm/
+        Upstream's own corpus surfaces ran: ${corpus_run} (passed ${corpus_ok}) — the charly-native equivalents of omarchy's own tests, per the omarchy-corpus plan in charly.yml.
         ## Suggestions
         ${suggestions_body}
         *Assisted-by: charly eval-lane agent ollama/deepseek-v4-flash:cloud (fully tested and validated)*
@@ -276,6 +277,10 @@ eval-lane-plan:
               # the updated pr-apply (the test-context closure) overwrites the
               # golden's baked script at deploy time — no golden re-provision.
               - omarchy-pr-apply
+              # upstream's own contract surfaces run per PR (the whole corpus is
+              # 25 cheap file-presence/CLI assertions (the selection vocabulary in the skill); the oracle's selection
+              # drives the report emphasis, the corpus facts land in the ledger)
+              - omarchy-corpus
             plan:
               - check: apply PR $pr via the single apply seam
                 id: pr-apply
@@ -581,7 +586,10 @@ eval-lane-plan:
           bed_name: "check-omarchy-pr-$pr-vm"
           control_bed_name: "check-omarchy-pr-$pr-control"
           media_dir: "media/pr-$pr-$calver"
-        outputs: [executed_checks, control_ok, media_ok]
+          # the corpus facts: the omarchy-corpus charly.yml is the identity source
+          # for the corpus-surface results (never conflated with the oracle's checks)
+          corpus_file: "candy/omarchy-corpus/charly.yml"
+        outputs: [executed_checks, control_ok, media_ok, corpus_run, corpus_ok, corpus_skipped]
       - id: not-testable
         kind: generate
         template: |-
@@ -678,11 +686,14 @@ eval-lane-plan:
         prompt: |-
           Fresh-context validation of the evidence packet against the ledger facts
           in your user message — the deterministic gates first (executed_checks >= 1,
-          control_ok, media_ok from the ledger-gate stage), then the prose gates
-          (every material claim corroborated, user-voice, no verdict language, no
-          lament). A packet with zero executed checks is a SETUP_DEFECT — say so
-          plainly. The suggestions are actionable user words, informed by the
-          setup-defects ledger (what the lane already learned).
+          control_ok, media_ok from the ledger-gate stage, plus the corpus facts:
+          corpus_run/corpus_ok/corpus_skipped — the omarchy-corpus surfaces that ran
+          upstream's own contract; a corpus result contradicted by a report claim is
+          a FAIL), then the prose gates (every material claim corroborated,
+          user-voice, no verdict language, no lament). A packet with zero executed
+          checks is a SETUP_DEFECT — say so plainly. The suggestions are actionable
+          user words, informed by the setup-defects ledger (what the lane already
+          learned).
           REPLY CONTRACT: your ENTIRE reply is ONE JSON object and NOTHING else.
           The first character is '{'. No prose, no preamble, no markdown fences
           (never wrap the object in ```json — the fence breaks the parse). The
@@ -700,6 +711,9 @@ eval-lane-plan:
           tier: "@triage.tier"
           golden: "@channel-map.golden"
           tests_body: "@report.tests"
+          corpus_run: "@ledger-gate.corpus_run"
+          corpus_ok: "@ledger-gate.corpus_ok"
+          corpus_skipped: "@ledger-gate.corpus_skipped"
           suggestions_body: "@cold-read.suggestions"
           cast: "media/pr-$pr-$calver/pr-$pr.cast"
           mp4: "media/pr-$pr-$calver/pr-$pr.mp4"
