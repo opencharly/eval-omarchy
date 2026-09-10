@@ -1,0 +1,30 @@
+# The omarchy test-corpus equivalence manifest.
+#
+# Every omarchy test file maps to its covering charly bed steps. A test file
+# with no entry is a REGISTRY GAP - the validate step fails the manifest when
+# an omarchy test file is unmapped (the equivalence contract is
+# machine-checked, never aspirational).
+#
+# class: runnable | partial (the hardware-bound / nested-VM classes are
+# mapped but honestly not runnable on this venue - PARTIAL with the reason).
+omarchy_ref: quattro
+corpus_source: applied PR tree (/usr/share/omarchy after pr-apply)
+suites:
+    cli:
+        upstream: test/cli
+        beds: [omarchy-corpus]
+        mapped:
+            - { file: test/cli, steps: [cli-help-renders, cli-help-hw, cli-help-pkg] }
+    shell:
+        upstream: test/shell.d/*-test.sh (237 files)
+        mapped:
+            - { file: test/shell.d/config-test.sh, steps: [shell-config-valid-json, shell-config-version-1, shell-config-bar-layouts, shell-config-clock-format] }
+            - { file: test/shell.d/notifications-test.sh, steps: [notifications-logic-present] }
+    acceptance:
+        upstream: test/acceptance.d/*-test.sh (9 files)
+        mapped: []
+    partial:
+        # the hardware-bound / nested-VM classes - mapped but not runnable on
+        # this venue, with the reason recorded (the tiers skill: PARTIAL,
+        # never a faked pass)
+        - { files: [hw-*, t2-*, brcmfmac-*, hybrid-gpu-*, windows-vm-*], reason: the venue lacks the hardware / the nested substrate }
