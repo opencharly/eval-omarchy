@@ -177,7 +177,7 @@ eval-lane:
       self-checks. The pipeline itself is the eval-lane-plan kind:pipeline entity in
       this file — every stage, prompt, template, and schema INLINE.
     candy:
-      - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.253.1504'
+      - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.253.1141'
       - '@github.com/opencharly/plugin-review/candy/plugin-review:v2026.251.1939'
     var:
       EVAL_LANES: "16"
