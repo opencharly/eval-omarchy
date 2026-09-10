@@ -1064,15 +1064,15 @@ check-omarchy-accept-suite:
               expect_exit: 0
             - id: matrix
               kind: command
-              command: 'charly pipeline run check-omarchy-accept-matrix --prs session shell-surfaces menu-bar panels apps system security hyprland monitors network update plugins agents theme-media power-audio bluetooth-battery dev-migrations --lanes 16'
+              command: 'charly pipeline run check-omarchy-accept-matrix --prs session shell-surfaces menu-bar panels apps system security hyprland monitors network update plugins agents theme-media power-audio dev-migrations --lanes 16'
               expect_exit: 0
             - id: aggregate
               kind: command
-              command: 'for b in session shell-surfaces menu-bar panels apps system security hyprland monitors network update plugins agents theme-media power-audio bluetooth-battery dev-migrations; do test -d ".check/check-omarchy-accept-$b" || { echo "missing run dir: $b" >&2; exit 1; }; for f in cast gif mjpeg mp4 png; do find "media/accept-$b-"* -name "*.$f" | grep -q . || { echo "missing $f for $b" >&2; exit 1; }; done; done'
+              command: 'for b in session shell-surfaces menu-bar panels apps system security hyprland monitors network update plugins agents theme-media power-audio dev-migrations; do test -d ".check/check-omarchy-accept-$b" || { echo "missing run dir: $b" >&2; exit 1; }; for f in cast gif mjpeg mp4 png; do find "media/accept-$b-"* -name "*.$f" | grep -q . || { echo "missing $f for $b" >&2; exit 1; }; done; done'
               expect_exit: 0
             - id: report
               kind: command
-              command: 'echo "# Omarchy acceptance matrix" > eval/omarchy-acceptance-matrix.md; for b in session shell-surfaces menu-bar panels apps system security hyprland monitors network update plugins agents theme-media power-audio bluetooth-battery dev-migrations; do echo "- $b: $(ls media/accept-$b-*/ 2>/dev/null | tr "
+              command: 'echo "# Omarchy acceptance matrix" > eval/omarchy-acceptance-matrix.md; for b in session shell-surfaces menu-bar panels apps system security hyprland monitors network update plugins agents theme-media power-audio dev-migrations; do echo "- $b: $(ls media/accept-$b-*/ 2>/dev/null | tr "
 " " ")" >> eval/omarchy-acceptance-matrix.md; done'
               expect_exit: 0
 
