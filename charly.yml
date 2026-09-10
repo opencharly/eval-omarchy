@@ -512,6 +512,9 @@ eval-lane-plan:
         # the verdict is a GATE: NO_VALIDATION/SKIP are LANE DEFECTS (the
         # harness failed) — the stage fails and the setup-defect record renders
         # instead of a worthless eval. PASS/FAIL are real outcomes and flow on.
+        # A class "skip" (a draft/WIP PR) never runs a bed — the NOT_TESTABLE_PR
+        # report renders instead.
+        skip_when: "@triage.class == skip"
         fail_on: [NO_VALIDATION, SKIP]
         redo:
           triggers: { redo-plan: setup-defect }
@@ -539,6 +542,34 @@ eval-lane-plan:
           control_bed_name: "check-omarchy-pr-$pr-control"
           media_dir: "media/pr-$pr-$calver"
         outputs: [executed_checks, control_ok, media_ok]
+      - id: not-testable
+        kind: generate
+        template: |-
+          ---
+          head: ${sha}
+          channel: ${channel}
+          class: skip
+          tier: ${tier}
+          posted: false
+          ---
+          # I looked at omacom/omarchy#$pr — this one is not testable yet
+          ## Tests
+          This PR is a draft or WIP — there is no testable behavior to exercise
+          on this setup yet. What it does: ${what}. When it is ready for review,
+          the lane will evaluate it like any other PR.
+          ## Suggestions
+          - Mark the PR ready for review when the behavior is implemented.
+          *Assisted-by: charly eval-lane agent ollama/deepseek-v4-flash:cloud (fully tested and validated)*
+          *Tested-by: charly eval-lane (channel ${channel}, golden ${golden}, bed check-omarchy-pr-$pr-vm)*
+        vars:
+          pr: "$pr"
+          sha: "$env.PR_HEAD_SHA"
+          channel: "@triage.channel"
+          tier: "@triage.tier"
+          golden: "@channel-map.golden"
+          what: "@triage.drive"
+        out: "eval/pr-$pr.md"
+        skip_when: "@triage.class != skip"
       - id: setup-defect
         kind: generate
         template: |-
@@ -660,5 +691,22 @@ eval-lane-plan:
         condition: "$env.EVAL_PUBLISH == approve"
         # the designed skip: no approval, no publication — the R10 gate must
         # complete at ZERO failures (validator finding R10/B12), so the
-        # unset-approval run reports a skip, never a fail.
-        skip_when: "$env.EVAL_PUBLISH != approve"
+        # unset-approval run reports a skip, never a fail. The cold-read's
+        # verdict is a GATE too: a NO_VALIDATION packet is never published.
+        skip_when: "$env.EVAL_PUBLISH != approve || @cold-read.verdict == NO_VALIDATION"
+      - id: metrics
+        kind: generate
+        template: |-
+          # Lane metrics — $pr @ $calver
+          - eval verdict: @eval.verdict
+          - control verdict: @control.verdict
+          - executed checks: @ledger-gate.executed_checks
+          - control ok: @ledger-gate.control_ok
+          - media ok: @ledger-gate.media_ok
+          - cold-read verdict: @cold-read.verdict
+          - report: eval/pr-$pr.md (TESTED / NOT_TESTABLE_PR) or setup-defects/ (SETUP_DEFECT)
+        vars:
+          pr: "$pr"
+          calver: "$calver"
+        out: "metrics/$calver-pr-$pr.md"
+        skip_when: "@triage.class == skip"

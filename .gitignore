@@ -13,3 +13,4 @@ __pycache__/
 pr-beds/ regenerated per run — never committed
 setup-defects/ the improvement ledger — committed
 stage-findings.yml — the per-run ledger dump
+metrics/ — the per-run lane metrics
