@@ -17,7 +17,7 @@ PARTIAL/NOT-EVALUABLE with the blocker, as part of the test record.
 
 ## The eval rules (every PR evaluation)
 
-The standing rules live **ONCE** in `.agents/skills/omarchy-eval-lane/SKILL.md` (+ its
+The standing rules live **ONCE** in `candy/eval-lane/skills/omarchy-eval-lane/SKILL.md` (+ its
 referenced skills) — every agent and skill points there, never restates. In short: never mock; test like
 a user; Assisted-by footer on every posted comment; install missing software before
 declaring "couldn't be tested"; test to the maximum extent on a live system; record
@@ -43,11 +43,11 @@ live-system behavior from a container run.
 
 The full semantics — the routing rule, the binary purpose of a validation, the
 strict prohibition, and honesty about testing — live ONCE in
-`.agents/skills/omarchy-eval-tiers/SKILL.md`; every agent and skill points there, never restates.
+`candy/eval-lane/skills/omarchy-eval-tiers/SKILL.md`; every agent and skill points there, never restates.
 
 The **FULL LOOP** (every stage grades the previous stage and can trigger a change;
 the runner CONFIG AUDIT; the artifacts-only cold-read; the loop guard) is the
-`.agents/skills/omarchy-eval-full-loop/SKILL.md` contract — the runner never leaves a VM
+`candy/eval-lane/skills/omarchy-eval-full-loop/SKILL.md` contract — the runner never leaves a VM
 running when done; the cold-reader grades the artifact packet only.
 
 ## The per-PR artifact pattern
@@ -57,7 +57,7 @@ Every evaluated PR gets three artifacts, following the established pattern:
 | Artifact | Purpose |
 |---|---|
 | `candy/omarchy-pr-apply/` | The ONE runtime apply seam: `pr-apply <pr> <sha> <files...>` fetches the PR head (SHA-pinned) and installs only its changed files over the installed tree. The git-fetch block lives here and nowhere else (S9) |
-| `pr-beds/pr-<N>/charly.yml` | The per-PR test environments, AUTHORED by the config-oracle from its per-PR analysis (§Template in .agents/skills/omarchy-eval-oracle/SKILL.md) — the charly.yml IS the plan: the clone entity (2G/1cpu from the channel golden) + the RED-PROBE bed (same checks, NO apply — must FAIL) + the eval bed (apply via the single seam + known-red behavior checks + the FULL record:/spice: evidence loop). Gate: `charly box validate`; NO hand-edits; NO `run:` steps |
+| `pr-beds/pr-<N>/charly.yml` | The per-PR test environments, AUTHORED by the config-oracle from its per-PR analysis (§Template in candy/eval-lane/skills/omarchy-eval-oracle/SKILL.md) — the charly.yml IS the plan: the clone entity (2G/1cpu from the channel golden) + the RED-PROBE bed (same checks, NO apply — must FAIL) + the eval bed (apply via the single seam + known-red behavior checks + the FULL record:/spice: evidence loop). Gate: `charly box validate`; NO hand-edits; NO `run:` steps |
 | `charly.yml` | The stable hand-authored config (VM template + golden bases + shared clone); per-PR test environments are oracle-generated into `pr-beds/pr-<N>/` |
 
 The checks must be **known-red**: every PR-specific check fails without the PR
@@ -90,7 +90,7 @@ to the Tier-2 live VM, never mocked.
   contract gets root-cause analysis before remediation. No "pre-existing", "out of
   scope", or "follow-up PR" classifications.
 - **R3 — No duplication.** One canonical implementation per behavior. The standing
-  rules live once in `.agents/skills/` (entry `.agents/skills/omarchy-eval-lane/SKILL.md`); the
+  rules live once in `candy/eval-lane/skills/` (entry `candy/eval-lane/skills/omarchy-eval-lane/SKILL.md`); the
   template and AGENTS.md point there, never copy them.
 - **R4 — No workarounds.** No sleeps, blind retries, or manual fixes. The never-mock
   rule is the fix, not a workaround.
@@ -135,7 +135,7 @@ Before the first tool call of a task, load the relevant skills. From the marketp
 - `strict-policy` / `root-cause-analyzer` — R1-R5 discipline
 - `git-workflow` — PR-only landing
 
-Plus the REPO skills under `.agents/skills/` (the binding lane contract — in addition to the
+Plus the REPO skills under `candy/eval-lane/skills/` (the binding lane contract — in addition to the
 marketplace procedure): `omarchy-eval-lane` (the entry: standing rules, class-based
 §Template index, work-lane schema), `omarchy-eval-tiers`, `omarchy-eval-oracle` (the
 §Template + marker/path rules), `omarchy-eval-golden`, `omarchy-eval-sequencing`,
@@ -147,7 +147,7 @@ marketplace procedure): `omarchy-eval-lane` (the entry: standing rules, class-ba
 
 The M4-era guidance — the ORACLE marker rule, the ORACLE path rule, the RUNNER
 orphan-sequencing rule — lives ONCE in present-tense standing form:
-`.agents/skills/omarchy-eval-oracle/SKILL.md` and `.agents/skills/omarchy-eval-sequencing/SKILL.md`. Its
+`candy/eval-lane/skills/omarchy-eval-oracle/SKILL.md` and `candy/eval-lane/skills/omarchy-eval-sequencing/SKILL.md`. Its
 dated origin (the 16-lane batch, 2026-09-04, with the caught-live examples) is
 archived in `CHANGELOG/2026.250.1700.md`. Agents point there; AGENTS.md never
 restates the rules.

@@ -1,0 +1,32 @@
+# omarchy-eval-lane
+
+The omarchy PR-eval lane procedure. Every agent in the lane follows this; the
+stage prompts point here and never restate it.
+
+## The lane's job
+
+Evaluate an omacom/omarchy PR the way another user would: apply the PR to a
+real omarchy system, use it, and report what happened — on a disposable
+golden-VM bed, with full evidence rigor.
+
+## The terminal states (typed, never ambiguous)
+
+- TESTED — real observed outcomes; renders the user-voice report.
+- NOT_TESTABLE_PR — the PR itself cannot be exercised on this machine (draft,
+  hardware-bound, out of scope). A SHORT factual note: what the PR does, the
+  CONCRETE reason this setup cannot exercise it, what a setup that could
+  would need. No lament, no fake outcomes.
+- SETUP_DEFECT — the harness failed (missing entity, plugin load, golden
+  absence, a fake assertion caught by the control bed). The lane NEVER
+  renders a report: it renders a structured defect record and triggers the
+  informed reconfiguration.
+
+## The rules
+
+- Never mock. Test like a user. Install missing software before declaring
+  "couldn't be tested". Test to the maximum extent on a live system.
+- Every PR-specific check is known-red: it MUST fail on the pristine golden.
+  The control bed proves it — a check that passes without the PR is a FAKE
+  assertion and the lane re-renders informed.
+- Every result is cold-read validated against the ledger, never against prose.
+- The evidence packet is linked, never inlined.
