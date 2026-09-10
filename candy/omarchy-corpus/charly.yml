@@ -1,6 +1,6 @@
 omarchy-corpus:
     candy:
-        version: 2026.253.2400
+        version: 2026.253.2500
         description: |-
             The charly-native equivalents of omarchy's own tests - the
             declarative translation of the omacom/omarchy test corpus into
@@ -90,7 +90,7 @@ omarchy-corpus:
             - check: the omarchy shell responds to the quickshell IPC ping
               id: accept-shell-ping
               context: [runtime]
-              command: 'omarchy-shell shell ping'
+              command: 'OMARCHY_PATH=/usr/share/omarchy omarchy-shell shell ping'
             - check: the bar and background layers are on screen (the shell layer surfaces)
               id: accept-bar-background-layers
               context: [runtime]
