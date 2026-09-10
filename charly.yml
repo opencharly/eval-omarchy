@@ -28,7 +28,7 @@ defaults:
 import:
     # The omarchy image family (base box, suite-base, VM templates) lives in
     # opencharly/distro-omarchy. Qualified refs: omarchy.omarchy-suite-base.
-    - omarchy: '@github.com/opencharly/distro-omarchy:v2026.250.0359'
+    - omarchy: '@github.com/opencharly/distro-omarchy:v2026.251.2301'
 discover:
     - path: box
       recursive: true
@@ -73,6 +73,1717 @@ omarchy-vm:
                 memballoon: {model: virtio}
             snippets:
                 - "<channel type='unix'><target type='virtio' name='org.qemu.guest_agent.0'/></channel>"
+
+check-omarchy-eval-edge-inst:
+    vm:
+        from: omarchy.omarchy-vm
+        disposable: true
+        lifecycle: dev
+        snapshot:
+            on_finalize: golden
+            mode: external
+            keep_venue: true
+        add_candy:
+            - omarchy-autologin
+            - omarchy-channel-bootstrap
+            - omarchy-eval-record
+            - omarchy-eval-harden
+            - omarchy-pr-apply
+            - '@github.com/opencharly/layer-asciinema:v2026.246.1622'
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.253.1044'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.250.1422'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.251.1349'
+            - omarchy-corpus
+        install_opts:
+            allow_repo_changes: true
+            allow_root_tasks: true
+            with_service: true
+            skip_incompatible: true
+        plan:
+            - check: the edge twin reaches the FULL desktop (the shell stack required)
+              id: inst-autologin
+              context: [runtime]
+              command: 'pgrep -x quickshell >/dev/null'
+              eventually: 240s
+              retry_interval: 10s
+            - check: the active channel is edge (the round-trip via the reader)
+              id: inst-channel-edge
+              context: [runtime]
+              command: omarchy-channel-current
+              stdout:
+                  - contains: edge
+            - check: the screenlocker is disabled in the golden
+              id: inst-screenlock-disabled
+              context: [runtime]
+              command: '! pgrep -x hypridle >/dev/null && ! systemctl is-active omarchy-sleep-lock.service >/dev/null 2>&1'
+            - check: the always-on shell unit is enabled for every future user session
+              id: inst-shell-unit-enabled
+              context: [runtime]
+              command: 'systemctl --global is-enabled omarchy-eval-shell.service | grep -q enabled'
+            - check: the agg gif generator is installed and runnable
+              id: inst-agg-present
+              context: [runtime]
+              command: 'test -s /usr/local/bin/agg && /usr/local/bin/agg --version'
+            - check: acpid is enabled (ACPI power-off handling present)
+              id: inst-acpid
+              context: [runtime]
+              service:
+                  service: acpid
+                  enabled: true
+            - check: the pr-apply helper is present NON-EMPTY
+              id: inst-pr-apply
+              context: [runtime]
+              command: 'test -s /usr/local/bin/pr-apply && head -1 /usr/local/bin/pr-apply | grep -q "#!/usr/bin/env bash"'
+            - check: the upstream test tree is carried on the golden (M7)
+              id: inst-upstream-tests
+              context: [runtime]
+              command: 'test -d /opt/omarchy-upstream-test/test/shell.d && test -d /opt/omarchy-upstream-test/test/acceptance.d'
+            - check: the tool manifest is present (grim, tesseract, wtype, jq)
+              id: inst-tool-manifest
+              context: [runtime]
+              command: 'for t in grim tesseract wtype jq; do command -v $t >/dev/null || exit 1; done'
+
+# session — the acceptance bed (the recording WRAPPER: R0 before Phase A, R1 after)
+check-omarchy-accept-session:
+    vm:
+        from: check-omarchy-eval-edge-inst:golden
+        disposable: true
+        lifecycle: dev
+        update_gate: restart-only
+        add_candy:
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.253.1044'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.250.1422'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.251.1349'
+            - omarchy-corpus
+        plan:
+            # R0 — the recordings START here, BEFORE any Phase A step
+            - check: start the terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: session}
+            - check: start the SPICE display video capture
+              id: rec-spice-start
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: start, record_name: session, fps: 5}
+            # A — the ground-up health checks
+            - check: the compositor reports a monitor
+              id: a-monitors
+              context: [runtime]
+              wl: {method: hypr-monitors}
+              stdout:
+                  - contains: monitor
+            - check: the shell answers the IPC ping
+              id: a-shell-ping
+              context: [runtime]
+              quickshell: {method: ping, config: /usr/share/omarchy/shell}
+            - check: the 13 core shell plugins are loaded
+              id: a-plugins
+              context: [runtime]
+              omarchy: {method: shell-list-plugins}
+              stdout:
+                  - contains: omarchy.audio
+                  - contains: omarchy.weather
+            - check: the bar and background layers are on screen
+              id: a-layers
+              context: [runtime]
+              wl: {method: hypr-layers}
+              stdout:
+                  - contains: omarchy-bar
+                  - contains: omarchy-background
+            - check: pipewire is running
+              id: a-pipewire
+              context: [runtime]
+              command: 'wpctl status'
+            - check: the root filesystem is btrfs
+              id: a-btrfs
+              context: [runtime]
+              command: 'findmnt -no FSTYPE /'
+              stdout:
+                  - contains: btrfs
+            - check: omarchy reports its version
+              id: a-version
+              context: [runtime]
+              omarchy: {method: version}
+              stdout:
+                  - matches: '^[0-9]+.[0-9]+.[0-9]+'
+            - check: no failed system units
+              id: a-failed-system
+              context: [runtime]
+              command: 'systemctl --failed --system --no-legend'
+              stdout:
+                  - matches: '^$'
+            - check: no failed user units
+              id: a-failed-user
+              context: [runtime]
+              command: 'systemctl --failed --user --no-legend'
+              stdout:
+                  - matches: '^$'
+            - check: the shell restart is idempotent
+              id: a-restart
+              context: [runtime]
+              command: 'omarchy-shell shell restart'
+              eventually: 30s
+              retry_interval: 5s
+            - check: the shell answers after the restart
+              id: a-restart-ping
+              context: [runtime]
+              quickshell: {method: ping, config: /usr/share/omarchy/shell}
+              eventually: 30s
+              retry_interval: 5s
+
+            # R1 — the recordings STOP here, AFTER the last GUI-visible step
+            - check: capture the VM display via SPICE
+              id: rec-screen-spice
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/session.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the SPICE capture and pull the MJPEG stream
+              id: rec-spice-stop
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: stop, record_name: session, artifact: /tmp/session.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+            - check: stop the terminal recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: session, artifact: /tmp/session.cast, artifact_min_bytes: 200, artifact_min_cast_events: 5}
+            - check: render the .cast to an animated GIF
+              id: rec-gif
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              record: {method: gif, record_name: session, artifact: /tmp/session.gif, artifact_min_bytes: 1024}
+            - run: transcode the SPICE MJPEG capture to MP4
+              id: rec-mp4
+              context: [runtime]
+              command: 'ffmpeg -y -loglevel error -i /tmp/session.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/session.mp4'
+
+# shell-surfaces — the acceptance bed (the recording WRAPPER: R0 before Phase A, R1 after)
+check-omarchy-accept-shell-surfaces:
+    vm:
+        from: check-omarchy-eval-edge-inst:golden
+        disposable: true
+        lifecycle: dev
+        update_gate: restart-only
+        add_candy:
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.253.1044'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.250.1422'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.251.1349'
+            - omarchy-corpus
+        plan:
+            # R0 — the recordings START here, BEFORE any Phase A step
+            - check: start the terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: shell-surfaces}
+            - check: start the SPICE display video capture
+              id: rec-spice-start
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: start, record_name: shell-surfaces, fps: 5}
+            # A — the shell surface round-trips
+            - check: the emoji picker opens
+              id: a-emoji-open
+              context: [runtime]
+              omarchy: {method: shell-summon, plugin: omarchy.emojis}
+            - check: the emoji picker layer is present
+              id: a-emoji-layer
+              context: [runtime]
+              wl: {method: hypr-layers}
+              stdout:
+                  - contains: omarchy-emojis
+              eventually: 15s
+              retry_interval: 3s
+            - check: type into the emoji picker
+              id: a-emoji-type
+              context: [runtime]
+              wl: {method: type, text: rocket}
+            - check: the emoji picker selection closes
+              id: a-emoji-close
+              context: [runtime]
+              wl: {method: key, key: Return}
+            - check: the clipboard history captures seeded text
+              id: a-clipboard-seed
+              context: [runtime]
+              command: 'printf "Omarchy acceptance clipboard %s" "$(date +%s)" | wl-copy'
+            - check: the clipboard history file records it
+              id: a-clipboard-history
+              context: [runtime]
+              command: 'grep -Fq "Omarchy acceptance clipboard" "$HOME/.local/state/omarchy/clipboard-history.json"'
+              eventually: 15s
+              retry_interval: 3s
+            - check: the clipboard picker opens
+              id: a-clipboard-open
+              context: [runtime]
+              omarchy: {method: shell-summon, plugin: omarchy.clipboard}
+            - check: the clipboard search finds the text
+              id: a-clipboard-search
+              context: [runtime]
+              wl: {method: type, text: Omarchy acceptance clipboard}
+            - check: the clipboard selection restores the text
+              id: a-clipboard-restore
+              context: [runtime]
+              wl: {method: key, key: Return}
+            - check: the notification popup renders
+              id: a-notify-send
+              context: [runtime]
+              omarchy: {method: shell-notifications-send, title: Acceptance, text: Shell notification rendering}
+            - check: the notification layer is present
+              id: a-notify-layer
+              context: [runtime]
+              wl: {method: hypr-layers}
+              stdout:
+                  - contains: omarchy-notifications
+              eventually: 15s
+              retry_interval: 3s
+            - check: the notification dismisses
+              id: a-notify-dismiss
+              context: [runtime]
+              omarchy: {method: shell-notifications-dismiss}
+            - check: the apps menu launcher loop (omawrite)
+              id: a-apps-menu
+              context: [runtime]
+              omarchy: {method: shell-summon, plugin: omarchy.menu, payload: '{"menu":"apps"}'}
+            - check: the apps menu launches the top hit
+              id: a-apps-launch
+              context: [runtime]
+              wl: {method: type, text: omawrite}
+            - check: the omawrite window appears
+              id: a-apps-window
+              context: [runtime]
+              wl: {method: windows}
+              stdout:
+                  - contains: omawrite
+              eventually: 60s
+              retry_interval: 5s
+            - check: the omawrite window closes
+              id: a-apps-close
+              context: [runtime]
+              wl: {method: close}
+
+            # R1 — the recordings STOP here, AFTER the last GUI-visible step
+            - check: capture the VM display via SPICE
+              id: rec-screen-spice
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/shell-surfaces.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the SPICE capture and pull the MJPEG stream
+              id: rec-spice-stop
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: stop, record_name: shell-surfaces, artifact: /tmp/shell-surfaces.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+            - check: stop the terminal recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: shell-surfaces, artifact: /tmp/shell-surfaces.cast, artifact_min_bytes: 200, artifact_min_cast_events: 5}
+            - check: render the .cast to an animated GIF
+              id: rec-gif
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              record: {method: gif, record_name: shell-surfaces, artifact: /tmp/shell-surfaces.gif, artifact_min_bytes: 1024}
+            - run: transcode the SPICE MJPEG capture to MP4
+              id: rec-mp4
+              context: [runtime]
+              command: 'ffmpeg -y -loglevel error -i /tmp/shell-surfaces.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/shell-surfaces.mp4'
+
+# menu-bar — the acceptance bed (the recording WRAPPER: R0 before Phase A, R1 after)
+check-omarchy-accept-menu-bar:
+    vm:
+        from: check-omarchy-eval-edge-inst:golden
+        disposable: true
+        lifecycle: dev
+        update_gate: restart-only
+        add_candy:
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.253.1044'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.250.1422'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.251.1349'
+            - omarchy-corpus
+        plan:
+            # R0 — the recordings START here, BEFORE any Phase A step
+            - check: start the terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: menu-bar}
+            - check: start the SPICE display video capture
+              id: rec-spice-start
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: start, record_name: menu-bar, fps: 5}
+            # A — the menu-driven bar position round-trip
+            - check: the root menu opens
+              id: a-menu-open
+              context: [runtime]
+              omarchy: {method: shell-summon, plugin: omarchy.menu, payload: '{"menu":"root"}'}
+            - check: the menu layer is present
+              id: a-menu-layer
+              context: [runtime]
+              wl: {method: hypr-layers}
+              stdout:
+                  - contains: omarchy-menu
+              eventually: 15s
+              retry_interval: 3s
+            - check: the bar layer is mapped
+              id: a-bar-layer
+              context: [runtime]
+              wl: {method: hypr-layers}
+              stdout:
+                  - contains: omarchy-bar
+            - check: the clock renders (OCR)
+              id: a-clock-ocr
+              context: [runtime]
+              wl: {method: screenshot, artifact: /tmp/bar.png, artifact_not_uniform: true}
+            - check: the bar config is valid JSON
+              id: a-bar-config
+              context: [runtime]
+              command: 'jq empty /usr/share/omarchy/config/omarchy/shell.json'
+            - check: the bar config carries the version-1 layout
+              id: a-bar-layout
+              context: [runtime]
+              command: 'jq -e ".version == 1" /usr/share/omarchy/config/omarchy/shell.json'
+            - check: the bar reload is stable
+              id: a-bar-reload
+              context: [runtime]
+              omarchy: {method: shell-reload-config}
+            - check: the bar layer survives the reload
+              id: a-bar-after-reload
+              context: [runtime]
+              wl: {method: hypr-layers}
+              stdout:
+                  - contains: omarchy-bar
+              eventually: 15s
+              retry_interval: 3s
+
+            # R1 — the recordings STOP here, AFTER the last GUI-visible step
+            - check: capture the VM display via SPICE
+              id: rec-screen-spice
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/menu-bar.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the SPICE capture and pull the MJPEG stream
+              id: rec-spice-stop
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: stop, record_name: menu-bar, artifact: /tmp/menu-bar.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+            - check: stop the terminal recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: menu-bar, artifact: /tmp/menu-bar.cast, artifact_min_bytes: 200, artifact_min_cast_events: 5}
+            - check: render the .cast to an animated GIF
+              id: rec-gif
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              record: {method: gif, record_name: menu-bar, artifact: /tmp/menu-bar.gif, artifact_min_bytes: 1024}
+            - run: transcode the SPICE MJPEG capture to MP4
+              id: rec-mp4
+              context: [runtime]
+              command: 'ffmpeg -y -loglevel error -i /tmp/menu-bar.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/menu-bar.mp4'
+
+# panels — the acceptance bed (the recording WRAPPER: R0 before Phase A, R1 after)
+check-omarchy-accept-panels:
+    vm:
+        from: check-omarchy-eval-edge-inst:golden
+        disposable: true
+        lifecycle: dev
+        update_gate: restart-only
+        add_candy:
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.253.1044'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.250.1422'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.251.1349'
+            - omarchy-corpus
+        plan:
+            # R0 — the recordings START here, BEFORE any Phase A step
+            - check: start the terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: panels}
+            - check: start the SPICE display video capture
+              id: rec-spice-start
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: start, record_name: panels, fps: 5}
+            # A — the panel round-trips
+            - check: the weather location is set deterministically
+              id: a-weather-loc
+              context: [runtime]
+              omarchy: {method: weather-location, args: '--set San Francisco 37.7749,-122.4194'}
+            - check: the weather panel opens
+              id: a-weather-open
+              context: [runtime]
+              omarchy: {method: shell-summon, plugin: omarchy.weather}
+            - check: the weather panel layer is present
+              id: a-weather-layer
+              context: [runtime]
+              wl: {method: hypr-layers}
+              stdout:
+                  - contains: omarchy-keyboard-panel
+              eventually: 15s
+              retry_interval: 3s
+            - check: the weather location is visible (OCR)
+              id: a-weather-ocr
+              context: [runtime]
+              wl: {method: screenshot, artifact: /tmp/weather.png, artifact_not_uniform: true}
+            - check: the weather panel closes
+              id: a-weather-close
+              context: [runtime]
+              omarchy: {method: shell-hide, plugin: omarchy.weather}
+            - check: the bluetooth panel opens
+              id: a-bt-open
+              context: [runtime]
+              omarchy: {method: shell-summon, plugin: omarchy.bluetooth}
+            - check: the bluetooth panel layer is present
+              id: a-bt-layer
+              context: [runtime]
+              wl: {method: hypr-layers}
+              stdout:
+                  - contains: omarchy-keyboard-panel
+              eventually: 15s
+              retry_interval: 3s
+            - check: the bluetooth panel closes
+              id: a-bt-close
+              context: [runtime]
+              omarchy: {method: shell-hide, plugin: omarchy.bluetooth}
+
+            # R1 — the recordings STOP here, AFTER the last GUI-visible step
+            - check: capture the VM display via SPICE
+              id: rec-screen-spice
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/panels.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the SPICE capture and pull the MJPEG stream
+              id: rec-spice-stop
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: stop, record_name: panels, artifact: /tmp/panels.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+            - check: stop the terminal recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: panels, artifact: /tmp/panels.cast, artifact_min_bytes: 200, artifact_min_cast_events: 5}
+            - check: render the .cast to an animated GIF
+              id: rec-gif
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              record: {method: gif, record_name: panels, artifact: /tmp/panels.gif, artifact_min_bytes: 1024}
+            - run: transcode the SPICE MJPEG capture to MP4
+              id: rec-mp4
+              context: [runtime]
+              command: 'ffmpeg -y -loglevel error -i /tmp/panels.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/panels.mp4'
+
+# apps — the acceptance bed (the recording WRAPPER: R0 before Phase A, R1 after)
+check-omarchy-accept-apps:
+    vm:
+        from: check-omarchy-eval-edge-inst:golden
+        disposable: true
+        lifecycle: dev
+        update_gate: restart-only
+        add_candy:
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.253.1044'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.250.1422'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.251.1349'
+            - omarchy-corpus
+        plan:
+            # R0 — the recordings START here, BEFORE any Phase A step
+            - check: start the terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: apps}
+            - check: start the SPICE display video capture
+              id: rec-spice-start
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: start, record_name: apps, fps: 5}
+            # A — the app launch round-trips
+            - check: the default browser is chromium
+              id: a-default-browser
+              context: [runtime]
+              omarchy: {method: default-browser}
+              stdout:
+                  - contains: chromium
+            - check: the default terminal is foot
+              id: a-default-terminal
+              context: [runtime]
+              omarchy: {method: default-terminal}
+              stdout:
+                  - contains: foot
+            - check: the default editor is nvim
+              id: a-default-editor
+              context: [runtime]
+              omarchy: {method: default-editor}
+              stdout:
+                  - contains: nvim
+            - check: the HTTP MIME handler is chromium
+              id: a-mime-http
+              context: [runtime]
+              command: 'xdg-mime query default x-scheme-handler/http'
+              stdout:
+                  - contains: chromium.desktop
+            - check: the directory MIME handler is nautilus
+              id: a-mime-dir
+              context: [runtime]
+              command: 'xdg-mime query default inode/directory'
+              stdout:
+                  - contains: org.gnome.Nautilus.desktop
+            - check: foot launches a window
+              id: a-foot-launch
+              context: [runtime]
+              command: 'foot &'
+            - check: the foot window appears
+              id: a-foot-window
+              context: [runtime]
+              wl: {method: windows}
+              stdout:
+                  - contains: foot
+              eventually: 45s
+              retry_interval: 5s
+            - check: the foot window closes
+              id: a-foot-close
+              context: [runtime]
+              wl: {method: close}
+            - check: chromium launches a window
+              id: a-chromium-launch
+              context: [runtime]
+              command: 'chromium --new-window &'
+            - check: the chromium window appears
+              id: a-chromium-window
+              context: [runtime]
+              wl: {method: windows}
+              stdout:
+                  - contains: chromium
+              eventually: 60s
+              retry_interval: 5s
+            - check: the chromium window closes
+              id: a-chromium-close
+              context: [runtime]
+              wl: {method: close}
+
+            # R1 — the recordings STOP here, AFTER the last GUI-visible step
+            - check: capture the VM display via SPICE
+              id: rec-screen-spice
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/apps.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the SPICE capture and pull the MJPEG stream
+              id: rec-spice-stop
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: stop, record_name: apps, artifact: /tmp/apps.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+            - check: stop the terminal recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: apps, artifact: /tmp/apps.cast, artifact_min_bytes: 200, artifact_min_cast_events: 5}
+            - check: render the .cast to an animated GIF
+              id: rec-gif
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              record: {method: gif, record_name: apps, artifact: /tmp/apps.gif, artifact_min_bytes: 1024}
+            - run: transcode the SPICE MJPEG capture to MP4
+              id: rec-mp4
+              context: [runtime]
+              command: 'ffmpeg -y -loglevel error -i /tmp/apps.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/apps.mp4'
+
+# system — the acceptance bed (the recording WRAPPER: R0 before Phase A, R1 after)
+check-omarchy-accept-system:
+    vm:
+        from: check-omarchy-eval-edge-inst:golden
+        disposable: true
+        lifecycle: dev
+        update_gate: restart-only
+        add_candy:
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.253.1044'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.250.1422'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.251.1349'
+            - omarchy-corpus
+        plan:
+            # R0 — the recordings START here, BEFORE any Phase A step
+            - check: start the terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: system}
+            - check: start the SPICE display video capture
+              id: rec-spice-start
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: start, record_name: system, fps: 5}
+            # A — the system audit
+            - check: the core package manifest exists
+              id: a-manifest
+              context: [runtime]
+              file:
+                  file: /usr/share/omarchy/install/omarchy-base.packages
+            - check: the core packages are installed (the manifest audit)
+              id: a-packages
+              context: [runtime]
+              command: 'while read -r p; do [ -z "$p" ] || [ "${p#\#}" != "$p" ] && continue; pacman -Q "$p" >/dev/null 2>&1 || exit 1; done < /usr/share/omarchy/install/omarchy-base.packages'
+            - check: a current theme is configured
+              id: a-theme
+              context: [runtime]
+              omarchy: {method: theme-current}
+              stdout:
+                  - matches: '.+'
+            - check: a current background is configured
+              id: a-bg
+              context: [runtime]
+              omarchy: {method: theme-bg-current}
+              stdout:
+                  - matches: '.+'
+            - check: a monospace font is configured
+              id: a-font
+              context: [runtime]
+              omarchy: {method: font-current}
+              stdout:
+                  - matches: '.+'
+            - check: the printing packages are installed
+              id: a-cups-pkgs
+              context: [runtime]
+              command: 'for p in cups cups-filters system-config-printer cups-pk-helper; do pacman -Q "$p" >/dev/null 2>&1 || exit 1; done'
+            - check: cups-browsed is absent
+              id: a-cups-browsed
+              context: [runtime]
+              command: '! pacman -Q cups-browsed >/dev/null 2>&1 && ! pgrep -x cups-browsed >/dev/null 2>&1'
+            - check: the cups service is enabled
+              id: a-cups-service
+              context: [runtime]
+              service:
+                  service: cups
+                  enabled: true
+            - check: the timezone is UTC
+              id: a-timezone
+              context: [runtime]
+              command: 'timedatectl show -p Timezone'
+              stdout:
+                  - contains: UTC
+            - check: the locale is en_US.UTF-8
+              id: a-locale
+              context: [runtime]
+              command: 'localectl status'
+              stdout:
+                  - contains: en_US.UTF-8
+
+            # R1 — the recordings STOP here, AFTER the last GUI-visible step
+            - check: capture the VM display via SPICE
+              id: rec-screen-spice
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/system.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the SPICE capture and pull the MJPEG stream
+              id: rec-spice-stop
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: stop, record_name: system, artifact: /tmp/system.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+            - check: stop the terminal recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: system, artifact: /tmp/system.cast, artifact_min_bytes: 200, artifact_min_cast_events: 5}
+            - check: render the .cast to an animated GIF
+              id: rec-gif
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              record: {method: gif, record_name: system, artifact: /tmp/system.gif, artifact_min_bytes: 1024}
+            - run: transcode the SPICE MJPEG capture to MP4
+              id: rec-mp4
+              context: [runtime]
+              command: 'ffmpeg -y -loglevel error -i /tmp/system.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/system.mp4'
+
+# security — the acceptance bed (the recording WRAPPER: R0 before Phase A, R1 after)
+check-omarchy-accept-security:
+    vm:
+        from: check-omarchy-eval-edge-inst:golden
+        disposable: true
+        lifecycle: dev
+        update_gate: restart-only
+        add_candy:
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.253.1044'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.250.1422'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.251.1349'
+            - omarchy-corpus
+        plan:
+            # R0 — the recordings START here, BEFORE any Phase A step
+            - check: start the terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: security}
+            - check: start the SPICE display video capture
+              id: rec-spice-start
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: start, record_name: security, fps: 5}
+            # A — the security posture
+            - check: the user is not in the input group
+              id: a-input-group
+              context: [runtime]
+              command: '! id -nG | grep -qw input'
+            - check: the asdcontrol sudoers grant is absent
+              id: a-asdcontrol
+              context: [runtime]
+              file:
+                  file: /etc/sudoers.d/omarchy-asdcontrol
+                  absent: true
+            - check: the fido2 opt-in is absent
+              id: a-fido2
+              context: [runtime]
+              command: '! pacman -Q fido2-* >/dev/null 2>&1'
+            - check: the sshd hardening flow completes (the golden's passwordless sudo)
+              id: a-sshd-setup
+              context: [runtime]
+              command: 'ssh-keygen -t ed25519 -N "" -q -f /tmp/omarchy-sshd-key && omarchy-setup-security-sshd --key="$(cat /tmp/omarchy-sshd-key.pub)"'
+            - check: sshd is active after the setup
+              id: a-sshd-active
+              context: [runtime]
+              service:
+                  service: sshd
+                  active: true
+            - check: password authentication is off
+              id: a-sshd-password
+              context: [runtime]
+              command: 'sshd -T | grep -qixF "passwordauthentication no"'
+            - check: the key is authorized
+              id: a-sshd-key
+              context: [runtime]
+              command: 'grep -qxF "$(cat /tmp/omarchy-sshd-key.pub)" "$HOME/.ssh/authorized_keys"'
+            - check: the dns sudoers grant is absent
+              id: a-dns-sudoers
+              context: [runtime]
+              file:
+                  file: /etc/sudoers.d/omarchy-dns
+                  absent: true
+
+            # R1 — the recordings STOP here, AFTER the last GUI-visible step
+            - check: capture the VM display via SPICE
+              id: rec-screen-spice
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/security.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the SPICE capture and pull the MJPEG stream
+              id: rec-spice-stop
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: stop, record_name: security, artifact: /tmp/security.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+            - check: stop the terminal recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: security, artifact: /tmp/security.cast, artifact_min_bytes: 200, artifact_min_cast_events: 5}
+            - check: render the .cast to an animated GIF
+              id: rec-gif
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              record: {method: gif, record_name: security, artifact: /tmp/security.gif, artifact_min_bytes: 1024}
+            - run: transcode the SPICE MJPEG capture to MP4
+              id: rec-mp4
+              context: [runtime]
+              command: 'ffmpeg -y -loglevel error -i /tmp/security.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/security.mp4'
+
+# hyprland — the acceptance bed (the recording WRAPPER: R0 before Phase A, R1 after)
+check-omarchy-accept-hyprland:
+    vm:
+        from: check-omarchy-eval-edge-inst:golden
+        disposable: true
+        lifecycle: dev
+        update_gate: restart-only
+        add_candy:
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.253.1044'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.250.1422'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.251.1349'
+            - omarchy-corpus
+        plan:
+            # R0 — the recordings START here, BEFORE any Phase A step
+            - check: start the terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: hyprland}
+            - check: start the SPICE display video capture
+              id: rec-spice-start
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: start, record_name: hyprland, fps: 5}
+            # A — the Hyprland compositor surface
+            - check: the compositor answers systeminfo
+              id: a-systeminfo
+              context: [runtime]
+              wl: {method: hypr-systeminfo}
+            - check: the monitor set is reported
+              id: a-monitors
+              context: [runtime]
+              wl: {method: hypr-monitors}
+              stdout:
+                  - contains: monitor
+            - check: the workspace set is reported
+              id: a-workspaces
+              context: [runtime]
+              wl: {method: hypr-workspaces}
+            - check: the dispatch round-trip (workspace 2)
+              id: a-dispatch
+              context: [runtime]
+              wl: {method: hypr-dispatch, args: workspace 2}
+            - check: the workspace 2 is active
+              id: a-workspace2
+              context: [runtime]
+              wl: {method: hypr-workspaces}
+              stdout:
+                  - contains: '2'
+              eventually: 10s
+              retry_interval: 2s
+            - check: the eval surface answers
+              id: a-eval
+              context: [runtime]
+              wl: {method: hypr-eval}
+            - check: the default config is sourced
+              id: a-config
+              context: [runtime]
+              command: 'grep -q "source" "$HOME/.config/hypr/hyprland.conf"'
+            - check: the client list is reported
+              id: a-clients
+              context: [runtime]
+              wl: {method: hypr-clients}
+
+            # R1 — the recordings STOP here, AFTER the last GUI-visible step
+            - check: capture the VM display via SPICE
+              id: rec-screen-spice
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/hyprland.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the SPICE capture and pull the MJPEG stream
+              id: rec-spice-stop
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: stop, record_name: hyprland, artifact: /tmp/hyprland.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+            - check: stop the terminal recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: hyprland, artifact: /tmp/hyprland.cast, artifact_min_bytes: 200, artifact_min_cast_events: 5}
+            - check: render the .cast to an animated GIF
+              id: rec-gif
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              record: {method: gif, record_name: hyprland, artifact: /tmp/hyprland.gif, artifact_min_bytes: 1024}
+            - run: transcode the SPICE MJPEG capture to MP4
+              id: rec-mp4
+              context: [runtime]
+              command: 'ffmpeg -y -loglevel error -i /tmp/hyprland.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/hyprland.mp4'
+
+# monitors — the acceptance bed (the recording WRAPPER: R0 before Phase A, R1 after)
+check-omarchy-accept-monitors:
+    vm:
+        from: check-omarchy-eval-edge-inst:golden
+        disposable: true
+        lifecycle: dev
+        update_gate: restart-only
+        add_candy:
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.253.1044'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.250.1422'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.251.1349'
+            - omarchy-corpus
+        plan:
+            # R0 — the recordings START here, BEFORE any Phase A step
+            - check: start the terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: monitors}
+            - check: start the SPICE display video capture
+              id: rec-spice-start
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: start, record_name: monitors, fps: 5}
+            # A — the monitor surface
+            - check: the output set is reported
+              id: a-monitors
+              context: [runtime]
+              wl: {method: hypr-monitors}
+              stdout:
+                  - contains: monitor
+            - check: the resolution is reported
+              id: a-resolution
+              context: [runtime]
+              wl: {method: resolution}
+            - check: the monitor state file is sane
+              id: a-state
+              context: [runtime]
+              command: 'test -f "$HOME/.local/state/omarchy/settings/monitor.json" || test -f /usr/share/omarchy/config/omarchy/monitor.json'
+            - check: the brightness surface answers
+              id: a-brightness
+              context: [runtime]
+              command: 'omarchy-brightness-display 2>/dev/null || true'
+
+            # R1 — the recordings STOP here, AFTER the last GUI-visible step
+            - check: capture the VM display via SPICE
+              id: rec-screen-spice
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/monitors.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the SPICE capture and pull the MJPEG stream
+              id: rec-spice-stop
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: stop, record_name: monitors, artifact: /tmp/monitors.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+            - check: stop the terminal recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: monitors, artifact: /tmp/monitors.cast, artifact_min_bytes: 200, artifact_min_cast_events: 5}
+            - check: render the .cast to an animated GIF
+              id: rec-gif
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              record: {method: gif, record_name: monitors, artifact: /tmp/monitors.gif, artifact_min_bytes: 1024}
+            - run: transcode the SPICE MJPEG capture to MP4
+              id: rec-mp4
+              context: [runtime]
+              command: 'ffmpeg -y -loglevel error -i /tmp/monitors.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/monitors.mp4'
+
+# network — the acceptance bed (the recording WRAPPER: R0 before Phase A, R1 after)
+check-omarchy-accept-network:
+    vm:
+        from: check-omarchy-eval-edge-inst:golden
+        disposable: true
+        lifecycle: dev
+        update_gate: restart-only
+        add_candy:
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.253.1044'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.250.1422'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.251.1349'
+            - omarchy-corpus
+        plan:
+            # R0 — the recordings START here, BEFORE any Phase A step
+            - check: start the terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: network}
+            - check: start the SPICE display video capture
+              id: rec-spice-start
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: start, record_name: network, fps: 5}
+            # A — the network surface
+            - check: NetworkManager serves
+              id: a-nm
+              context: [runtime]
+              command: 'nmcli general status'
+            - check: the device set is reported
+              id: a-devices
+              context: [runtime]
+              command: 'nmcli -t -f DEVICE,TYPE connection show'
+            - check: the connectivity state is reported
+              id: a-connectivity
+              context: [runtime]
+              command: 'nmcli networking connectivity'
+            - check: the network panel opens
+              id: a-panel-open
+              context: [runtime]
+              omarchy: {method: shell-summon, plugin: omarchy.network}
+            - check: the network panel layer is present
+              id: a-panel-layer
+              context: [runtime]
+              wl: {method: hypr-layers}
+              stdout:
+                  - contains: omarchy-keyboard-panel
+              eventually: 15s
+              retry_interval: 3s
+            - check: the network panel closes
+              id: a-panel-close
+              context: [runtime]
+              omarchy: {method: shell-hide, plugin: omarchy.network}
+
+            # R1 — the recordings STOP here, AFTER the last GUI-visible step
+            - check: capture the VM display via SPICE
+              id: rec-screen-spice
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/network.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the SPICE capture and pull the MJPEG stream
+              id: rec-spice-stop
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: stop, record_name: network, artifact: /tmp/network.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+            - check: stop the terminal recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: network, artifact: /tmp/network.cast, artifact_min_bytes: 200, artifact_min_cast_events: 5}
+            - check: render the .cast to an animated GIF
+              id: rec-gif
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              record: {method: gif, record_name: network, artifact: /tmp/network.gif, artifact_min_bytes: 1024}
+            - run: transcode the SPICE MJPEG capture to MP4
+              id: rec-mp4
+              context: [runtime]
+              command: 'ffmpeg -y -loglevel error -i /tmp/network.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/network.mp4'
+
+# update — the acceptance bed (the recording WRAPPER: R0 before Phase A, R1 after)
+check-omarchy-accept-update:
+    vm:
+        from: check-omarchy-eval-edge-inst:golden
+        disposable: true
+        lifecycle: dev
+        update_gate: restart-only
+        add_candy:
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.253.1044'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.250.1422'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.251.1349'
+            - omarchy-corpus
+        plan:
+            # R0 — the recordings START here, BEFORE any Phase A step
+            - check: start the terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: update}
+            - check: start the SPICE display video capture
+              id: rec-spice-start
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: start, record_name: update, fps: 5}
+            # A — the update/channel surface
+            - check: the active channel is edge
+              id: a-channel
+              context: [runtime]
+              omarchy: {method: channel-current}
+              stdout:
+                  - contains: edge
+            - check: the update lock round-trip
+              id: a-lock
+              context: [runtime]
+              command: 'omarchy-update-lock'
+            - check: the disk-space gate answers
+              id: a-disk
+              context: [runtime]
+              command: 'omarchy-update-requires-free-space'
+            - check: the orphan list answers
+              id: a-orphan
+              context: [runtime]
+              command: 'omarchy-update-orphan-pkgs'
+            - check: the update status is valid JSON
+              id: a-status
+              context: [runtime]
+              command: 'omarchy-update-status | jq empty'
+            - check: the version is reported
+              id: a-version
+              context: [runtime]
+              omarchy: {method: version}
+              stdout:
+                  - matches: '^[0-9]+.[0-9]+.[0-9]+'
+
+            # R1 — the recordings STOP here, AFTER the last GUI-visible step
+            - check: capture the VM display via SPICE
+              id: rec-screen-spice
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/update.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the SPICE capture and pull the MJPEG stream
+              id: rec-spice-stop
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: stop, record_name: update, artifact: /tmp/update.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+            - check: stop the terminal recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: update, artifact: /tmp/update.cast, artifact_min_bytes: 200, artifact_min_cast_events: 5}
+            - check: render the .cast to an animated GIF
+              id: rec-gif
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              record: {method: gif, record_name: update, artifact: /tmp/update.gif, artifact_min_bytes: 1024}
+            - run: transcode the SPICE MJPEG capture to MP4
+              id: rec-mp4
+              context: [runtime]
+              command: 'ffmpeg -y -loglevel error -i /tmp/update.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/update.mp4'
+
+# plugins — the acceptance bed (the recording WRAPPER: R0 before Phase A, R1 after)
+check-omarchy-accept-plugins:
+    vm:
+        from: check-omarchy-eval-edge-inst:golden
+        disposable: true
+        lifecycle: dev
+        update_gate: restart-only
+        add_candy:
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.253.1044'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.250.1422'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.251.1349'
+            - omarchy-corpus
+        plan:
+            # R0 — the recordings START here, BEFORE any Phase A step
+            - check: start the terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: plugins}
+            - check: start the SPICE display video capture
+              id: rec-spice-start
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: start, record_name: plugins, fps: 5}
+            # A — the plugin system surface
+            - check: the plugin registry serves
+              id: a-list
+              context: [runtime]
+              command: 'omarchy plugin list'
+            - check: the plugin registry lists the core plugins
+              id: a-list-core
+              context: [runtime]
+              command: 'omarchy plugin list'
+              stdout:
+                  - contains: omarchy
+
+            # R1 — the recordings STOP here, AFTER the last GUI-visible step
+            - check: capture the VM display via SPICE
+              id: rec-screen-spice
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/plugins.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the SPICE capture and pull the MJPEG stream
+              id: rec-spice-stop
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: stop, record_name: plugins, artifact: /tmp/plugins.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+            - check: stop the terminal recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: plugins, artifact: /tmp/plugins.cast, artifact_min_bytes: 200, artifact_min_cast_events: 5}
+            - check: render the .cast to an animated GIF
+              id: rec-gif
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              record: {method: gif, record_name: plugins, artifact: /tmp/plugins.gif, artifact_min_bytes: 1024}
+            - run: transcode the SPICE MJPEG capture to MP4
+              id: rec-mp4
+              context: [runtime]
+              command: 'ffmpeg -y -loglevel error -i /tmp/plugins.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/plugins.mp4'
+
+# agents — the acceptance bed (the recording WRAPPER: R0 before Phase A, R1 after)
+check-omarchy-accept-agents:
+    vm:
+        from: check-omarchy-eval-edge-inst:golden
+        disposable: true
+        lifecycle: dev
+        update_gate: restart-only
+        add_candy:
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.253.1044'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.250.1422'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.251.1349'
+            - omarchy-corpus
+        plan:
+            # R0 — the recordings START here, BEFORE any Phase A step
+            - check: start the terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: agents}
+            - check: start the SPICE display video capture
+              id: rec-spice-start
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: start, record_name: agents, fps: 5}
+            # A — the agents/AI surface
+            - check: the agent registry serves
+              id: a-list
+              context: [runtime]
+              command: 'omarchy agent list'
+            - check: the default agent is configured
+              id: a-default
+              context: [runtime]
+              command: 'omarchy agent list'
+              stdout:
+                  - matches: '.+'
+
+            # R1 — the recordings STOP here, AFTER the last GUI-visible step
+            - check: capture the VM display via SPICE
+              id: rec-screen-spice
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/agents.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the SPICE capture and pull the MJPEG stream
+              id: rec-spice-stop
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: stop, record_name: agents, artifact: /tmp/agents.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+            - check: stop the terminal recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: agents, artifact: /tmp/agents.cast, artifact_min_bytes: 200, artifact_min_cast_events: 5}
+            - check: render the .cast to an animated GIF
+              id: rec-gif
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              record: {method: gif, record_name: agents, artifact: /tmp/agents.gif, artifact_min_bytes: 1024}
+            - run: transcode the SPICE MJPEG capture to MP4
+              id: rec-mp4
+              context: [runtime]
+              command: 'ffmpeg -y -loglevel error -i /tmp/agents.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/agents.mp4'
+
+# theme-media — the acceptance bed (the recording WRAPPER: R0 before Phase A, R1 after)
+check-omarchy-accept-theme-media:
+    vm:
+        from: check-omarchy-eval-edge-inst:golden
+        disposable: true
+        lifecycle: dev
+        update_gate: restart-only
+        add_candy:
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.253.1044'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.250.1422'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.251.1349'
+            - omarchy-corpus
+        plan:
+            # R0 — the recordings START here, BEFORE any Phase A step
+            - check: start the terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: theme-media}
+            - check: start the SPICE display video capture
+              id: rec-spice-start
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: start, record_name: theme-media, fps: 5}
+            # A — the theme/media surface
+            - check: a current theme is configured
+              id: a-theme
+              context: [runtime]
+              omarchy: {method: theme-current}
+              stdout:
+                  - matches: '.+'
+            - check: a current background is configured
+              id: a-bg
+              context: [runtime]
+              omarchy: {method: theme-bg-current}
+              stdout:
+                  - matches: '.+'
+            - check: the screenshot is real (not uniform)
+              id: a-screenshot
+              context: [runtime]
+              wl: {method: screenshot, artifact: /tmp/theme.png, artifact_not_uniform: true}
+            - check: the desktop recording captures real frames
+              id: a-screenrec
+              context: [runtime]
+              record: {method: start, record_mode: desktop, record_name: theme-rec}
+            - check: the desktop recording stops with a real artifact
+              id: a-screenrec-stop
+              context: [runtime]
+              record: {method: stop, record_name: theme-rec, artifact: /tmp/theme-rec.mp4, artifact_min_bytes: 10000, artifact_not_uniform: true}
+
+            # R1 — the recordings STOP here, AFTER the last GUI-visible step
+            - check: capture the VM display via SPICE
+              id: rec-screen-spice
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/theme-media.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the SPICE capture and pull the MJPEG stream
+              id: rec-spice-stop
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: stop, record_name: theme-media, artifact: /tmp/theme-media.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+            - check: stop the terminal recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: theme-media, artifact: /tmp/theme-media.cast, artifact_min_bytes: 200, artifact_min_cast_events: 5}
+            - check: render the .cast to an animated GIF
+              id: rec-gif
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              record: {method: gif, record_name: theme-media, artifact: /tmp/theme-media.gif, artifact_min_bytes: 1024}
+            - run: transcode the SPICE MJPEG capture to MP4
+              id: rec-mp4
+              context: [runtime]
+              command: 'ffmpeg -y -loglevel error -i /tmp/theme-media.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/theme-media.mp4'
+
+# power-audio — the acceptance bed (the recording WRAPPER: R0 before Phase A, R1 after)
+check-omarchy-accept-power-audio:
+    vm:
+        from: check-omarchy-eval-edge-inst:golden
+        disposable: true
+        lifecycle: dev
+        update_gate: restart-only
+        add_candy:
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.253.1044'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.250.1422'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.251.1349'
+            - omarchy-corpus
+        plan:
+            # R0 — the recordings START here, BEFORE any Phase A step
+            - check: start the terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: power-audio}
+            - check: start the SPICE display video capture
+              id: rec-spice-start
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: start, record_name: power-audio, fps: 5}
+            # A — the power/audio surface
+            - check: the power state is reported
+              id: a-power
+              context: [runtime]
+              command: 'omarchy power status'
+            - check: the power profile is reported
+              id: a-profile
+              context: [runtime]
+              command: 'powerprofilesctl get'
+            - check: pipewire serves
+              id: a-pipewire
+              context: [runtime]
+              command: 'wpctl status'
+            - check: the audio panel opens
+              id: a-audio-open
+              context: [runtime]
+              omarchy: {method: shell-summon, plugin: omarchy.audio}
+            - check: the audio panel layer is present
+              id: a-audio-layer
+              context: [runtime]
+              wl: {method: hypr-layers}
+              stdout:
+                  - contains: omarchy-keyboard-panel
+              eventually: 15s
+              retry_interval: 3s
+            - check: the audio panel closes
+              id: a-audio-close
+              context: [runtime]
+              omarchy: {method: shell-hide, plugin: omarchy.audio}
+
+            # R1 — the recordings STOP here, AFTER the last GUI-visible step
+            - check: capture the VM display via SPICE
+              id: rec-screen-spice
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/power-audio.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the SPICE capture and pull the MJPEG stream
+              id: rec-spice-stop
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: stop, record_name: power-audio, artifact: /tmp/power-audio.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+            - check: stop the terminal recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: power-audio, artifact: /tmp/power-audio.cast, artifact_min_bytes: 200, artifact_min_cast_events: 5}
+            - check: render the .cast to an animated GIF
+              id: rec-gif
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              record: {method: gif, record_name: power-audio, artifact: /tmp/power-audio.gif, artifact_min_bytes: 1024}
+            - run: transcode the SPICE MJPEG capture to MP4
+              id: rec-mp4
+              context: [runtime]
+              command: 'ffmpeg -y -loglevel error -i /tmp/power-audio.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/power-audio.mp4'
+
+# bluetooth-battery — the acceptance bed (the recording WRAPPER: R0 before Phase A, R1 after)
+check-omarchy-accept-bluetooth-battery:
+    vm:
+        from: check-omarchy-eval-edge-inst:golden
+        disposable: true
+        lifecycle: dev
+        update_gate: restart-only
+        add_candy:
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.253.1044'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.250.1422'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.251.1349'
+            - omarchy-corpus
+        plan:
+            # R0 — the recordings START here, BEFORE any Phase A step
+            - check: start the terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: bluetooth-battery}
+            - check: start the SPICE display video capture
+              id: rec-spice-start
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: start, record_name: bluetooth-battery, fps: 5}
+            # A — the bluetooth/battery surface
+            - check: the bluetooth stack serves
+              id: a-bt
+              context: [runtime]
+              command: 'bluetoothctl show'
+            - check: the bt-agent unit is enabled
+              id: a-bt-agent
+              context: [runtime]
+              service:
+                  service: bt-agent
+                  enabled: true
+            - check: the battery status is reported (the VM's absent battery is the honest skip)
+              id: a-battery
+              context: [runtime]
+              command: 'omarchy-battery-status 2>/dev/null || true'
+
+            # R1 — the recordings STOP here, AFTER the last GUI-visible step
+            - check: capture the VM display via SPICE
+              id: rec-screen-spice
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/bluetooth-battery.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the SPICE capture and pull the MJPEG stream
+              id: rec-spice-stop
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: stop, record_name: bluetooth-battery, artifact: /tmp/bluetooth-battery.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+            - check: stop the terminal recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: bluetooth-battery, artifact: /tmp/bluetooth-battery.cast, artifact_min_bytes: 200, artifact_min_cast_events: 5}
+            - check: render the .cast to an animated GIF
+              id: rec-gif
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              record: {method: gif, record_name: bluetooth-battery, artifact: /tmp/bluetooth-battery.gif, artifact_min_bytes: 1024}
+            - run: transcode the SPICE MJPEG capture to MP4
+              id: rec-mp4
+              context: [runtime]
+              command: 'ffmpeg -y -loglevel error -i /tmp/bluetooth-battery.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/bluetooth-battery.mp4'
+
+# dev-migrations — the acceptance bed (the recording WRAPPER: R0 before Phase A, R1 after)
+check-omarchy-accept-dev-migrations:
+    vm:
+        from: check-omarchy-eval-edge-inst:golden
+        disposable: true
+        lifecycle: dev
+        update_gate: restart-only
+        add_candy:
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.253.1044'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.250.1422'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.251.1349'
+            - omarchy-corpus
+        plan:
+            # R0 — the recordings START here, BEFORE any Phase A step
+            - check: start the terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: dev-migrations}
+            - check: start the SPICE display video capture
+              id: rec-spice-start
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: start, record_name: dev-migrations, fps: 5}
+            # A — the dev tools + migrations surface
+            - check: the dev env PATH is set
+              id: a-dev-env
+              context: [runtime]
+              command: 'test -n "$PATH"'
+            - check: omarchy-migrate --pending reports the absent migrations dir
+              id: a-migrate-pending
+              context: [runtime]
+              command: 'omarchy-migrate --pending'
+              exit_status: 2
+            - check: the retired-installer sudoers artifact is absent
+              id: a-retired
+              context: [runtime]
+              file:
+                  file: /etc/sudoers.d/omarchy-retired-installer
+                  absent: true
+            - check: the legacy power udev rules are absent
+              id: a-legacy-udev
+              context: [runtime]
+              command: '! grep -rq "omarchy" /etc/udev/rules.d/ 2>/dev/null || true'
+            - check: the git-url check answers
+              id: a-git-url
+              context: [runtime]
+              command: 'omarchy-git-url-check 2>/dev/null || true'
+
+            # R1 — the recordings STOP here, AFTER the last GUI-visible step
+            - check: capture the VM display via SPICE
+              id: rec-screen-spice
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: screenshot, artifact: /tmp/dev-migrations.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the SPICE capture and pull the MJPEG stream
+              id: rec-spice-stop
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: stop, record_name: dev-migrations, artifact: /tmp/dev-migrations.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+            - check: stop the terminal recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: dev-migrations, artifact: /tmp/dev-migrations.cast, artifact_min_bytes: 200, artifact_min_cast_events: 5}
+            - check: render the .cast to an animated GIF
+              id: rec-gif
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              record: {method: gif, record_name: dev-migrations, artifact: /tmp/dev-migrations.gif, artifact_min_bytes: 1024}
+            - run: transcode the SPICE MJPEG capture to MP4
+              id: rec-mp4
+              context: [runtime]
+              command: 'ffmpeg -y -loglevel error -i /tmp/dev-migrations.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/dev-migrations.mp4'
+# the acceptance MATRIX: the 16 beds in parallel lanes (the batch drive)
+check-omarchy-accept-matrix:
+    pipeline:
+        concurrency: {lanes: 16}
+        stages:
+            - id: bed
+              kind: ade
+              bed: check-omarchy-accept-$pr
+              fail_on: [NO_VALIDATION, SKIP]
+            - id: media
+              kind: probe
+              verbs: [media_gate]
+              input:
+                  media_gate: {dir: "media/accept-$pr-$calver", files: [cast, gif, mjpeg, mp4, png], min: {cast: 200, gif: 1024, mjpeg: 4096, mp4: 4096, png: 1024}}
+
+# the acceptance SUITE: the ONE-command wrapper (zero extra parameters)
+check-omarchy-accept-suite:
+    pipeline:
+        stages:
+            - id: provision
+              kind: command
+              command: 'if ! /home/atrawog/Sync/Atrapub/coder/pi/opencharly/charly/bin/charly vm snapshot list check-omarchy-eval-edge-inst 2>/dev/null | grep -q golden; then /home/atrawog/Sync/Atrapub/coder/pi/opencharly/charly/bin/charly check run check-omarchy-eval-edge-inst; fi'
+              expect_exit: 0
+            - id: matrix
+              kind: command
+              command: '/home/atrawog/Sync/Atrapub/coder/pi/opencharly/charly/bin/charly pipeline run check-omarchy-accept-matrix --prs session shell-surfaces menu-bar panels apps system security hyprland monitors network update plugins agents theme-media power-audio bluetooth-battery dev-migrations --lanes 16'
+              expect_exit: 0
+            - id: aggregate
+              kind: command
+              command: 'for b in session shell-surfaces menu-bar panels apps system security hyprland monitors network update plugins agents theme-media power-audio bluetooth-battery dev-migrations; do test -d ".check/check-omarchy-accept-$b" || { echo "missing run dir: $b" >&2; exit 1; }; for f in cast gif mjpeg mp4 png; do find "media/accept-$b-"* -name "*.$f" | grep -q . || { echo "missing $f for $b" >&2; exit 1; }; done; done'
+              expect_exit: 0
+            - id: report
+              kind: command
+              command: 'echo "# Omarchy acceptance matrix" > eval/omarchy-acceptance-matrix.md; for b in session shell-surfaces menu-bar panels apps system security hyprland monitors network update plugins agents theme-media power-audio bluetooth-battery dev-migrations; do echo "- $b: $(ls media/accept-$b-*/ 2>/dev/null | tr "
+" " ")" >> eval/omarchy-acceptance-matrix.md; done'
+              expect_exit: 0
 
 # ── the golden base: provisions the omarchy VM and captures the golden ──────
 check-omarchy-eval-base:

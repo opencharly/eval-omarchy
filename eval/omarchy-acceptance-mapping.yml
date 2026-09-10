@@ -1,0 +1,266 @@
+# omarchy-acceptance-mapping.yml — the traceability data (M8): every upstream
+# test file maps to exactly one acceptance bed. A file mapped to NOTHING is a
+# corpus GAP and fails the report gate (corpus_audit with the mapping input).
+# Source: omacom/omarchy @ quattro/test (pinned 8ea5151).
+version: 1
+upstream_pin: 8ea51516390320f8e768808b230098e67bdaa82c
+beds:
+  accept-session:
+    - acceptance-helpers-test.sh
+    - base-test.sh
+    - bin-style-test.sh
+    - compositor-guard-test.sh
+    - done-test.sh
+    - installed-service-test.sh
+    - logging-test.sh
+    - panel-command-path-test.sh
+    - restart-shell-test.sh
+    - runtime-smoke-test.sh
+    - shell-ipc-display-test.sh
+    - shell-launch-test.sh
+    - systemd-test.sh
+  accept-shell-surfaces:
+    - app-search-test.sh
+    - clipboard-test.sh
+    - emojis-test.sh
+    - image-picker-test.sh
+    - notification-send-test.sh
+    - notifications-test.sh
+    - qml-text-format-scan.py
+    - qml-text-format-test.sh
+    - reminders-test.sh
+  accept-menu-bar:
+    - apply-lock-test.sh
+    - bar-icon-geometry-test.sh
+    - bar-test.sh
+    - bar-text-color-test.sh
+    - bar-widget-contract-test.sh
+    - border-geometry-test.sh
+    - button-border-stability-test.sh
+    - clock-test.sh
+    - indicator-contract-test.sh
+    - keybindings-menu-test.sh
+    - menu-guards-test.sh
+    - menu-images-test.sh
+    - menu-plugin-test.sh
+    - menu-test.sh
+    - pkg-drop-test.sh
+    - row-border-stability-test.sh
+    - tray-menu-test.sh
+    - tray-test.sh
+  accept-panels:
+    - battery-status-test.sh
+    - battery-test.sh
+    - battlenet-test.sh
+    - bluetooth-test.sh
+    - power-present-test.sh
+    - weather-test.sh
+  accept-apps:
+    - browser-env-test.sh
+    - chromium-copy-url-test.sh
+    - chromium-whatsapp-slim-test.sh
+    - chromium-ytdlp-test.sh
+    - default-apps-test.sh
+    - desktop-entry-launch-test.sh
+    - drive-password-test.sh
+    - dropbox-test.sh
+    - editor-env-test.sh
+    - launch-1password-test.sh
+    - launch-about-test.sh
+    - launch-browser-test.sh
+    - launch-openclaw-test.sh
+    - launch-shell-test.sh
+    - launcher-remove-test.sh
+    - locate-test.sh
+    - webapp-install-escaping-test.sh
+    - webapp-install-test.sh
+    - webapp-name-test.sh
+    - whatsapp-slim-test.sh
+  accept-system:
+    - config-test.sh
+    - cups-hardening-test.sh
+    - limine-defaults-test.sh
+    - locale-env-test.sh
+    - manifest-entrypoints-test.sh
+    - refresh-config-test.sh
+    - setup-security-sshd-test.sh
+    - timezone-test.sh
+    - toggle-input-device-test.sh
+    - toggle-test.sh
+  accept-security:
+    - browser-policy-dir-test.sh
+    - browser-policy-sudoers-test.sh
+    - dns-sudoers-test.sh
+    - firewall-config-test.sh
+    - lock-blank-fingerprint-test.sh
+    - lock-fingerprint-indicator-test.sh
+    - lock-password-overflow-test.sh
+    - lock-stranded-recovery-test.sh
+    - nopasswd-sudo-expiry-test.sh
+    - polkit-test.sh
+    - security-fido2-migration-test.sh
+    - security-fido2-remove-test.sh
+    - security-fido2-test.sh
+    - sshd-hardening-migration-test.sh
+    - unowned-system-paths-test.sh
+  accept-hyprland:
+    - floating-terminal-test.sh
+    - hyprland-binding-conflicts-test.sh
+    - hyprland-default-config-test.sh
+    - hyprland-focus-app-test.sh
+    - hyprland-keyboard-layout-test.sh
+    - hyprland-paths-test.sh
+    - hyprland-qconsole-test.sh
+    - hyprland-reload-guard-test.sh
+    - hyprland-session-locked-test.sh
+    - hyprland-window-close-all-test.sh
+    - hyprland-window-test.sh
+    - hyprland-workspace-layout-test.sh
+    - windows-key-test.sh
+  accept-monitors:
+    - brightness-display-apple-cache-test.sh
+    - brightness-display-test.sh
+    - monitor-clamshell-scale-test.sh
+    - monitor-modeless-test.sh
+    - monitor-output-name-test.sh
+    - monitor-recovery-test.sh
+    - monitor-scaling-test.sh
+    - monitor-state-test.sh
+    - monitor-test.sh
+    - nightlight-test.sh
+  accept-network:
+    - network-captive-portal-test.sh
+    - network-manager-transition-test.sh
+    - network-password-test.sh
+    - network-qr-test.sh
+    - network-test.sh
+    - tailscale-receive-test.sh
+    - tailscale-test.sh
+    - wifiqr-test.sh
+  accept-update:
+    - channel-test.sh
+    - snapper-test.sh
+    - snapper-timeline-leak-test.sh
+    - snapshot-create-test.sh
+    - update-available-test.sh
+    - update-dev-test.sh
+    - update-disk-space-test.sh
+    - update-file-conflict-test.sh
+    - update-lock-test.sh
+    - update-orphan-test.sh
+    - update-package-conflict-test.sh
+    - update-pacman-guard-test.sh
+    - update-pkg-prune-test.sh
+    - update-sequence-test.sh
+    - update-status-test.sh
+    - upgrade-to-quattro-test.sh
+    - version-test.sh
+  accept-plugins:
+    - plugin-add-test.sh
+    - plugin-auth-boundary-test.sh
+    - plugin-clone-test.sh
+    - plugin-enable-test.sh
+    - plugin-registry-contract-test.sh
+    - plugin-validate-test.sh
+    - plugins-test.sh
+  accept-agents:
+    - agent-invitation-test.sh
+    - agent-usage-claude-limits-test.sh
+    - agent-usage-claude-scanner-test.sh
+    - agent-usage-codex-scanner-test.sh
+    - agent-usage-fireworks-scanner-test.sh
+    - agent-usage-update-test.sh
+    - agents-panel-test.sh
+    - agents-rename-migration-test.sh
+    - default-agent-test.sh
+    - hermes-cli-migration-test.sh
+    - hermes-cli-test.sh
+    - hermes-desktop-install-test.sh
+    - hermes-remove-test.sh
+    - hermes-skills-migration-test.sh
+    - hermes-skin-migration-test.sh
+    - hermes-theme-test.sh
+    - openclaw-onboard-test.sh
+    - remove-ai-test.sh
+    - voxtype-invitation-test.sh
+  accept-theme-media:
+    - ascii-test.sh
+    - background-test.sh
+    - branding-about-animation-test.sh
+    - screenrecording-test.sh
+    - screenshot-sanity-test.sh
+    - theme-install-guards-test.sh
+    - theme-staging-test.sh
+    - user-theme-test.sh
+    - video-background-test.sh
+    - vscode-theme-test.sh
+  accept-power-audio:
+    - audio-test.sh
+    - idle-test.sh
+    - keyboard-layout-test.sh
+    - media-test.sh
+    - osd-test.sh
+    - pointer-move-gate-test.sh
+    - power-test.sh
+    - powerprofiles-set-test.sh
+    - sleep-lock-test.sh
+    - sleep-monitor-test.sh
+    - system-lock-test.sh
+    - system-power-test.sh
+  accept-dev-migrations:
+    - copy-url-shortcut-migration-test.sh
+    - crash-capture-test.sh
+    - dev-env-path-test.sh
+    - dev-link-test.sh
+    - dev-unlink-test.sh
+    - docker-group-migration-test.sh
+    - fingerprint-driver-migration-test.sh
+    - git-url-check-test.sh
+    - herdr-functions-test.sh
+    - input-group-migration-test.sh
+    - kitty-config-test.sh
+    - legacy-icon-font-migration-test.sh
+    - legacy-power-udev-rules-migration-test.sh
+    - migrate-notify-test.sh
+    - migrate-scope-test.sh
+    - migrate-wrapper-test.sh
+    - mise-install-test.sh
+    - mise-wrapper-quiet-migration-test.sh
+    - retired-installer-artifacts-migration-test.sh
+    - ssh-reconnect-test.sh
+    - sudo-docker-test.sh
+    - sudoless-docker-posture-test.sh
+    - sudoless-docker-toggle-test.sh
+    - system-sleep-ownership-migration-test.sh
+    - t3code-install-test.sh
+    - tmux-alert-removal-migration-test.sh
+partial:
+  hardware_bound:
+    - brcmfmac-supplicant-test.sh
+    - fingerprint-invitation-test.sh
+    - fingerprint-package-test.sh
+    - hw-display-test.sh
+    - hw-external-monitors-test.sh
+    - hw-fingerprint-test.sh
+    - hw-hybrid-gpu-test.sh
+    - hw-nvidia-test.sh
+    - hybrid-gpu-test.sh
+    - lid-close-test.sh
+    - monitor-clamshell-scale-test.sh
+    - nouveau-cursor-test.sh
+    - nvidia-kms-hook-test.sh
+    - synaptic-touchpad-test.sh
+    - t2-hardware-test.sh
+    - xps13-sidecar-amps-test.sh
+  nested_vm:
+    - windows-vm-compose-test.sh
+    - windows-vm-mount-boundary-test.sh
+    - windows-vm-test.sh
+  install_time:
+    - first-run-test.sh
+    - plymouth-set-test.sh
+    - preinstalls-test.sh
+    - privileged-heredoc-test.sh
+    - provision-user-test.sh
+    - provisioning-groups-test.sh
+    - setup-form-test.sh

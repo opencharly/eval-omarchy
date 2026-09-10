@@ -13,8 +13,28 @@ omarchy-corpus:
             live-system claim (tier-2).
         distro:
             arch:
-                package: [jq, tesseract]
+                # the tool manifest (M7): the acceptance helpers upstream's own
+                # tests need — grim (screenshot), tesseract (OCR), wtype (input),
+                # jq (state assertions). The golden carries them so the
+                # corroboration lane can run upstream's OWN test files live.
+                package: [jq, tesseract, grim, wtype]
         plan:
+            # the upstream test tree (M7): the quattro/test corpus at the pinned
+            # hash, carried on the golden so the corroboration lane executes
+            # upstream's OWN test files (bash <file>) — the charly-native
+            # translation is strictly stronger, the upstream run is the
+            # corroboration fact. A run: step on the install timeline (the
+            # install ledger skips it on re-apply).
+            - run: fetch the upstream quattro/test tree at the pinned hash
+              id: corpus-fetch-upstream-tests
+              command: |
+                  set -eu
+                  rm -rf /opt/omarchy-upstream-test
+                  mkdir -p /opt/omarchy-upstream-test
+                  curl -fsSL https://github.com/omacom/omarchy/archive/8ea51516390320f8e768808b230098e67bdaa82c.tar.gz | tar -xz --strip-components=1 -C /opt/omarchy-upstream-test
+                  test -d /opt/omarchy-upstream-test/test/shell.d
+                  test -d /opt/omarchy-upstream-test/test/acceptance.d
+
             # === test/cli - the omarchy CLI suite ===
             - check: the omarchy CLI main help renders the command-center banner
               id: cli-help-renders
