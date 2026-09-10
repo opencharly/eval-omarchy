@@ -123,6 +123,7 @@ check-omarchy-eval-base-inst:
             - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
             - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
             - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1500'
+            - omarchy-corpus
         install_opts:
             allow_repo_changes: true
             allow_root_tasks: true
