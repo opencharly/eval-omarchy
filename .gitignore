@@ -15,3 +15,4 @@ stage-findings.yml
 metrics/
 # the improvement ledger — committed
 setup-defects/
+capture/
