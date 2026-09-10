@@ -713,6 +713,7 @@ eval-lane-plan:
           tests_body: "@report.tests"
           corpus_run: "@ledger-gate.corpus_run"
           corpus_ok: "@ledger-gate.corpus_ok"
+          corpus_skipped: "@ledger-gate.corpus_skipped"
           suggestions_body: "@cold-read.suggestions"
           cast: "media/pr-$pr-$calver/pr-$pr.cast"
           mp4: "media/pr-$pr-$calver/pr-$pr.mp4"

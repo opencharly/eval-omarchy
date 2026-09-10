@@ -21,6 +21,31 @@ plan itself:
   the candy's plan vs the upstream corpus size (the config-audit computes it
   from charly.yml — no side file to drift).
 
+## The selection vocabulary (the CURRENT corpus step ids — select ONLY these)
+
+The corpus step ids in the omarchy-corpus candy's plan (charly.yml) — the
+oracle selects from THIS list, never a description fragment:
+
+- cli-help-renders, cli-help-hw, cli-help-pkg (test/cli)
+- shell-config-valid-json, shell-config-version-1, shell-config-bar-layouts,
+  shell-config-clock-format (test/shell.d/config-test.sh)
+- notifications-logic-present (test/shell.d/notifications-test.sh)
+- bar-drag-no-slot-mutation, bar-move-no-settle (test/shell.d/bar-test.sh)
+- hyprland-default-config-parses (test/shell.d/hyprland-default-config-test.sh)
+- update-cli-discoverable (test/shell.d/update-*)
+- battery-model-present (test/shell.d/battery-test.sh)
+- bluetooth-bt-agent-guard, bluetooth-panel-model (test/shell.d/bluetooth-test.sh)
+- clipboard-model-present (test/shell.d/clipboard-test.sh)
+- ocr-screen-text (test/acceptance.d/session-test.sh)
+- accept-shell-ping, accept-bar-background-layers, accept-root-btrfs,
+  accept-omarchy-version, accept-pipewire-running (test/acceptance.d/session-test.sh)
+- accept-core-manifest, accept-default-browser (test/acceptance.d/system-test.sh)
+- accept-cups-unit (test/acceptance.d/cups-test.sh)
+
+A selected id NOT in this list fails the corpus-gate (the oracle's gap) and
+re-authors informed. The corpus RUN is the whole candy (the add_candy — the
+surfaces run per PR); the SELECTION is the report emphasis.
+
 ## The selection heuristic ("if it makes sense")
 
 1. ALWAYS include the PR's own changed test files (the existing contract,
