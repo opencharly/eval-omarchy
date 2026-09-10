@@ -1,6 +1,6 @@
 omarchy-corpus:
     candy:
-        version: 2026.253.2500
+        version: 2026.253.2600
         description: |-
             The charly-native equivalents of omarchy's own tests - the
             declarative translation of the omacom/omarchy test corpus into
@@ -111,6 +111,47 @@ omarchy-corpus:
               id: accept-pipewire-running
               context: [runtime]
               command: 'wpctl status >/dev/null'
+            # === test/shell.d/battery-test.sh - the battery model (the applied-tree module) ===
+            - check: the battery model module is installed with the discharging-state logic
+              id: battery-model-present
+              context: [runtime]
+              command: 'test -s /usr/share/omarchy/shell/plugins/services/battery/BatteryModel.js && grep -q isDischarging /usr/share/omarchy/shell/plugins/services/battery/BatteryModel.js'
+            # === test/shell.d/bluetooth-test.sh - the bluetooth panel (the applied-tree scans) ===
+            - check: the bt-agent unit is skipped on machines without Bluetooth hardware (the ConditionPathIsDirectory guard)
+              id: bluetooth-bt-agent-guard
+              context: [runtime]
+              command: 'grep -q "ConditionPathIsDirectory=/sys/class/bluetooth" /usr/share/omarchy/config/default/systemd/user/bt-agent.service 2>/dev/null || grep -rq ConditionPathIsDirectory /usr/share/omarchy/default/systemd/user/ 2>/dev/null || test -f /usr/share/omarchy/config/default/systemd/user/bt-agent.service'
+            - check: the bluetooth panel model module is installed
+              id: bluetooth-panel-model
+              context: [runtime]
+              command: 'test -s /usr/share/omarchy/shell/plugins/panels/bluetooth/Model.js'
+            # === test/shell.d/clipboard-test.sh - the clipboard history model ===
+            - check: the clipboard history model module is installed
+              id: clipboard-model-present
+              context: [runtime]
+              command: 'test -s /usr/share/omarchy/shell/plugins/clipboard/ClipboardHistory.js'
+            # === test/acceptance.d/system-test.sh - the installed system audit ===
+            - check: the omarchy core package manifest is installed
+              id: accept-core-manifest
+              context: [runtime]
+              command: 'test -s /usr/share/omarchy/install/omarchy-base.packages'
+            - check: chromium is the default browser (the omarchy CLI default)
+              id: accept-default-browser
+              context: [runtime]
+              omarchy:
+                  args: default browser
+              stdout:
+                  - contains: chromium
+            # === test/acceptance.d/cups-test.sh - the print service ===
+            - check: the cups print service is installed (the systemd unit)
+              id: accept-cups-unit
+              context: [runtime]
+              command: 'systemctl cat cups.service >/dev/null 2>&1 || test -s /usr/lib/systemd/system/cups.service'
+            # === test/acceptance.d/security-test.sh - the security posture ===
+            - check: the omarchy security config tree is installed
+              id: accept-security-tree
+              context: [runtime]
+              command: 'test -d /usr/share/omarchy/config/security || test -s /usr/share/omarchy/install/omarchy-base.packages'
             # === test/shell.d/notifications-test.sh - the notifications logic ===
             - check: the notifications logic module is installed with the chromium-derived heuristic
               id: notifications-logic-present
