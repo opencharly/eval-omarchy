@@ -372,6 +372,7 @@ eval-lane-plan:
           drive: { type: string, description: "one shell command exercising the PR's key behavior" }
           tests: { type: string_list, description: "the PR's own test files, absolute paths in the applied system" }
           checks: { type: object, description: "the behavior checks: [{id, what, assertion, knownRed}]" }
+          what: { type: string, description: "one line: what the PR does (its key behavior)" }
           record: { type: bool, description: "whether to record the eval" }
           visual: { type: bool, description: "whether the class is visual" }
         prompt: |-
@@ -387,6 +388,7 @@ eval-lane-plan:
             drive: one shell command exercising the PR's key behavior
             tests: [the PR's own test files, absolute paths in the applied system]
             checks: [ {id, what, assertion, knownRed}, ... ]   (OBJECTS — never bare strings)
+            what: one line describing what the PR does (its key behavior)
             record: true | false   (a JSON boolean, never a string)
             visual: true | false
           After you have the PR facts, produce the JSON immediately — do not call
@@ -576,7 +578,7 @@ eval-lane-plan:
           channel: "@triage.channel"
           tier: "@triage.tier"
           golden: "@channel-map.golden"
-          what: "@triage.drive"
+          what: "@triage.what"
         out: "eval/pr-$pr.md"
         skip_when: "@triage.class != skip"
       - id: setup-defect
