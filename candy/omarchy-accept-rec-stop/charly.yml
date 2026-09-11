@@ -1,9 +1,11 @@
 # the shared recording WRAPPER R1 (R3: the 17x duplication collapsed into two
-# included candies). The record_name + artifact paths use ${IMAGE} — the per-bed
-# deploy name (check-omarchy-accept-<fn>) — so parallel beds never collide, and
-# ${CHECK_RUN_DIR} — the bed run's .check/<bed>/<calver> dir, threaded by the bed
-# runner — so the evidence lands in the run's evidence/ dir (the media stage's
-# source). R1 (stop) is included AFTER Phase B.
+# included candies). Artifact paths use ${BED} — the bed's media-stage SHORT name
+# threaded into check-live env by the bed runner (check-omarchy-accept-<fn> →
+# <fn>, plugin-check G-2) — so parallel beds never collide. The DIRECT-WRITE
+# layout (G-wave): artifacts land in media/${CALVER}/${BED}/ straight from the
+# check-live steps — no evidence/ copy, no media-stage cp. The bed runner also
+# threads ${CALVER} (the run calver) and ${CHECK_RUN_DIR}. R1 (stop) is included
+# AFTER Phase B.
 #
 # NOTE: this is a SINGLE-entity candy directory — the include ref must match the
 # DISCOVERY key (the directory name), and a multi-entity manifest would only
@@ -15,26 +17,18 @@ omarchy-accept-rec-stop:
             The recording wrapper R1: capture the SPICE screenshot, stop the
             SPICE + terminal captures, render the GIF, and transcode the MP4 —
             AFTER the bed's Phase B checks. Included by every acceptance bed
-            (include: candy:omarchy-accept-rec-stop). Artifacts land in the
-            bed run's evidence/ dir (${CHECK_RUN_DIR}, threaded by the bed
-            runner) keyed by the bed name (${IMAGE}) so parallel beds never
-            collide.
+            (include: candy:omarchy-accept-rec-stop). Artifacts land DIRECTLY
+            in media/${CALVER}/${BED}/ (the direct-write layout — the bed
+            runner threads CALVER/BED into check-live env) keyed by the bed
+            short name (${BED}) so parallel beds never collide and no
+            evidence/ copy is needed. The .cast land runs FIRST: record's
+            sdk.LandArtifact mkdirs the host media/<calver>/<bed>/ parent,
+            while spice (os.Create) and plugin-media (ffmpeg) never mkdir —
+            they always find the dir already created.
         distro:
             arch:
                 package: [bash]
         plan:
-            - check: capture the VM display via SPICE
-              id: rec-screen-spice
-              eventually: 25s
-              retry_interval: 3s
-              context: [runtime]
-              spice: {method: screenshot, artifact: '${CHECK_RUN_DIR}/evidence/${IMAGE}.png', artifact_min_bytes: 1000, artifact_not_uniform: true}
-            - check: stop the SPICE capture and pull the MJPEG stream
-              id: rec-spice-stop
-              eventually: 25s
-              retry_interval: 3s
-              context: [runtime]
-              spice: {method: record, action: stop, record_name: '${IMAGE}', artifact: '${CHECK_RUN_DIR}/evidence/${IMAGE}.mjpeg', artifact_min_bytes: 10000, artifact_not_uniform: true}
             # The .cast gate (>=5 events) must capture REAL run-period output: the
             # acceptance checks execute over the runner's SSH executor, never inside the
             # recording's tmux session, so the recording alone holds only an empty shell
@@ -46,18 +40,30 @@ omarchy-accept-rec-stop:
               id: rec-surface
               context: [runtime]
               record: {method: run, record_name: '${IMAGE}', text: 'journalctl --user -n 30 --no-pager 2>&1 | tail -24; echo; echo "[run-window-end]"', settle_ms: 8000}
-            - check: stop the terminal recording and pull the .cast
+            - check: stop the terminal recording and pull the .cast (the FIRST media write — record's LandArtifact mkdirs media/<calver>/<bed>/ so the later non-mkdir writes (spice os.Create, plugin-media ffmpeg) always land)
               id: rec-stop
               context: [runtime]
-              record: {method: stop, record_name: '${IMAGE}', artifact: '${CHECK_RUN_DIR}/evidence/${IMAGE}.cast', artifact_min_bytes: 200, artifact_min_cast_events: 5}
+              record: {method: stop, record_name: '${IMAGE}', artifact: 'media/${CALVER}/${BED}/${BED}.cast', artifact_min_bytes: 200, artifact_min_cast_events: 5}
             - check: render the .cast to an animated GIF
               id: rec-gif
               eventually: 25s
               retry_interval: 3s
               context: [runtime]
-              record: {method: gif, record_name: '${IMAGE}', artifact: '${CHECK_RUN_DIR}/evidence/${IMAGE}.gif', artifact_min_bytes: 1024}
+              record: {method: gif, record_name: '${IMAGE}', artifact: 'media/${CALVER}/${BED}/${BED}.gif', artifact_min_bytes: 1024}
+            - check: capture the VM display via SPICE
+              id: rec-screen-spice
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: screenshot, artifact: 'media/${CALVER}/${BED}/${BED}.png', artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the SPICE capture and pull the MJPEG stream
+              id: rec-spice-stop
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: stop, record_name: '${IMAGE}', artifact: 'media/${CALVER}/${BED}/${BED}.mjpeg', artifact_min_bytes: 10000, artifact_not_uniform: true}
             - check: transcode the SPICE MJPEG capture to MP4 (the host-side transcode verb — the MJPEG is already host-side, so the in-VM ffmpeg command form could never see it)
               id: rec-mp4
               context: [runtime]
               # min 8000: valid h264 transcodes of the SHORT parallel-suite captures land at ~10-11 KB (observed 9992 B plugins / 10141 B agents at 2026.254.0048); a failed/empty transcode yields no artifact or far below 1 KB. RCA 2026.254.0048.
-              transcode: {source_artifact: '${CHECK_RUN_DIR}/evidence/${IMAGE}.mjpeg', artifact: '${CHECK_RUN_DIR}/evidence/${IMAGE}.mp4', artifact_min_bytes: 8000}
+              transcode: {source_artifact: 'media/${CALVER}/${BED}/${BED}.mjpeg', artifact: 'media/${CALVER}/${BED}/${BED}.mp4', artifact_min_bytes: 8000}
