@@ -12,13 +12,13 @@ omarchy-accept-plugins:
             version verb through the host registry to prove the composition
             registers.
         candy:
-            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
-            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.254.0459'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.254.0449'
             - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
-            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.253.1044'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.254.0527'
             - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
             - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
-            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.251.1349'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.254.0445'
         plan:
             - check: the acceptance plugin providers are registered (the meta-candy's composition)
               id: accept-plugins-present
