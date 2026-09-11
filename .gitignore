@@ -13,5 +13,7 @@ __pycache__/
 pr-beds/
 stage-findings.yml
 metrics/
+eval/omarchy-acceptance-matrix.md
 # the improvement ledger — committed
 setup-defects/
+capture/

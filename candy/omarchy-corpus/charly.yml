@@ -13,8 +13,28 @@ omarchy-corpus:
             live-system claim (tier-2).
         distro:
             arch:
-                package: [jq, tesseract]
+                # the tool manifest (M7): the acceptance helpers upstream's own
+                # tests need — grim (screenshot), tesseract (OCR), wtype (input),
+                # jq (state assertions). The golden carries them so the
+                # corroboration lane can run upstream's OWN test files live.
+                package: [jq, tesseract, grim, wtype]
         plan:
+            # the upstream test tree (M7): the quattro/test corpus at the pinned
+            # hash, carried on the golden so the corroboration lane executes
+            # upstream's OWN test files (bash <file>) — the charly-native
+            # translation is strictly stronger, the upstream run is the
+            # corroboration fact. A run: step on the install timeline (the
+            # install ledger skips it on re-apply).
+            - run: fetch the upstream quattro/test tree at the pinned hash
+              id: corpus-fetch-upstream-tests
+              command: |
+                  set -eu
+                  rm -rf /opt/omarchy-upstream-test
+                  mkdir -p /opt/omarchy-upstream-test
+                  curl -fsSL https://github.com/omacom/omarchy/archive/8ea51516390320f8e768808b230098e67bdaa82c.tar.gz | tar -xz --strip-components=1 -C /opt/omarchy-upstream-test
+                  test -d /opt/omarchy-upstream-test/test/shell.d
+                  test -d /opt/omarchy-upstream-test/test/acceptance.d
+
             # === test/cli - the omarchy CLI suite ===
             - check: the omarchy CLI main help renders the command-center banner
               id: cli-help-renders
@@ -55,14 +75,44 @@ omarchy-corpus:
               context: [runtime]
               command: 'jq -r ".bar.layout.center[].formatAlt? // empty" /usr/share/omarchy/config/omarchy/shell.json | grep -q "ww yyyy"'
             # === test/acceptance.d - the ocr surface assertion (the wl: ocr method's live proof) ===
-            - check: the ocr reads the shell's update prompt off the screen (the native-res capture + tesseract; the always-on shell unit renders it — the retry rides the shell's render window)
+            # The probe is the deterministic surface: a fresh critical toast (never
+            # auto-dismisses) sent right before the ocr reads it. The first-run
+            # announce_network "Update System" toast is NOT merely a transient: the
+            # golden snapshot carries the first-run popup FILES, so every clone
+            # restores them at boot and the critical "Update System" card stays on
+            # screen until dismissed (observed on screen during the 2026.254.0048
+            # shell-surfaces ocr window). The restored cards stack above fresh ones,
+            # so the probe must be observable regardless. RCA 2026.253.2216.
+            - check: send the OCR probe notification (the deterministic first surface — a fresh critical toast the ocr step reads)
+              id: ocr-probe-send
+              context: [runtime]
+              command: 'DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus omarchy-notification-send -u critical -g test "OCR-PROBE" "probe body"'
+            - check: the ocr reads the probe notification off the screen (grim+tesseract over the LIVE display; the probe is RE-SENT every loop pass so a one-shot send swallowed by a half-initialized notifications service cannot strand the check — observed at 2026.254.0048 the phase-2 probe persisted on disk yet never rendered on screen for 37+ min, because the shell restarts between check-live and check-live-rebuild and the live-card path can land in the wrong quickshell instance. RCA 2026.254.0048)
               id: ocr-screen-text
               context: [runtime]
-              eventually: 120s
+              # RCA 2026.254.0003 (the accept-suite 7/16 failure class): under the
+              # parallel suite's host oversubscription (16 cores, 8+ beds x 4 vCPUs),
+              # a single ocr attempt's ~14 serial SSH venue ops stretch past the 2m
+              # per-attempt never-hang bound (measured: ~70-90s per attempt at light
+              # load, >2m at peak; the passing beds took 2 attempts, the failing beds
+              # 3). The surface itself is healthy — grim+tesseract finishes in ~0.5s
+              # idle and the probe text was read live once rendered.
+              # RCA 2026.254.0159/0212 (the re-send regression): the raw command step must
+              # set the Wayland session env ITSELF — the wl ocr verb's venue command is
+              # wrapped by plugin-wl's envPrelude (which sources the compositor's real
+              # WAYLAND_DISPLAY/XDG_RUNTIME_DIR from /proc/$(pgrep Hyprland)/environ),
+              # but a `command:` step runs as bare `ssh vm bash -s` whose login session
+              # carries XDG_RUNTIME_DIR (pam_systemd) but NOT WAYLAND_DISPLAY, so grim
+              # could not resolve the compositor socket ("failed to create display").
+              # Export the display var here — the a-clipboard-seed idiom (discover the
+              # newest /run/user/1000/wayland-* socket). NEVER use ${...} in a check
+              # command: the runner's var: substitution resolves it before the shell
+              # sees it (a stray ${XDG_RUNTIME_DIR:-...} SKIPs the check as
+              # "unresolved variables" — observed on this very fix's first re-run).
+              timeout: 9m
+              eventually: 10m
               retry_interval: 5s
-              wl:
-                  method: ocr
-                  text: Update System
+              command: 'export WAYLAND_DISPLAY=$(ls -t /run/user/1000/wayland-* 2>/dev/null | grep -v "\.lock$" | head -1 | xargs -r basename); for i in $(seq 1 100); do DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus omarchy-notification-send -u critical -g test "OCR-PROBE" "probe body" >/dev/null 2>&1; sleep 2; if grim - | tesseract - stdout 2>/dev/null | grep -qi "OCR-PROBE"; then exit 0; fi; done; exit 1'
             # === test/shell.d/bar-test.sh - the bar QML invariants (the applied-tree scans) ===
             - check: bar module dragging leaves layout-managed slots in place (the Bar.qml scan)
               id: bar-drag-no-slot-mutation
