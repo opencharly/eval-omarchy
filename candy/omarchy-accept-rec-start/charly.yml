@@ -1,0 +1,29 @@
+# the shared recording WRAPPER R0 (R3: the 17x duplication collapsed into two
+# included candies). The record_name uses ${IMAGE} — the per-bed deploy name
+# (check-omarchy-accept-<fn>) — so parallel beds never collide. R0 (start) is
+# included BEFORE Phase A; R1 (stop) AFTER Phase B.
+#
+# NOTE: this is a SINGLE-entity candy directory — the include ref must match the
+# DISCOVERY key (the directory name), and a multi-entity manifest would only
+# expose its FIRST entity to the include splicer.
+omarchy-accept-rec-start:
+    candy:
+        version: 2026.253.2700
+        description: |-
+            The recording wrapper R0: start the terminal (asciinema) + SPICE
+            captures BEFORE the bed's Phase A checks. Included by every
+            acceptance bed (include: candy:omarchy-accept-rec-start).
+        distro:
+            arch:
+                package: [bash]
+        plan:
+            - check: start the terminal recording
+              id: rec-start
+              context: [runtime]
+              record: {method: start, record_mode: terminal, record_name: '${IMAGE}'}
+            - check: start the SPICE display video capture
+              id: rec-spice-start
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: start, record_name: '${IMAGE}', fps: 5}

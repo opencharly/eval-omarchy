@@ -1,0 +1,51 @@
+# the shared recording WRAPPER R1 (R3: the 17x duplication collapsed into two
+# included candies). The record_name + artifact paths use ${IMAGE} — the per-bed
+# deploy name (check-omarchy-accept-<fn>) — so parallel beds never collide, and
+# ${CHECK_RUN_DIR} — the bed run's .check/<bed>/<calver> dir, threaded by the bed
+# runner — so the evidence lands in the run's evidence/ dir (the media stage's
+# source). R1 (stop) is included AFTER Phase B.
+#
+# NOTE: this is a SINGLE-entity candy directory — the include ref must match the
+# DISCOVERY key (the directory name), and a multi-entity manifest would only
+# expose its FIRST entity to the include splicer.
+omarchy-accept-rec-stop:
+    candy:
+        version: 2026.253.2700
+        description: |-
+            The recording wrapper R1: capture the SPICE screenshot, stop the
+            SPICE + terminal captures, render the GIF, and transcode the MP4 —
+            AFTER the bed's Phase B checks. Included by every acceptance bed
+            (include: candy:omarchy-accept-rec-stop). Artifacts land in the
+            bed run's evidence/ dir (${CHECK_RUN_DIR}, threaded by the bed
+            runner) keyed by the bed name (${IMAGE}) so parallel beds never
+            collide.
+        distro:
+            arch:
+                package: [bash]
+        plan:
+            - check: capture the VM display via SPICE
+              id: rec-screen-spice
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: screenshot, artifact: '${CHECK_RUN_DIR}/evidence/${IMAGE}.png', artifact_min_bytes: 1000, artifact_not_uniform: true}
+            - check: stop the SPICE capture and pull the MJPEG stream
+              id: rec-spice-stop
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              spice: {method: record, action: stop, record_name: '${IMAGE}', artifact: '${CHECK_RUN_DIR}/evidence/${IMAGE}.mjpeg', artifact_min_bytes: 10000, artifact_not_uniform: true}
+            - check: stop the terminal recording and pull the .cast
+              id: rec-stop
+              context: [runtime]
+              record: {method: stop, record_name: '${IMAGE}', artifact: '${CHECK_RUN_DIR}/evidence/${IMAGE}.cast', artifact_min_bytes: 200, artifact_min_cast_events: 5}
+            - check: render the .cast to an animated GIF
+              id: rec-gif
+              eventually: 25s
+              retry_interval: 3s
+              context: [runtime]
+              record: {method: gif, record_name: '${IMAGE}', artifact: '${CHECK_RUN_DIR}/evidence/${IMAGE}.gif', artifact_min_bytes: 1024}
+            - check: transcode the SPICE MJPEG capture to MP4 (the host-side transcode verb — the MJPEG is already host-side, so the in-VM ffmpeg command form could never see it)
+              id: rec-mp4
+              context: [runtime]
+              transcode: {source_artifact: '${CHECK_RUN_DIR}/evidence/${IMAGE}.mjpeg', artifact: '${CHECK_RUN_DIR}/evidence/${IMAGE}.mp4', artifact_min_bytes: 10000}
