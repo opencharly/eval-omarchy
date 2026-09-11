@@ -1292,7 +1292,7 @@ eval-lane:
       self-checks. The pipeline itself is the eval-lane-plan kind:pipeline entity in
       this file — every stage, prompt, template, and schema INLINE.
     candy:
-      - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.253.1141'
+      - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.254.1528'
       - '@github.com/opencharly/plugin-review/candy/plugin-review:v2026.251.1939'
     var:
       EVAL_LANES: "16"
@@ -1307,7 +1307,7 @@ eval-lane:
       - name: EVAL_LLM_BASE_URL
         description: "LLM chat-completions base URL (default: the local ollama server)"
       - name: EVAL_LLM_MODEL
-        description: "LLM model id (default: deepseek-v4-flash:cloud on the local ollama)"
+        description: "LLM model id (default: deepseek-v4.1-flash:cloud on the local ollama)"
       - name: EVAL_LLM_PROVIDER
         description: "LLM provider name"
       - name: EVAL_DRY_RUN
@@ -1382,7 +1382,7 @@ eval-lane-plan:
         Upstream's own corpus surfaces ran: ${corpus_run} (passed ${corpus_ok}) — the charly-native equivalents of omarchy's own tests, per the omarchy-corpus plan in charly.yml.
         ## Suggestions
         ${suggestions_body}
-        *Assisted-by: charly eval-lane agent ollama/deepseek-v4-flash:cloud (fully tested and validated)*
+        *Assisted-by: charly eval-lane agent ollama/deepseek-v4.1-flash:cloud (fully tested and validated)*
         *Tested-by: charly eval-lane (channel ${channel}, golden ${golden}, bed check-omarchy-pr-$pr-vm @ $calver)*
       frontmatter_schema: |-
         { "type": "object", "required": [pr, head, channel, class, tier, posted] }
@@ -1730,7 +1730,7 @@ eval-lane-plan:
           the lane will evaluate it like any other PR.
           ## Suggestions
           - Mark the PR ready for review when the behavior is implemented.
-          *Assisted-by: charly eval-lane agent ollama/deepseek-v4-flash:cloud (fully tested and validated)*
+          *Assisted-by: charly eval-lane agent ollama/deepseek-v4.1-flash:cloud (fully tested and validated)*
           *Tested-by: charly eval-lane (channel ${channel}, golden ${golden}, bed check-omarchy-pr-$pr-vm)*
         vars:
           pr: "$pr"
