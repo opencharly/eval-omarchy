@@ -1152,15 +1152,15 @@ check-omarchy-accept-matrix:
             - id: media
               kind: command
               # VERIFY-ONLY (the G-wave direct-write cutover): the bed's
-              # rec-wrap steps now land artifacts DIRECTLY in
-              # media/<calver>/<bed>/ (CALVER/BED threaded into check-live env
-              # by the bed runner, plugin-check G-2) — no evidence/ copy, no
-              # cp, no accept- staging dir. This stage derives {bed} from the
-              # pipeline's $pr (the SAME short name bedShortName yields:
-              # check-omarchy-accept-<fn> → <fn>) and {calver} from the newest
-              # run dir, then asserts each media/<calver>/<bed>/<bed>.{cast,
-              # gif,mjpeg,mp4,png} exists non-empty with min sizes.
-              command: 'latest=$(ls -t .check/check-omarchy-accept-$pr 2>/dev/null | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" | head -1); [ -n "$latest" ] || { echo "no run dir for $pr" >&2; exit 1; }; d="media/$latest/$pr"; [ -d "$d" ] || { echo "missing media dir $d for $pr (the rec-stop .cast land did not run)" >&2; exit 1; }; for spec in "cast 200" "gif 1024" "mjpeg 4096" "mp4 4096" "png 1024"; do set -- $spec; f=$1; m=$2; [ -s "$d/$pr.$f" ] || { echo "missing $d/$pr.$f" >&2; exit 1; }; [ "$(wc -c < "$d/$pr.$f")" -ge "$m" ] || { echo "$d/$pr.$f under $m bytes" >&2; exit 1; }; done'
+              # rec-wrap steps land artifacts DIRECTLY in
+              # media/<calver>/<bed>/, with no staging and no copy; this
+              # stage derives {bed} from the pipeline's $pr (the SAME short
+              # name bedShortName yields: check-omarchy-accept-<fn> → <fn>)
+              # and {calver} from the newest run dir, then delegates the
+              # whole 5-artifact min-size assertion to scripts/verify-media.sh
+              # — the ONE verify implementation (R3), shared by the matrix
+              # media stage and the suite aggregate stage alike.
+              command: 'latest=$(ls -t .check/check-omarchy-accept-$pr 2>/dev/null | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" | head -1); [ -n "$latest" ] || exit 1; bash scripts/verify-media.sh $pr $latest'
               expect_exit: 0
 
 # the acceptance SUITE: the ONE-command wrapper (zero extra parameters)
@@ -1179,9 +1179,10 @@ check-omarchy-accept-suite:
               kind: command
               command: 'charly pipeline run check-omarchy-accept-matrix --prs session shell-surfaces menu-bar panels apps system security hyprland monitors network update plugins agents theme-media power-audio dev-migrations --lanes 16'
               expect_exit: 0
+            # the SAME 5-artifact assertion, delegated to the ONE script (R3)
             - id: aggregate
               kind: command
-              command: 'for b in session shell-surfaces menu-bar panels apps system security hyprland monitors network update plugins agents theme-media power-audio dev-migrations; do latest=$(ls -t ".check/check-omarchy-accept-$b" 2>/dev/null | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" | head -1); [ -n "$latest" ] || { echo "missing run dir: $b" >&2; exit 1; }; d="media/$latest/$b"; [ -d "$d" ] || { echo "no media dir for $b ($latest) - the direct-write run did not publish this run" >&2; exit 1; }; for spec in "cast 200" "gif 1024" "mjpeg 4096" "mp4 4096" "png 1024"; do set -- $spec; f=$1; m=$2; [ -s "$d/$b.$f" ] || { echo "missing $f media for $b ($latest)" >&2; exit 1; }; [ "$(wc -c < "$d/$b.$f")" -ge "$m" ] || { echo "$f media for $b ($latest) under $m bytes" >&2; exit 1; }; done; done'
+              command: 'for b in session shell-surfaces menu-bar panels apps system security hyprland monitors network update plugins agents theme-media power-audio dev-migrations; do latest=$(ls -t ".check/check-omarchy-accept-$b" 2>/dev/null | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" | head -1); [ -n "$latest" ] || exit 1; bash scripts/verify-media.sh $b $latest; done'
               expect_exit: 0
             - id: report
               kind: command
