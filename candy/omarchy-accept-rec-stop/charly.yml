@@ -35,6 +35,17 @@ omarchy-accept-rec-stop:
               retry_interval: 3s
               context: [runtime]
               spice: {method: record, action: stop, record_name: '${IMAGE}', artifact: '${CHECK_RUN_DIR}/evidence/${IMAGE}.mjpeg', artifact_min_bytes: 10000, artifact_not_uniform: true}
+            # The .cast gate (>=5 events) must capture REAL run-period output: the
+            # acceptance checks execute over the runner's SSH executor, never inside the
+            # recording's tmux session, so the recording alone holds only an empty shell
+            # prompt (4 events — the failing class-2 verdict of 2026.254.0002). Surface
+            # the run window's actual user-session journal tail into the recording
+            # (real system output spanning the checks) before stopping, so the .cast
+            # carries genuine terminal content and the rendered GIF is per-run.
+            - check: surface the run's terminal evidence into the recording (the user-session journal tail of the run window — real content for the .cast)
+              id: rec-surface
+              context: [runtime]
+              record: {method: run, record_name: '${IMAGE}', text: 'journalctl --user -n 30 --no-pager 2>&1 | tail -24; echo; echo "[run-window-end]"', settle_ms: 8000}
             - check: stop the terminal recording and pull the .cast
               id: rec-stop
               context: [runtime]

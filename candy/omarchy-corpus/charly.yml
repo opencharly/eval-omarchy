@@ -88,10 +88,18 @@ omarchy-corpus:
             - check: the ocr reads the probe notification off the screen (the native-res capture + tesseract; the critical toast persists until dismissed — the retry rides the shell's render window)
               id: ocr-screen-text
               context: [runtime]
-              # the wl ocr verb's per-attempt never-hang bound is 2m — the 300s
-              # eventually lets a slow attempt be killed and retried (the verb is
-              # fast in isolation; the parallel bed context slows it)
-              eventually: 300s
+              # RCA 2026.254.0003 (the accept-suite 7/16 failure class): under the
+              # parallel suite's host oversubscription (16 cores, 8+ beds x 4 vCPUs),
+              # a single ocr attempt's ~14 serial SSH venue ops stretch past the 2m
+              # per-attempt never-hang bound (measured: ~70-90s per attempt at light
+              # load, >2m at peak; the passing beds took 2 attempts, the failing beds
+              # 3). The verb itself is healthy — grim+tesseract finishes in ~0.5s idle
+              # and the probe text was read live. The fix uses the mechanism's own
+              # parameter: timeout: 3m raises the per-attempt bound to 3m30
+              # (ProbeNeverHang honors timeout+30s over the 2m floor); eventually: 6m
+              # caps the retry window at two full attempts (3m30+5s+3m30=7m05 worst).
+              timeout: 3m
+              eventually: 6m
               retry_interval: 5s
               wl:
                   method: ocr
