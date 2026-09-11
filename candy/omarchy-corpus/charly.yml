@@ -97,10 +97,22 @@ omarchy-corpus:
               # load, >2m at peak; the passing beds took 2 attempts, the failing beds
               # 3). The surface itself is healthy — grim+tesseract finishes in ~0.5s
               # idle and the probe text was read live once rendered.
+              # RCA 2026.254.0159/0212 (the re-send regression): the raw command step must
+              # set the Wayland session env ITSELF — the wl ocr verb's venue command is
+              # wrapped by plugin-wl's envPrelude (which sources the compositor's real
+              # WAYLAND_DISPLAY/XDG_RUNTIME_DIR from /proc/$(pgrep Hyprland)/environ),
+              # but a `command:` step runs as bare `ssh vm bash -s` whose login session
+              # carries XDG_RUNTIME_DIR (pam_systemd) but NOT WAYLAND_DISPLAY, so grim
+              # could not resolve the compositor socket ("failed to create display").
+              # Export the display var here — the a-clipboard-seed idiom (discover the
+              # newest /run/user/1000/wayland-* socket). NEVER use ${...} in a check
+              # command: the runner's var: substitution resolves it before the shell
+              # sees it (a stray ${XDG_RUNTIME_DIR:-...} SKIPs the check as
+              # "unresolved variables" — observed on this very fix's first re-run).
               timeout: 9m
               eventually: 10m
               retry_interval: 5s
-              command: 'for i in $(seq 1 100); do DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus omarchy-notification-send -u critical -g test "OCR-PROBE" "probe body" >/dev/null 2>&1; sleep 2; if grim - | tesseract - stdout 2>/dev/null | grep -q "OCR-PROBE"; then exit 0; fi; done; exit 1'
+              command: 'export WAYLAND_DISPLAY=$(ls -t /run/user/1000/wayland-* 2>/dev/null | grep -v "\.lock$" | head -1 | xargs -r basename); for i in $(seq 1 100); do DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus omarchy-notification-send -u critical -g test "OCR-PROBE" "probe body" >/dev/null 2>&1; sleep 2; if grim - | tesseract - stdout 2>/dev/null | grep -qi "OCR-PROBE"; then exit 0; fi; done; exit 1'
             # === test/shell.d/bar-test.sh - the bar QML invariants (the applied-tree scans) ===
             - check: bar module dragging leaves layout-managed slots in place (the Bar.qml scan)
               id: bar-drag-no-slot-mutation
