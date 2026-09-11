@@ -59,4 +59,5 @@ omarchy-accept-rec-stop:
             - check: transcode the SPICE MJPEG capture to MP4 (the host-side transcode verb — the MJPEG is already host-side, so the in-VM ffmpeg command form could never see it)
               id: rec-mp4
               context: [runtime]
-              transcode: {source_artifact: '${CHECK_RUN_DIR}/evidence/${IMAGE}.mjpeg', artifact: '${CHECK_RUN_DIR}/evidence/${IMAGE}.mp4', artifact_min_bytes: 10000}
+              # min 8000: valid h264 transcodes of the SHORT parallel-suite captures land at ~10-11 KB (observed 9992 B plugins / 10141 B agents at 2026.254.0048); a failed/empty transcode yields no artifact or far below 1 KB. RCA 2026.254.0048.
+              transcode: {source_artifact: '${CHECK_RUN_DIR}/evidence/${IMAGE}.mjpeg', artifact: '${CHECK_RUN_DIR}/evidence/${IMAGE}.mp4', artifact_min_bytes: 8000}

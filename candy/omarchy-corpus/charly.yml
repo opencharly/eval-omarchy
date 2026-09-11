@@ -75,17 +75,19 @@ omarchy-corpus:
               context: [runtime]
               command: 'jq -r ".bar.layout.center[].formatAlt? // empty" /usr/share/omarchy/config/omarchy/shell.json | grep -q "ww yyyy"'
             # === test/acceptance.d - the ocr surface assertion (the wl: ocr method's live proof) ===
-            # The first-run "Update System" toast is a BOOT-TIME transient (sent once by
-            # announce_network; the provision bed's long channel-switch + migration steps
-            # outlive its display window, and a fully-provisioned golden has no update
-            # prompt at all). The probe is the deterministic surface: a fresh critical
-            # toast (never auto-dismisses) sent right before the ocr reads it — works on
-            # any golden state. RCA 2026.253.2216.
-            - check: send the OCR probe notification (the deterministic surface — a fresh critical toast the ocr step reads; the first-run "Update System" toast is a boot-time transient)
+            # The probe is the deterministic surface: a fresh critical toast (never
+            # auto-dismisses) sent right before the ocr reads it. The first-run
+            # announce_network "Update System" toast is NOT merely a transient: the
+            # golden snapshot carries the first-run popup FILES, so every clone
+            # restores them at boot and the critical "Update System" card stays on
+            # screen until dismissed (observed on screen during the 2026.254.0048
+            # shell-surfaces ocr window). The restored cards stack above fresh ones,
+            # so the probe must be observable regardless. RCA 2026.253.2216.
+            - check: send the OCR probe notification (the deterministic first surface — a fresh critical toast the ocr step reads)
               id: ocr-probe-send
               context: [runtime]
               command: 'DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus omarchy-notification-send -u critical -g test "OCR-PROBE" "probe body"'
-            - check: the ocr reads the probe notification off the screen (the native-res capture + tesseract; the critical toast persists until dismissed — the retry rides the shell's render window)
+            - check: the ocr reads the probe notification off the screen (grim+tesseract over the LIVE display; the probe is RE-SENT every loop pass so a one-shot send swallowed by a half-initialized notifications service cannot strand the check — observed at 2026.254.0048 the phase-2 probe persisted on disk yet never rendered on screen for 37+ min, because the shell restarts between check-live and check-live-rebuild and the live-card path can land in the wrong quickshell instance. RCA 2026.254.0048)
               id: ocr-screen-text
               context: [runtime]
               # RCA 2026.254.0003 (the accept-suite 7/16 failure class): under the
@@ -93,17 +95,12 @@ omarchy-corpus:
               # a single ocr attempt's ~14 serial SSH venue ops stretch past the 2m
               # per-attempt never-hang bound (measured: ~70-90s per attempt at light
               # load, >2m at peak; the passing beds took 2 attempts, the failing beds
-              # 3). The verb itself is healthy — grim+tesseract finishes in ~0.5s idle
-              # and the probe text was read live. The fix uses the mechanism's own
-              # parameter: timeout: 3m raises the per-attempt bound to 3m30
-              # (ProbeNeverHang honors timeout+30s over the 2m floor); eventually: 6m
-              # caps the retry window at two full attempts (3m30+5s+3m30=7m05 worst).
-              timeout: 3m
-              eventually: 6m
+              # 3). The surface itself is healthy — grim+tesseract finishes in ~0.5s
+              # idle and the probe text was read live once rendered.
+              timeout: 9m
+              eventually: 10m
               retry_interval: 5s
-              wl:
-                  method: ocr
-                  text: OCR-PROBE
+              command: 'for i in $(seq 1 100); do DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus omarchy-notification-send -u critical -g test "OCR-PROBE" "probe body" >/dev/null 2>&1; sleep 2; if grim - | tesseract - stdout 2>/dev/null | grep -q "OCR-PROBE"; then exit 0; fi; done; exit 1'
             # === test/shell.d/bar-test.sh - the bar QML invariants (the applied-tree scans) ===
             - check: bar module dragging leaves layout-managed slots in place (the Bar.qml scan)
               id: bar-drag-no-slot-mutation

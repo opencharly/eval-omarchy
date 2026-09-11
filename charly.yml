@@ -904,16 +904,20 @@ check-omarchy-accept-plugins:
             # R0 — the recordings START here (the shared wrapper, ${INSTANCE}-keyed)
             - include: candy:omarchy-accept-rec-start
             # A — the plugin system surface
-            - check: the plugin registry serves
+            - check: the plugin registry serves (the omarchy CLI queries the live shell registry; the shell takes a while to come up after the clone boots - retry until it answers, the same IPC accept-shell-ping uses later. RCA 2026.254.0048)
               id: a-list
               context: [runtime]
               command: 'OMARCHY_PATH=/usr/share/omarchy omarchy plugin list'
-            - check: the plugin registry lists the core plugins
+              eventually: 240s
+              retry_interval: 5s
+            - check: the plugin registry lists the core plugins (same readiness retry)
               id: a-list-core
               context: [runtime]
               command: 'OMARCHY_PATH=/usr/share/omarchy omarchy plugin list'
               stdout:
                   - contains: omarchy
+              eventually: 240s
+              retry_interval: 5s
 
             # R1 — the recordings STOP here (the shared wrapper)
             - include: candy:omarchy-accept-rec-stop
@@ -1090,7 +1094,8 @@ check-omarchy-accept-matrix:
               expect_exit: 0
             - id: media
               kind: command
-              command: 'mkdir -p media/accept-$pr-$calver && cp .check/check-omarchy-accept-$pr/*/evidence/* media/accept-$pr-$calver/ 2>/dev/null; for f in cast gif mjpeg mp4 png; do find media/accept-$pr-$calver -name "*.$f" | grep -q . || { echo "missing $f for $pr" >&2; exit 1; }; done'
+              # Copy from the bed run's OWN (newest .check/<bed>/<calver>) dir only: the old */evidence/* glob hit GNU cp's "will not overwrite just-created" guard across multiple calver dirs (oldest silently won, stderr suppressed) and the publish was stale. RCA 2026.254.0048.
+              command: 'latest=$(ls -t .check/check-omarchy-accept-$pr 2>/dev/null | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" | head -1); [ -n "$latest" ] || { echo "no run dir for $pr" >&2; exit 1; }; mkdir -p media/accept-$pr-$latest && cp .check/check-omarchy-accept-$pr/$latest/evidence/* media/accept-$pr-$latest/ || { echo "media cp failed for $pr" >&2; exit 1; }; for f in cast gif mjpeg mp4 png; do find "media/accept-$pr-$latest" -name "*.$f" | grep -q . || { echo "missing $f for $pr" >&2; exit 1; }; done'
               expect_exit: 0
 
 # the acceptance SUITE: the ONE-command wrapper (zero extra parameters)
@@ -1111,11 +1116,11 @@ check-omarchy-accept-suite:
               expect_exit: 0
             - id: aggregate
               kind: command
-              command: 'for b in session shell-surfaces menu-bar panels apps system security hyprland monitors network update plugins agents theme-media power-audio dev-migrations; do test -d ".check/check-omarchy-accept-$b" || { echo "missing run dir: $b" >&2; exit 1; }; for f in cast gif mjpeg mp4 png; do find "media/accept-$b-"* -name "*.$f" | grep -q . || { echo "missing $f for $b" >&2; exit 1; }; done; done'
+              command: 'for b in session shell-surfaces menu-bar panels apps system security hyprland monitors network update plugins agents theme-media power-audio dev-migrations; do latest=$(ls -t ".check/check-omarchy-accept-$b" 2>/dev/null | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" | head -1); [ -n "$latest" ] || { echo "missing run dir: $b" >&2; exit 1; }; test -d ".check/check-omarchy-accept-$b/$latest/evidence" || { echo "no evidence for $b ($latest)" >&2; exit 1; }; test -d "media/accept-$b-$latest" || { echo "no media dir for $b ($latest) - the media stage did not publish this run" >&2; exit 1; }; for f in cast gif mjpeg mp4 png; do find ".check/check-omarchy-accept-$b/$latest/evidence" -name "*.$f" | grep -q . || { echo "missing $f evidence for $b ($latest)" >&2; exit 1; }; find "media/accept-$b-$latest" -name "*.$f" | grep -q . || { echo "missing $f media for $b ($latest)" >&2; exit 1; }; done; done'
               expect_exit: 0
             - id: report
               kind: command
-              command: 'echo "# Omarchy acceptance matrix" > eval/omarchy-acceptance-matrix.md; for b in session shell-surfaces menu-bar panels apps system security hyprland monitors network update plugins agents theme-media power-audio dev-migrations; do echo "- $b: $(ls media/accept-$b-*/ 2>/dev/null | tr "
+              command: 'echo "# Omarchy acceptance matrix" > eval/omarchy-acceptance-matrix.md; for b in session shell-surfaces menu-bar panels apps system security hyprland monitors network update plugins agents theme-media power-audio dev-migrations; do latest=$(ls -t ".check/check-omarchy-accept-$b" 2>/dev/null | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" | head -1); echo "- $b ($latest): $(ls media/accept-$b-$latest/ 2>/dev/null | tr "
 " " ")" >> eval/omarchy-acceptance-matrix.md; done'
               expect_exit: 0
 
