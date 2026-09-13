@@ -13,28 +13,29 @@ environments — read `VISION.md` for what that is and `README.md` for how it wo
   (`charly vm gpu status`).
 - The **omarchy distro import** (`omarchy: '@github.com/opencharly/distro-omarchy:…'`)
   resolved via the charly binary — no manual checkout needed.
-- The **golden chain** provisioned once: `charly check run check-omarchy-eval-base`
-  then `check-omarchy-eval-base-inst` (see `docs/golden-vm.md`).
+- The **golden chain** provisioned once per channel: `charly check run check-omarchy-eval-base`
+  then `check-omarchy-eval-base-inst` / `-edge-inst` / `-rc-inst` / `-dev-inst`
+  (see `docs/golden-vm.md`).
 
 ## How the lane works
 
-The pipeline is a set of **pi agents** committed in the opencharly umbrella
-(`.pi/agents/omarchy-{config-oracle,eval-runner,eval-supervisor,cold-reader}.md`)
-plus the `pi-omarchy-eval` package (skills + prompts). There is **no GitHub Action**
-in the eval path. The binding lane contract is `eval/PR-EVAL-LANE.md` (+ its
-`references/`); the report template is `eval/PR-EVAL-TEMPLATE.md`.
+The lane is the `eval-lane-plan` `kind: pipeline` entity in `charly.yml`, running on
+the `plugin-pipeline` engine. There is **no GitHub Action** in the eval path. The
+binding lane contract is the `omarchy-eval-*` skill entities in
+`candy/eval-lane/charly.yml`, generated to `marketplace/distros/skills/`; the report
+template is the inline `eval-lane-plan` template in `charly.yml`.
 
 ## Running one evaluation
 
 ```sh
-pi -p "<supervisor prompt> /eval-pr <N>"   # or invoke the agents directly
+charly pipeline run eval-lane-plan --pr <N>     # triage → control → eval → cold-read
 ```
 
 or, to run a single generated bed by hand:
 
 ```sh
-charly check run check-omarchy-pr-<N>-vm        # the eval bed (apply + checks + evidence)
-charly check run check-omarchy-pr-<N>-vm-probe  # the RED-PROBE twin (must FAIL exit 2)
+charly check run check-omarchy-pr-<N>-vm         # the eval bed (apply + checks + evidence)
+charly check run check-omarchy-pr-<N>-control    # the control twin (negated checks, must PASS)
 ```
 
 The bed files under `pr-beds/pr-<N>/` are **oracle-generated** — never hand-edit
@@ -43,8 +44,8 @@ preflight compares the plan's headSha with the live PR head.
 
 ## The publication gate
 
-Reports are rendered from `eval/PR-EVAL-TEMPLATE.md` (user-testing voice, the
-the `*Assisted-by:*` footer).
+Reports are rendered from the inline `eval-lane-plan` report template in
+`charly.yml` (user-testing voice, the `*Assisted-by:*` footer).
 **Nothing posts to omacom/omarchy without explicit operator approval.** Every posted
 comment is the operator's call, outside the repo's automated flows.
 
@@ -64,8 +65,9 @@ comment is the operator's call, outside the repo's automated flows.
 
 ## Which skills to load
 
-The lane instructions are the proper skills under `.agents/skills/` — see the index in
-`.agents/skills/omarchy-eval-lane/SKILL.md` (entry) and AGENTS.md R0. Load the entry + the
-skills your task touches (oracle for authoring beds, golden for provisioning, media
-for evidence, cold-reader for grading, full-loop for the redo contract) before any
+The lane instructions are the `omarchy-eval-*` skill entities in
+`candy/eval-lane/charly.yml` (generated to `marketplace/distros/skills/`) — see
+the entry `omarchy-eval` and AGENTS.md R0. Load the entry + the skills your
+task touches (oracle for authoring beds, golden for provisioning, media for
+evidence, cold-reader for grading, full-loop for the redo contract) before any
 eval work.
