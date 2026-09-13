@@ -1546,6 +1546,10 @@ eval-lane-plan:
       # the user-voice report contract (2026.252): the eval reads like a fellow
       # omarchy user who pulled the PR and tested it — NOT a maintainer audit.
       # No verdict section: what I did, what happened, what I'd suggest.
+      # ATTRIBUTION: every report from this template renders ONLY when the eval
+      # verdict is PASS or FAIL (the render-report stage's skip_when), so a live
+      # eval bed ALWAYS ran — the truthful tier is therefore "analysed on a live
+      # system", never "fully tested and validated" (R1).
       template: |-
         ---
         head: ${sha}
@@ -1561,7 +1565,7 @@ eval-lane-plan:
         Upstream's own corpus surfaces ran: ${corpus_run} (passed ${corpus_ok}) — the charly-native equivalents of omarchy's own tests, per the omarchy-corpus plan in charly.yml.
         ## Suggestions
         ${suggestions_body}
-        *Assisted-by: charly eval-lane agent ollama/deepseek-v4.1-flash:cloud (fully tested and validated)*
+        *Assisted-by: charly eval-lane agent ollama/deepseek-v4.1-flash:cloud (analysed on a live system)*
         *Tested-by: charly eval-lane (channel ${channel}, golden ${golden}, bed check-omarchy-pr-$pr-vm @ $calver)*
       frontmatter_schema: |-
         { "type": "object", "required": [pr, head, channel, class, tier, posted] }
@@ -1900,6 +1904,11 @@ eval-lane-plan:
         outputs: [executed_checks, control_ok, media_ok, corpus_run, corpus_ok, corpus_skipped]
       - id: not-testable
         kind: generate
+        # ATTRIBUTION: a not-testable record is triage-only — NO bed runs, and the
+        # triaged PR is typically a WIP CODE diff (not docs-only), so NO rulebook
+        # attribution tier is truthful here. It carries a plain disclosure instead
+        # of a tier: "(triage only — no validation performed)". Using a tier would
+        # assert a validation that did not happen (R1).
         template: |-
           ---
           head: ${sha}
@@ -1915,8 +1924,8 @@ eval-lane-plan:
           the lane will evaluate it like any other PR.
           ## Suggestions
           - Mark the PR ready for review when the behavior is implemented.
-          *Assisted-by: charly eval-lane agent ollama/deepseek-v4.1-flash:cloud (fully tested and validated)*
-          *Tested-by: charly eval-lane (channel ${channel}, golden ${golden}, bed check-omarchy-pr-$pr-vm)*
+          *Assisted-by: charly eval-lane agent ollama/deepseek-v4.1-flash:cloud (triage only — no validation performed)*
+          *Tested-by: charly eval-lane (triage only; no bed run)*
         vars:
           pr: "$pr"
           sha: "$env.PR_HEAD_SHA"

@@ -12,6 +12,29 @@ __pycache__/
 *.pyc
 .rollup-cache.json
 
+# large binary artifacts — a TYPE-level safety net so a disk image / recording /
+# screenshot can never be committed even if it lands OUTSIDE the dirs above
+# (the dir patterns cover media/ + output/, these cover a stray path).
+*.qcow2
+*.qcow
+*.iso
+*.raw
+*.img
+*.vmdk
+*.vdi
+*.mp4
+*.mjpeg
+*.m4v
+*.mov
+*.webm
+*.mkv
+*.avi
+*.gif
+*.cast
+*.png
+*.jpg
+*.jpeg
+
 # Deliberately NOT ignored (tracked as the lane produces them) so a fresh clone
 # can rerun every eval and read every result:
 #   pr-beds/                 the generated per-PR eval config (oracle-authored beds)
