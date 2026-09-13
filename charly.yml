@@ -1546,6 +1546,10 @@ eval-lane-plan:
       # the user-voice report contract (2026.252): the eval reads like a fellow
       # omarchy user who pulled the PR and tested it — NOT a maintainer audit.
       # No verdict section: what I did, what happened, what I'd suggest.
+      # ATTRIBUTION: every report from this template renders ONLY when the eval
+      # verdict is PASS or FAIL (the render-report stage's skip_when), so a live
+      # eval bed ALWAYS ran — the truthful tier is therefore "analysed on a live
+      # system", never "fully tested and validated" (R1).
       template: |-
         ---
         head: ${sha}
@@ -1900,6 +1904,8 @@ eval-lane-plan:
         outputs: [executed_checks, control_ok, media_ok, corpus_run, corpus_ok, corpus_skipped]
       - id: not-testable
         kind: generate
+        # ATTRIBUTION: a not-testable record is triage-only — NO bed runs — so its
+        # tier is a documentation-level review, never "fully tested and validated".
         template: |-
           ---
           head: ${sha}
