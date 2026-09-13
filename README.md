@@ -36,8 +36,8 @@ The repo serves **two roles**:
 | `check-omarchy-eval-dev-inst` | The DEV channel twin |
 
 Every evaluation clones its **channel golden** as a lean COW overlay, so each VM starts
-in seconds from the immutable golden. The golden survives every re-provision (RCA #7); a
-missing golden after capture is a BLOCK. The full provision/re-provision runbook
+in seconds from the immutable golden. The golden survives every re-provision — the runner
+verifies the golden is present before teardown; a missing golden after capture is a BLOCK. The full provision/re-provision runbook
 (delete-before-recapture, golden-presence gates, head-freshness) is the
 `omarchy-eval-golden` skill.
 
@@ -50,7 +50,8 @@ The lane is the `eval-lane-plan` `kind: pipeline` entity in `charly.yml`; it run
    channel golden; design PR-specific **known-red** checks. The plan IS the config: the
    oracle authors a DEDICATED `pr-beds/pr-<N>/charly.yml` (the clone + the eval bed with
    the `pr-apply` seam + the FULL record:/spice: evidence loop) and the negative
-   `pr-beds/pr-<N>-control/charly.yml` twin. Gate: `charly box validate`. No JSON plans.
+   `pr-beds/pr-<N>-control/charly.yml` twin. Gate: `charly box validate`; there is no committed
+   JSON plan file (the oracle's reply is data — the committed `charly.yml` IS the plan).
 2. **CONTROL.** The control bed runs the SAME checks NEGATED with NO apply — every
    negated check must PASS on the pristine golden, proving every PR-specific check is
    known-red. A control step that fails is a FAKE assertion, caught before the eval.
@@ -75,9 +76,9 @@ via `skills.corpus: "$env.EVAL_UMBRELLA/marketplace/distros/skills"`:
 
 | Skill | Covers |
 |---|---|
-| `omarchy-eval` | The entry: the state machine, the 10 standing rules, the per-PR §Template index, the work-lane schema |
+| `omarchy-eval` | The entry: the terminal states, the never-mock and known-red rules, the control bed, and cold-read validation |
 | `omarchy-eval-tiers` | What each tier proves (container vs live VM vs visual/GPU) + the mandatory routing rule |
-| `omarchy-eval-oracle` | The per-PR config the oracle authors: lean sizing, per-channel goldens, the ORACLE TEMPLATE, pr-apply seam, marker/path rules |
+| `omarchy-eval-oracle` | The triage contract: classify the PR, pick the channel golden, author the known-red checks at absolute system paths, and select the corpus |
 | `omarchy-eval-tests` | The corpus-selection map for the oracle |
 | `omarchy-eval-golden` | The golden VM chain runbook: provision/re-provision, golden-presence gates, per-PR clones, head-freshness |
 | `omarchy-eval-sequencing` | Lane sequencing, orphan discipline, concurrency (one lane per core) |
@@ -95,6 +96,9 @@ via `skills.corpus: "$env.EVAL_UMBRELLA/marketplace/distros/skills"`:
 | `candy/omarchy-pr-apply/` | The ONE runtime apply seam (`pr-apply <pr> <sha> <files...>`; the git-fetch block lives here and nowhere else) |
 | `candy/omarchy-eval-record/` `candy/omarchy-eval-harden/` | The recording + hardening candies baked into the instrumented goldens |
 | `candy/omarchy-corpus/` | The charly-native corpus surfaces the lane runs per PR |
+| `candy/omarchy-accept-*/` | The acceptance-corpus recording/plugin candies the `check-omarchy-accept-*` beds compose |
+| `scripts/verify-media.sh` | The media-presence gate helper |
+| `setup-defects/` | The improvement ledger — the lane's memory of caught setup defects |
 | `pr-beds/pr-<N>/charly.yml` | The committed per-PR eval bed (the charly.yml IS the plan) |
 | `pr-beds/pr-<N>-control/charly.yml` | The negative-control twin |
 | `eval/pr-<N>.md` | Per-PR evaluation reports |
@@ -106,7 +110,7 @@ via `skills.corpus: "$env.EVAL_UMBRELLA/marketplace/distros/skills"`:
 
 ```bash
 charly pipeline run eval-lane-plan --pr <N>     # triage → control → eval → cold-read
-charly check run check-omarchy-accept-suite     # the acceptance corpus
+charly pipeline run check-omarchy-accept-suite  # the acceptance corpus
 ```
 
 Requires a charly binary supporting the schema (`charly box validate` on the tree must be
