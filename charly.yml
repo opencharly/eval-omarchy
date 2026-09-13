@@ -1561,7 +1561,7 @@ eval-lane-plan:
         Upstream's own corpus surfaces ran: ${corpus_run} (passed ${corpus_ok}) — the charly-native equivalents of omarchy's own tests, per the omarchy-corpus plan in charly.yml.
         ## Suggestions
         ${suggestions_body}
-        *Assisted-by: charly eval-lane agent ollama/deepseek-v4.1-flash:cloud (fully tested and validated)*
+        *Assisted-by: charly eval-lane agent ollama/deepseek-v4.1-flash:cloud*
         *Tested-by: charly eval-lane (channel ${channel}, golden ${golden}, bed check-omarchy-pr-$pr-vm @ $calver)*
       frontmatter_schema: |-
         { "type": "object", "required": [pr, head, channel, class, tier, posted] }
@@ -1915,8 +1915,8 @@ eval-lane-plan:
           the lane will evaluate it like any other PR.
           ## Suggestions
           - Mark the PR ready for review when the behavior is implemented.
-          *Assisted-by: charly eval-lane agent ollama/deepseek-v4.1-flash:cloud (fully tested and validated)*
-          *Tested-by: charly eval-lane (channel ${channel}, golden ${golden}, bed check-omarchy-pr-$pr-vm)*
+          *Assisted-by: charly eval-lane agent ollama/deepseek-v4.1-flash:cloud (triage only — not tested)*
+          *Tested-by: charly eval-lane (triage only; no bed run)*
         vars:
           pr: "$pr"
           sha: "$env.PR_HEAD_SHA"
