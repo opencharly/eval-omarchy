@@ -12,8 +12,8 @@ __pycache__/
 *.pyc
 .rollup-cache.json
 
-# TRACKED (deliberately not ignored) so a fresh clone can rerun every eval and
-# read every result:
+# Deliberately NOT ignored (tracked as the lane produces them) so a fresh clone
+# can rerun every eval and read every result:
 #   pr-beds/                 the generated per-PR eval config (oracle-authored beds)
 #   metrics/                 the per-PR lane metrics
 #   stage-findings.yml       the per-run lane ledger dump

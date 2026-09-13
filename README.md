@@ -63,8 +63,8 @@ The lane is the `eval-lane-plan` `kind: pipeline` entity in `charly.yml`; it run
    SETUP_DEFECT, never a whited-out eval.
 
 Lean PRs run in parallel — one eval lane per core (`--lanes 16`). Reports land in
-`eval/pr-<N>.md`; the committed per-PR beds and the metrics make the whole run
-reproducible from a fresh clone.
+`eval/pr-<N>.md`; the per-PR beds and the metrics are tracked (committed as the
+lane runs), so the whole run is reproducible from a fresh clone.
 
 ## The skills
 
