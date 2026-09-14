@@ -1,0 +1,90 @@
+version: 2026.249.2125
+check-omarchy-pr-10116-vm:
+  vm:
+    from: check-omarchy-eval-base-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    add_candy:
+      - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+      - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+      # the updated pr-apply (the test-context closure) overwrites the
+      # golden's baked script at deploy time — no golden re-provision.
+      - omarchy-pr-apply
+      # upstream's own contract surfaces run per PR (the whole corpus is
+      # 25 cheap file-presence/CLI assertions (the selection vocabulary in the skill); the oracle's selection
+      # drives the report emphasis, the corpus facts land in the ledger)
+      - omarchy-corpus
+    plan:
+      - check: apply PR 10116 via the single apply seam
+        id: pr-apply
+        context: [runtime]
+        command: 'pr-apply 10116 075feebd8248a31f35a8c5914083bdb0f0aa615b shell/plugins/panels/network/Model.js shell/plugins/panels/network/Panel.qml test/shell.d/network-test.sh'
+      - check: the PR's OWN test suite passes on the applied system
+        id: pr-tests
+        context: [runtime]
+        command: 'for t in /usr/share/omarchy/test/shell.d/network-test.sh; do bash "$t" || exit 1; done'
+      - check: 'Model.js defines and exports the new shouldShowAdapter helper'
+        id: behavior-1
+        context: [runtime]
+        command: 'grep -q ''function shouldShowAdapter(devices, connectionType, wifiType, wiredType)'' /usr/share/omarchy/shell/plugins/panels/network/Model.js && grep -q ''shouldShowAdapter: shouldShowAdapter,'' /usr/share/omarchy/shell/plugins/panels/network/Model.js'
+      - check: 'Panel.qml derives showAdapter from the model with the active connection type and the Wifi/Wired device types'
+        id: behavior-2
+        context: [runtime]
+        command: 'grep -q ''readonly property bool showAdapter: Model.shouldShowAdapter('' /usr/share/omarchy/shell/plugins/panels/network/Panel.qml && grep -q ''networkDevices, info.type, DeviceType.Wifi, DeviceType.Wired)'' /usr/share/omarchy/shell/plugins/panels/network/Panel.qml'
+      - check: 'Panel.qml renders the Adapter label/value pair bound to root.info.iface and gated on root.showAdapter'
+        id: behavior-3
+        context: [runtime]
+        command: 'grep -q ''text: "Adapter"'' /usr/share/omarchy/shell/plugins/panels/network/Panel.qml && grep -q ''text: root.info.iface || "--"'' /usr/share/omarchy/shell/plugins/panels/network/Panel.qml && test "$(grep -c ''visible: root.showAdapter'' /usr/share/omarchy/shell/plugins/panels/network/Panel.qml)" -ge 2'
+      - check: 'the helper maps the connection type to the matching device type and returns true only when more than one device matches'
+        id: behavior-4
+        context: [runtime]
+        command: 'grep -q ''if (connectionType === "wifi") targetType = wifiType'' /usr/share/omarchy/shell/plugins/panels/network/Model.js && grep -q ''else if (connectionType === "ethernet") targetType = wiredType'' /usr/share/omarchy/shell/plugins/panels/network/Model.js && grep -q ''return count > 1'' /usr/share/omarchy/shell/plugins/panels/network/Model.js'
+      - check: start a terminal recording
+        id: rec-start
+        context: [runtime]
+        record: {method: start, record_mode: terminal, record_name: pr-10116}
+      - check: start the SPICE display video capture
+        id: rec-spice-start
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: record, action: start, record_name: pr-10116, fps: 5}
+      - check: drive the PR key command inside the recording
+        id: rec-drive
+        context: [runtime]
+        record:
+          method: run
+          record_name: pr-10116
+          # the drive is ARBITRARY shell — a block scalar, never a flow
+          # mapping (RCA 2026.252.2250: the inlined text broke the
+          # rendered YAML on shell metacharacters).
+          text: |-
+            bash /usr/share/omarchy/test/shell.d/network-test.sh
+          settle_ms: 1000
+      - check: capture the VM display via SPICE
+        id: rec-screen-spice
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: screenshot, artifact: /tmp/pr-10116.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+      - check: stop the SPICE capture and pull the MJPEG stream
+        id: rec-spice-stop
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: record, action: stop, record_name: pr-10116, artifact: /tmp/pr-10116.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+      - check: stop the terminal recording and pull the .cast
+        id: rec-stop
+        context: [runtime]
+        record: {method: stop, record_name: pr-10116, artifact: /tmp/pr-10116.cast, artifact_min_bytes: 200}
+      - check: render the .cast to an animated GIF
+        id: rec-gif
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        record: {method: gif, record_name: pr-10116, artifact: /tmp/pr-10116.gif, artifact_min_bytes: 100}
+      - run: transcode the SPICE MJPEG capture to MP4
+        id: rec-mp4
+        context: [runtime]
+        command: 'ffmpeg -y -loglevel error -i /tmp/pr-10116.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/pr-10116.mp4'

@@ -1,0 +1,90 @@
+version: 2026.249.2125
+check-omarchy-pr-10200-vm:
+  vm:
+    from: check-omarchy-eval-base-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    add_candy:
+      - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+      - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+      # the updated pr-apply (the test-context closure) overwrites the
+      # golden's baked script at deploy time — no golden re-provision.
+      - omarchy-pr-apply
+      # upstream's own contract surfaces run per PR (the whole corpus is
+      # 25 cheap file-presence/CLI assertions (the selection vocabulary in the skill); the oracle's selection
+      # drives the report emphasis, the corpus facts land in the ledger)
+      - omarchy-corpus
+    plan:
+      - check: apply PR 10200 via the single apply seam
+        id: pr-apply
+        context: [runtime]
+        command: 'pr-apply 10200 e13b3b4f83010ebeb894dc34f478a054b945cb39 bin/omarchy-default-editor manual/18-development-tools.md test/shell.d/default-apps-test.sh'
+      - check: the PR's OWN test suite passes on the applied system
+        id: pr-tests
+        context: [runtime]
+        command: 'for t in /usr/share/omarchy/test/shell.d/default-apps-test.sh; do bash "$t" || exit 1; done'
+      - check: 'omarchy-default-editor carries the new XDG sync call that applies the selection to the user mimeapps defaults'
+        id: behavior-1
+        context: [runtime]
+        command: 'grep -qF ''sync_xdg_defaults "$desktop_id"'' /usr/share/omarchy/bin/omarchy-default-editor'
+      - check: 'selecting code rewrites ~/.config/mimeapps.list so text/plain maps to code.desktop'
+        id: behavior-2
+        context: [runtime]
+        command: 'tmp=$(mktemp -d); mkdir -p "$tmp/bin"; printf ''#!/bin/bash\nexit 0\n'' > "$tmp/bin/code"; chmod +x "$tmp/bin/code"; PATH="$tmp/bin:$PATH" HOME="$tmp" timeout 60 bash /usr/share/omarchy/bin/omarchy-default-editor code </dev/null >/dev/null 2>&1; grep -Fxq ''text/plain=code.desktop'' "$tmp/.config/mimeapps.list"'
+      - check: 'selecting a GUI editor installs a per-user desktop override whose MimeType line declares text/plain'
+        id: behavior-3
+        context: [runtime]
+        command: 'tmp=$(mktemp -d); mkdir -p "$tmp/bin" "$tmp/data/applications"; printf ''#!/bin/bash\nexit 0\n'' > "$tmp/bin/code"; chmod +x "$tmp/bin/code"; printf ''[Desktop Entry]\nName=Code\nMimeType=application/x-code-workspace;\n'' > "$tmp/data/applications/code.desktop"; PATH="$tmp/bin:$PATH" HOME="$tmp" XDG_DATA_HOME="$tmp/data" timeout 60 bash /usr/share/omarchy/bin/omarchy-default-editor code </dev/null >/dev/null 2>&1; grep -q ''^MimeType=.*text/plain'' "$tmp/data/applications/code.desktop"'
+      - check: 'switching the default editor to nvim rewrites the text handlers to nvim.desktop while preserving the [Added Associations] section verbatim'
+        id: behavior-4
+        context: [runtime]
+        command: 'tmp=$(mktemp -d); mkdir -p "$tmp/bin" "$tmp/.config"; for b in code nvim; do printf ''#!/bin/bash\nexit 0\n'' > "$tmp/bin/$b"; chmod +x "$tmp/bin/$b"; done; printf ''[Default Applications]\ntext/plain=code.desktop\n\n[Added Associations]\ntext/plain=code.desktop;\n'' > "$tmp/.config/mimeapps.list"; PATH="$tmp/bin:$PATH" HOME="$tmp" timeout 60 bash /usr/share/omarchy/bin/omarchy-default-editor nvim </dev/null >/dev/null 2>&1; grep -Fxq ''text/plain=nvim.desktop'' "$tmp/.config/mimeapps.list" && grep -Fq ''[Added Associations]'' "$tmp/.config/mimeapps.list" && grep -Fq ''text/plain=code.desktop;'' "$tmp/.config/mimeapps.list"'
+      - check: start a terminal recording
+        id: rec-start
+        context: [runtime]
+        record: {method: start, record_mode: terminal, record_name: pr-10200}
+      - check: start the SPICE display video capture
+        id: rec-spice-start
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: record, action: start, record_name: pr-10200, fps: 5}
+      - check: drive the PR key command inside the recording
+        id: rec-drive
+        context: [runtime]
+        record:
+          method: run
+          record_name: pr-10200
+          # the drive is ARBITRARY shell — a block scalar, never a flow
+          # mapping (RCA 2026.252.2250: the inlined text broke the
+          # rendered YAML on shell metacharacters).
+          text: |-
+            tmp=$(mktemp -d); mkdir -p "$tmp/bin"; printf '#!/bin/bash\nexit 0\n' > "$tmp/bin/code"; chmod +x "$tmp/bin/code"; PATH="$tmp/bin:$PATH" HOME="$tmp" timeout 60 bash /usr/share/omarchy/bin/omarchy-default-editor code </dev/null; echo '--- ~/.config/mimeapps.list ---'; cat "$tmp/.config/mimeapps.list"; echo '--- ~/.local/share/applications/code.desktop ---'; cat "$tmp/.local/share/applications/code.desktop" 2>/dev/null
+          settle_ms: 1000
+      - check: capture the VM display via SPICE
+        id: rec-screen-spice
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: screenshot, artifact: /tmp/pr-10200.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+      - check: stop the SPICE capture and pull the MJPEG stream
+        id: rec-spice-stop
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: record, action: stop, record_name: pr-10200, artifact: /tmp/pr-10200.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+      - check: stop the terminal recording and pull the .cast
+        id: rec-stop
+        context: [runtime]
+        record: {method: stop, record_name: pr-10200, artifact: /tmp/pr-10200.cast, artifact_min_bytes: 200}
+      - check: render the .cast to an animated GIF
+        id: rec-gif
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        record: {method: gif, record_name: pr-10200, artifact: /tmp/pr-10200.gif, artifact_min_bytes: 100}
+      - run: transcode the SPICE MJPEG capture to MP4
+        id: rec-mp4
+        context: [runtime]
+        command: 'ffmpeg -y -loglevel error -i /tmp/pr-10200.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/pr-10200.mp4'

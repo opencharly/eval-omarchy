@@ -1,0 +1,29 @@
+version: 2026.249.2125
+check-omarchy-pr-10123-control:
+  vm:
+    from: check-omarchy-eval-base-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    plan:
+      # the NEGATIVE CONTROL: the negated checks on the PRISTINE golden.
+      # Every negated step must PASS (every original check failed without
+      # the PR = every knownRed claim holds). A control step failing means
+      # the original check passed without the PR — a FAKE assertion,
+      # caught at render, never shipped to a real eval.
+      - check: 'the installed manual carries the new ''Tile the Steam window'' section the PR adds'
+        id: behavior-1
+        context: [runtime]
+        command: '! ( grep -q ''^### Tile the Steam window$'' /usr/share/omarchy/manual/42-common-tweaks.md )'
+      - check: 'the documented override is the exact o.window rule the PR adds (class steam + title Steam, tile = true)'
+        id: behavior-2
+        context: [runtime]
+        command: '! ( grep -qF ''o.window({ class = "steam", title = "Steam" }, { tile = true })'' /usr/share/omarchy/manual/42-common-tweaks.md )'
+      - check: 'the doc tells the user to append the rule to ~/.config/hypr/hyprland.lua (the file the drive then loads)'
+        id: behavior-3
+        context: [runtime]
+        command: '! ( grep -q ''~/.config/hypr/hyprland.lua'' /usr/share/omarchy/manual/42-common-tweaks.md )'
+      - check: 'the doc states the last-match-wins scoping so only the main client tiles and the other Steam windows keep floating'
+        id: behavior-4
+        context: [runtime]
+        command: '! ( grep -q ''last match wins'' /usr/share/omarchy/manual/42-common-tweaks.md && grep -q ''keep floating'' /usr/share/omarchy/manual/42-common-tweaks.md )'

@@ -1,0 +1,90 @@
+version: 2026.249.2125
+check-omarchy-pr-10125-vm:
+  vm:
+    from: check-omarchy-eval-base-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    add_candy:
+      - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+      - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+      # the updated pr-apply (the test-context closure) overwrites the
+      # golden's baked script at deploy time — no golden re-provision.
+      - omarchy-pr-apply
+      # upstream's own contract surfaces run per PR (the whole corpus is
+      # 25 cheap file-presence/CLI assertions (the selection vocabulary in the skill); the oracle's selection
+      # drives the report emphasis, the corpus facts land in the ledger)
+      - omarchy-corpus
+    plan:
+      - check: apply PR 10125 via the single apply seam
+        id: pr-apply
+        context: [runtime]
+        command: 'pr-apply 10125 399665b58a317c50ff134555a9d9188d10ab4c9e bin/omarchy-capture-screenrecording test/shell.d/screenrecording-encoder-test.sh'
+      - check: the PR's OWN test suite passes on the applied system
+        id: pr-tests
+        context: [runtime]
+        command: 'for t in /usr/share/omarchy/test/shell.d/screenrecording-encoder-test.sh; do bash "$t" || exit 1; done'
+      - check: 'the installed recorder defines the Baffin CPU-encoder detector'
+        id: behavior-1
+        context: [runtime]
+        command: 'grep -q ''screenrecording_needs_cpu_encoder()'' /usr/share/omarchy/bin/omarchy-capture-screenrecording'
+      - check: 'the detector matches the Baffin device id 1002:67ef'
+        id: behavior-2
+        context: [runtime]
+        command: 'grep -qE ''1002:67ef'' /usr/share/omarchy/bin/omarchy-capture-screenrecording'
+      - check: 'the gpu-screen-recorder invocation forwards the encoder_args array'
+        id: behavior-3
+        context: [runtime]
+        command: 'grep -qF ''"${encoder_args[@]}"'' /usr/share/omarchy/bin/omarchy-capture-screenrecording'
+      - check: 'with a stubbed lspci reporting Baffin, the installed recorder starts gpu-screen-recorder with -encoder cpu'
+        id: behavior-4
+        context: [runtime]
+        command: 'tmp=$(mktemp -d) && export tmp && mkdir -p "$tmp/bin" "$tmp/Videos" && printf ''%s\n'' ''#!/bin/bash'' ''printf "%s\n" "$@" >"$tmp/args"'' ''while (($#)); do [[ $1 == -o ]] && { touch "$2"; break; }; shift; done'' >"$tmp/bin/gpu-screen-recorder" && printf ''%s\n'' ''#!/bin/bash'' ''printf "%s\n" "[{\"focused\":true,\"width\":1920,\"height\":1080}]"'' >"$tmp/bin/hyprctl" && printf ''%s\n'' ''#!/bin/bash'' ''printf "%s\n" "0000:01:00.0 0300: 1002:67ef (rev c0)"'' >"$tmp/bin/lspci" && for c in omarchy-hyprland-monitor-focused omarchy-shell omarchy-notification-send; do printf ''%s\n'' ''#!/bin/bash'' ''[[ ${0##*/} == omarchy-hyprland-monitor-focused ]] && echo eDP-1'' >"$tmp/bin/$c"; done && chmod +x "$tmp/bin"/* && HOME="$tmp" PATH="$tmp/bin:$PATH" OMARCHY_SCREENRECORD_DIR="$tmp/Videos" bash /usr/share/omarchy/bin/omarchy-capture-screenrecording --fullscreen && grep -Fx -- -encoder "$tmp/args" >/dev/null && grep -Fx -- cpu "$tmp/args" >/dev/null'
+      - check: start a terminal recording
+        id: rec-start
+        context: [runtime]
+        record: {method: start, record_mode: terminal, record_name: pr-10125}
+      - check: start the SPICE display video capture
+        id: rec-spice-start
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: record, action: start, record_name: pr-10125, fps: 5}
+      - check: drive the PR key command inside the recording
+        id: rec-drive
+        context: [runtime]
+        record:
+          method: run
+          record_name: pr-10125
+          # the drive is ARBITRARY shell — a block scalar, never a flow
+          # mapping (RCA 2026.252.2250: the inlined text broke the
+          # rendered YAML on shell metacharacters).
+          text: |-
+            tmp=$(mktemp -d); export tmp; mkdir -p "$tmp/bin" "$tmp/Videos"; printf '%s\n' '#!/bin/bash' 'printf "%s\n" "$@" >"$tmp/args"' 'while (($#)); do [[ $1 == -o ]] && { touch "$2"; break; }; shift; done' >"$tmp/bin/gpu-screen-recorder"; printf '%s\n' '#!/bin/bash' 'printf "%s\n" "[{\"focused\":true,\"width\":1920,\"height\":1080}]"' >"$tmp/bin/hyprctl"; printf '%s\n' '#!/bin/bash' 'printf "%s\n" "0000:01:00.0 0300: 1002:67ef (rev c0)"' >"$tmp/bin/lspci"; for c in omarchy-hyprland-monitor-focused omarchy-shell omarchy-notification-send; do printf '%s\n' '#!/bin/bash' '[[ ${0##*/} == omarchy-hyprland-monitor-focused ]] && echo eDP-1' >"$tmp/bin/$c"; done; chmod +x "$tmp/bin"/*; HOME="$tmp" PATH="$tmp/bin:$PATH" OMARCHY_SCREENRECORD_DIR="$tmp/Videos" bash /usr/share/omarchy/bin/omarchy-capture-screenrecording --fullscreen; echo "--- recorder args ---"; cat "$tmp/args"
+          settle_ms: 1000
+      - check: capture the VM display via SPICE
+        id: rec-screen-spice
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: screenshot, artifact: /tmp/pr-10125.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+      - check: stop the SPICE capture and pull the MJPEG stream
+        id: rec-spice-stop
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: record, action: stop, record_name: pr-10125, artifact: /tmp/pr-10125.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+      - check: stop the terminal recording and pull the .cast
+        id: rec-stop
+        context: [runtime]
+        record: {method: stop, record_name: pr-10125, artifact: /tmp/pr-10125.cast, artifact_min_bytes: 200}
+      - check: render the .cast to an animated GIF
+        id: rec-gif
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        record: {method: gif, record_name: pr-10125, artifact: /tmp/pr-10125.gif, artifact_min_bytes: 100}
+      - run: transcode the SPICE MJPEG capture to MP4
+        id: rec-mp4
+        context: [runtime]
+        command: 'ffmpeg -y -loglevel error -i /tmp/pr-10125.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/pr-10125.mp4'

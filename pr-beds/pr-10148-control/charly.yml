@@ -1,0 +1,29 @@
+version: 2026.249.2125
+check-omarchy-pr-10148-control:
+  vm:
+    from: check-omarchy-eval-base-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    plan:
+      # the NEGATIVE CONTROL: the negated checks on the PRISTINE golden.
+      # Every negated step must PASS (every original check failed without
+      # the PR = every knownRed claim holds). A control step failing means
+      # the original check passed without the PR — a FAKE assertion,
+      # caught at render, never shipped to a real eval.
+      - check: 'the shipped WirePlumber rule exists and matches vendor 0x2708 with api.alsa.soft-mixer=true'
+        id: behavior-1
+        context: [runtime]
+        command: '! ( test -f /usr/share/omarchy/config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf && grep -q ''device.vendor.id = "0x2708"'' /usr/share/omarchy/config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf && grep -q ''api.alsa.soft-mixer = true'' /usr/share/omarchy/config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf )'
+      - check: 'the migration script exists and carries the vendor guard, the audio restart and the Speaker reset'
+        id: behavior-2
+        context: [runtime]
+        command: '! ( test -f /usr/share/omarchy/migrations/1788513270.sh && grep -q ''2708:'' /usr/share/omarchy/migrations/1788513270.sh && grep -q ''omarchy-restart-audio'' /usr/share/omarchy/migrations/1788513270.sh && grep -q ''sset Speaker 100%'' /usr/share/omarchy/migrations/1788513270.sh )'
+      - check: 'with an Audient card attached the migration seeds the shipped rule, restarts audio, resets only the Audient card''s Speaker element, and leaves other vendors alone'
+        id: behavior-3
+        context: [runtime]
+        command: '! ( d=$(mktemp -d) && mkdir -p "$d/home" "$d/asound/card0" "$d/asound/card2" "$d/bin" && printf ''8086:2668\n'' > "$d/asound/card0/usbid" && printf ''2708:0002\n'' > "$d/asound/card2/usbid" && printf ''#!/bin/bash\necho omarchy-restart-audio >>"$CALLS"\n'' > "$d/bin/omarchy-restart-audio" && printf ''#!/bin/bash\necho amixer $* >>"$CALLS"\n'' > "$d/bin/amixer" && chmod +x "$d/bin"/* && CALLS="$d/calls" HOME="$d/home" OMARCHY_PATH=/usr/share/omarchy OMARCHY_ALSA_PROCFS="$d/asound" PATH="$d/bin:/usr/share/omarchy/bin:$PATH" bash /usr/share/omarchy/migrations/1788513270.sh && cmp -s "$d/home/.config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf" /usr/share/omarchy/config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf && grep -qx ''omarchy-restart-audio'' "$d/calls" && grep -qx ''amixer -c 2 sset Speaker 100%'' "$d/calls" && ! grep -q ''amixer -c 0'' "$d/calls" )'
+      - check: 'with no Audient card attached the migration still seeds the rule but touches no audio state'
+        id: behavior-4
+        context: [runtime]
+        command: '! ( d=$(mktemp -d) && mkdir -p "$d/home" "$d/asound/card0" "$d/bin" && printf ''8086:2668\n'' > "$d/asound/card0/usbid" && printf ''#!/bin/bash\necho omarchy-restart-audio >>"$CALLS"\n'' > "$d/bin/omarchy-restart-audio" && printf ''#!/bin/bash\necho amixer $* >>"$CALLS"\n'' > "$d/bin/amixer" && chmod +x "$d/bin"/* && CALLS="$d/calls" HOME="$d/home" OMARCHY_PATH=/usr/share/omarchy OMARCHY_ALSA_PROCFS="$d/asound" PATH="$d/bin:/usr/share/omarchy/bin:$PATH" bash /usr/share/omarchy/migrations/1788513270.sh && cmp -s "$d/home/.config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf" /usr/share/omarchy/config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf && test ! -s "$d/calls" )'

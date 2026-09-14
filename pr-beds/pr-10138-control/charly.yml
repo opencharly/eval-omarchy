@@ -1,0 +1,37 @@
+version: 2026.249.2125
+check-omarchy-pr-10138-control:
+  vm:
+    from: check-omarchy-eval-dev-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    plan:
+      # the NEGATIVE CONTROL: the negated checks on the PRISTINE golden.
+      # Every negated step must PASS (every original check failed without
+      # the PR = every knownRed claim holds). A control step failing means
+      # the original check passed without the PR — a FAKE assertion,
+      # caught at render, never shipped to a real eval.
+      - check: 'the new qs.Commons Wallclock singleton is installed and reports a step through the tested predicate, with resync toggling SystemClock.enabled'
+        id: behavior-1
+        context: [runtime]
+        command: '! ( test -f /usr/share/omarchy/shell/Commons/Wallclock.qml && grep -q ''isDiscontinuity(elapsed, root.interval, root.threshold)'' /usr/share/omarchy/shell/Commons/Wallclock.qml && grep -q ''clock.enabled = false'' /usr/share/omarchy/shell/Commons/Wallclock.qml && grep -q ''clock.enabled = true'' /usr/share/omarchy/shell/Commons/Wallclock.qml )'
+      - check: 'WallclockMath.isDiscontinuity flags a real step (forward, eight-hour suspend, backwards) and ignores an on-time or merely-late tick'
+        id: behavior-2
+        context: [runtime]
+        command: '! ( node -e "const m=require(''/usr/share/omarchy/shell/Commons/WallclockMath.js''); process.exit(m.isDiscontinuity(4000,1000,3000) && m.isDiscontinuity(8*60*60*1000,1000,3000) && m.isDiscontinuity(-5000,1000,3000) && !m.isDiscontinuity(1000,1000,3000) && !m.isDiscontinuity(1400,1000,3000) && !m.isDiscontinuity(3999,1000,3000) ? 0 : 1)" )'
+      - check: 'Wallclock is registered as a Commons singleton so the clock widget and panel can import it'
+        id: behavior-3
+        context: [runtime]
+        command: '! ( grep -q ''^singleton Wallclock 1.0 Wallclock.qml'' /usr/share/omarchy/shell/Commons/qmldir )'
+      - check: 'the bar clock widget wires Wallclock.onJumped to Wallclock.resync(clock)'
+        id: behavior-4
+        context: [runtime]
+        command: '! ( grep -Pzoq ''target: Wallclock\s*\n\s*function onJumped\(\) \{ Wallclock\.resync\(clock\) \}'' /usr/share/omarchy/shell/plugins/panels/clock/BarWidget.qml )'
+      - check: 'the calendar panel resyncs on a wall-clock step and does not call refresh() (which would drag an open calendar back to today)'
+        id: behavior-5
+        context: [runtime]
+        command: '! ( grep -Pzoq ''target: Wallclock\s*\n\s*function onJumped\(\) \{ Wallclock\.resync\(clock\) \}'' /usr/share/omarchy/shell/plugins/panels/clock/Panel.qml && ! grep -Pzoq ''function onJumped\(\) \{[^}]*refresh\(\)'' /usr/share/omarchy/shell/plugins/panels/clock/Panel.qml )'
+      - check: 'docs/omarchy-shell.md documents the Wallclock jump signal and Wallclock.resync(clock) for third-party clock plugins'
+        id: behavior-6
+        context: [runtime]
+        command: '! ( grep -q ''Wallclock.resync(clock)'' /usr/share/omarchy/docs/omarchy-shell.md && grep -q ''onJumped'' /usr/share/omarchy/docs/omarchy-shell.md )'

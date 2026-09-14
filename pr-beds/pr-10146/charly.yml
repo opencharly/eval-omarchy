@@ -1,0 +1,102 @@
+version: 2026.249.2125
+check-omarchy-pr-10146-vm:
+  vm:
+    from: check-omarchy-eval-base-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    add_candy:
+      - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+      - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+      # the updated pr-apply (the test-context closure) overwrites the
+      # golden's baked script at deploy time — no golden re-provision.
+      - omarchy-pr-apply
+      # upstream's own contract surfaces run per PR (the whole corpus is
+      # 25 cheap file-presence/CLI assertions (the selection vocabulary in the skill); the oracle's selection
+      # drives the report emphasis, the corpus facts land in the ledger)
+      - omarchy-corpus
+    plan:
+      - check: apply PR 10146 via the single apply seam
+        id: pr-apply
+        context: [runtime]
+        command: 'pr-apply 10146 a3e951158dcac624ced50d4df9b0a33e68539468 docs/notifications.md shell/plugins/notifications/NotificationLogic.js shell/plugins/notifications/Service.qml test/shell.d/notifications-test.sh'
+      - check: the PR's OWN test suite passes on the applied system
+        id: pr-tests
+        context: [runtime]
+        command: 'for t in /usr/share/omarchy/test/shell.d/notifications-test.sh; do bash "$t" || exit 1; done'
+      - check: 'NotificationLogic exports the new popupGroup helper'
+        id: behavior-1
+        context: [runtime]
+        command: 'grep -q ''popupGroup: popupGroup'' /usr/share/omarchy/shell/plugins/notifications/NotificationLogic.js'
+      - check: 'popupGroup(model, index) is implemented in NotificationLogic.js'
+        id: behavior-2
+        context: [runtime]
+        command: 'grep -q ''function popupGroup(model, index)'' /usr/share/omarchy/shell/plugins/notifications/NotificationLogic.js'
+      - check: 'popupGroup counts exact app+summary+body matches, marks only the newest row leader, and does not group a different body'
+        id: behavior-3
+        context: [runtime]
+        command: 'node -e "const n=require(''/usr/share/omarchy/shell/plugins/notifications/NotificationLogic.js'');const rows=[{app:''ChatGPT'',summary:''Task finished'',body:''ready''},{app:''ChatGPT'',summary:''Task finished'',body:''ready''},{app:''ChatGPT'',summary:''Task finished'',body:''other''}];const a=n.popupGroup(rows,0),b=n.popupGroup(rows,1),c=n.popupGroup(rows,2);process.exit(a.count===2&&a.leader===true&&b.count===2&&b.leader===false&&c.count===1&&c.leader===true?0:1)"'
+      - check: 'the popup delegate derives its group from the complete live popupModel'
+        id: behavior-4
+        context: [runtime]
+        command: 'grep -q ''readonly property var group: NotificationLogic.popupGroup(popupModel, cardSlot.index)'' /usr/share/omarchy/shell/plugins/notifications/Service.qml'
+      - check: 'only the newest member of an exact group is drawn'
+        id: behavior-5
+        context: [runtime]
+        command: 'grep -q ''visible: cardSlot.group.leader'' /usr/share/omarchy/shell/plugins/notifications/Service.qml'
+      - check: 'a grouped card prefixes its summary with the group size (mako''s (%g) %s format)'
+        id: behavior-6
+        context: [runtime]
+        command: 'grep -q ''cardSlot.group.count > 1'' /usr/share/omarchy/shell/plugins/notifications/Service.qml && grep -q ''"(" + cardSlot.group.count + ") " + cardSlot.summary'' /usr/share/omarchy/shell/plugins/notifications/Service.qml'
+      - check: 'the PR''s own grouping assertions landed and the notifications suite passes on the applied tree'
+        id: behavior-7
+        context: [runtime]
+        command: 'grep -q ''popupGroup(groupedPopups, 0)'' /usr/share/omarchy/test/shell.d/notifications-test.sh && bash /usr/share/omarchy/test/shell.d/notifications-test.sh'
+      - check: start a terminal recording
+        id: rec-start
+        context: [runtime]
+        record: {method: start, record_mode: terminal, record_name: pr-10146}
+      - check: start the SPICE display video capture
+        id: rec-spice-start
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: record, action: start, record_name: pr-10146, fps: 5}
+      - check: drive the PR key command inside the recording
+        id: rec-drive
+        context: [runtime]
+        record:
+          method: run
+          record_name: pr-10146
+          # the drive is ARBITRARY shell — a block scalar, never a flow
+          # mapping (RCA 2026.252.2250: the inlined text broke the
+          # rendered YAML on shell metacharacters).
+          text: |-
+            notify-send -a ChatGPT 'Task finished' 'The answer is ready'; sleep 0.3; notify-send -a ChatGPT 'Task finished' 'The answer is ready'; sleep 1; bash /usr/share/omarchy/test/shell.d/notifications-test.sh
+          settle_ms: 1000
+      - check: capture the VM display via SPICE
+        id: rec-screen-spice
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: screenshot, artifact: /tmp/pr-10146.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+      - check: stop the SPICE capture and pull the MJPEG stream
+        id: rec-spice-stop
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: record, action: stop, record_name: pr-10146, artifact: /tmp/pr-10146.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+      - check: stop the terminal recording and pull the .cast
+        id: rec-stop
+        context: [runtime]
+        record: {method: stop, record_name: pr-10146, artifact: /tmp/pr-10146.cast, artifact_min_bytes: 200}
+      - check: render the .cast to an animated GIF
+        id: rec-gif
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        record: {method: gif, record_name: pr-10146, artifact: /tmp/pr-10146.gif, artifact_min_bytes: 100}
+      - run: transcode the SPICE MJPEG capture to MP4
+        id: rec-mp4
+        context: [runtime]
+        command: 'ffmpeg -y -loglevel error -i /tmp/pr-10146.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/pr-10146.mp4'

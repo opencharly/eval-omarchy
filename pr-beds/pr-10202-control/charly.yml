@@ -1,0 +1,45 @@
+version: 2026.249.2125
+check-omarchy-pr-10202-control:
+  vm:
+    from: check-omarchy-eval-base-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    plan:
+      # the NEGATIVE CONTROL: the negated checks on the PRISTINE golden.
+      # Every negated step must PASS (every original check failed without
+      # the PR = every knownRed claim holds). A control step failing means
+      # the original check passed without the PR — a FAKE assertion,
+      # caught at render, never shipped to a real eval.
+      - check: 'install/config/locate.sh pins the privileged config target to /etc/updatedb.conf'
+        id: behavior-1
+        context: [runtime]
+        command: '! ( grep -qxF ''UPDATEDB_CONF_PATH=/etc/updatedb.conf'' /usr/share/omarchy/install/config/locate.sh )'
+      - check: 'the environment-controlled OMARCHY_UPDATEDB_CONF_PATH is gone from the locate config script'
+        id: behavior-2
+        context: [runtime]
+        command: '! ( ! grep -qF ''OMARCHY_UPDATEDB_CONF_PATH'' /usr/share/omarchy/install/config/locate.sh )'
+      - check: 'PRUNEPATHS is rewritten by the fixed awk program fed through the environment, not interpolated into a sed program'
+        id: behavior-3
+        context: [runtime]
+        command: '! ( grep -qF ''rewrite_updatedb_prunepaths() ('' /usr/share/omarchy/install/config/locate.sh && grep -qF ''UPDATEDB_PRUNEPATHS="$replacement" awk'' /usr/share/omarchy/install/config/locate.sh )'
+      - check: 'the PRUNEPATHS branch calls the new rewrite helper instead of sed -i'
+        id: behavior-4
+        context: [runtime]
+        command: '! ( grep -qF ''rewrite_updatedb_prunepaths "/.snapshots${pruned:+ $pruned}"'' /usr/share/omarchy/install/config/locate.sh )'
+      - check: 'the old sed -i PRUNEPATHS rewrite that compiled config data into a sed program is gone'
+        id: behavior-5
+        context: [runtime]
+        command: '! ( ! grep -qF ''sed -i -E "s|^[[:space:]]*PRUNEPATHS'' /usr/share/omarchy/install/config/locate.sh )'
+      - check: 'the rewrite preserves ownership/mode and publishes atomically via mv -fT'
+        id: behavior-6
+        context: [runtime]
+        command: '! ( grep -qF ''cp --attributes-only --preserve=all -- "$UPDATEDB_CONF_PATH" "$rewritten_conf"'' /usr/share/omarchy/install/config/locate.sh && grep -qF ''mv -fT -- "$rewritten_conf" "$UPDATEDB_CONF_PATH"'' /usr/share/omarchy/install/config/locate.sh )'
+      - check: 'migrations/1784809451.sh pins the config path and no longer forwards an env-selected path through sudo'
+        id: behavior-7
+        context: [runtime]
+        command: '! ( grep -qxF ''UPDATEDB_CONF_PATH=/etc/updatedb.conf'' /usr/share/omarchy/migrations/1784809451.sh && ! grep -qF ''OMARCHY_UPDATEDB_CONF_PATH'' /usr/share/omarchy/migrations/1784809451.sh && grep -qF ''as_root bash -euo pipefail "$locate_config_script"'' /usr/share/omarchy/migrations/1784809451.sh )'
+      - check: 'a sed-like PRUNEPATHS value is preserved verbatim as data and never executed by the rewrite'
+        id: behavior-8
+        context: [runtime]
+        command: '! ( tmp=$(mktemp -d); grep -qxF ''UPDATEDB_CONF_PATH=/etc/updatedb.conf'' /usr/share/omarchy/install/config/locate.sh || exit 1; payload=''\x22;id > ''"$tmp"''/pwned;:|ew ''; printf ''PRUNEPATHS = "%s"\n'' "$payload" > "$tmp/updatedb.conf"; sed "s|^UPDATEDB_CONF_PATH=/etc/updatedb.conf$|UPDATEDB_CONF_PATH=$tmp/updatedb.conf|" /usr/share/omarchy/install/config/locate.sh | bash -euo pipefail; test ! -e "$tmp/pwned" && grep -qF ''PRUNEPATHS = "/.snapshots'' "$tmp/updatedb.conf" )'

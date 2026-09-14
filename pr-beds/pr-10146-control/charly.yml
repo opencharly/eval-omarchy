@@ -1,0 +1,41 @@
+version: 2026.249.2125
+check-omarchy-pr-10146-control:
+  vm:
+    from: check-omarchy-eval-base-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    plan:
+      # the NEGATIVE CONTROL: the negated checks on the PRISTINE golden.
+      # Every negated step must PASS (every original check failed without
+      # the PR = every knownRed claim holds). A control step failing means
+      # the original check passed without the PR — a FAKE assertion,
+      # caught at render, never shipped to a real eval.
+      - check: 'NotificationLogic exports the new popupGroup helper'
+        id: behavior-1
+        context: [runtime]
+        command: '! ( grep -q ''popupGroup: popupGroup'' /usr/share/omarchy/shell/plugins/notifications/NotificationLogic.js )'
+      - check: 'popupGroup(model, index) is implemented in NotificationLogic.js'
+        id: behavior-2
+        context: [runtime]
+        command: '! ( grep -q ''function popupGroup(model, index)'' /usr/share/omarchy/shell/plugins/notifications/NotificationLogic.js )'
+      - check: 'popupGroup counts exact app+summary+body matches, marks only the newest row leader, and does not group a different body'
+        id: behavior-3
+        context: [runtime]
+        command: '! ( node -e "const n=require(''/usr/share/omarchy/shell/plugins/notifications/NotificationLogic.js'');const rows=[{app:''ChatGPT'',summary:''Task finished'',body:''ready''},{app:''ChatGPT'',summary:''Task finished'',body:''ready''},{app:''ChatGPT'',summary:''Task finished'',body:''other''}];const a=n.popupGroup(rows,0),b=n.popupGroup(rows,1),c=n.popupGroup(rows,2);process.exit(a.count===2&&a.leader===true&&b.count===2&&b.leader===false&&c.count===1&&c.leader===true?0:1)" )'
+      - check: 'the popup delegate derives its group from the complete live popupModel'
+        id: behavior-4
+        context: [runtime]
+        command: '! ( grep -q ''readonly property var group: NotificationLogic.popupGroup(popupModel, cardSlot.index)'' /usr/share/omarchy/shell/plugins/notifications/Service.qml )'
+      - check: 'only the newest member of an exact group is drawn'
+        id: behavior-5
+        context: [runtime]
+        command: '! ( grep -q ''visible: cardSlot.group.leader'' /usr/share/omarchy/shell/plugins/notifications/Service.qml )'
+      - check: 'a grouped card prefixes its summary with the group size (mako''s (%g) %s format)'
+        id: behavior-6
+        context: [runtime]
+        command: '! ( grep -q ''cardSlot.group.count > 1'' /usr/share/omarchy/shell/plugins/notifications/Service.qml && grep -q ''"(" + cardSlot.group.count + ") " + cardSlot.summary'' /usr/share/omarchy/shell/plugins/notifications/Service.qml )'
+      - check: 'the PR''s own grouping assertions landed and the notifications suite passes on the applied tree'
+        id: behavior-7
+        context: [runtime]
+        command: '! ( grep -q ''popupGroup(groupedPopups, 0)'' /usr/share/omarchy/test/shell.d/notifications-test.sh && bash /usr/share/omarchy/test/shell.d/notifications-test.sh )'

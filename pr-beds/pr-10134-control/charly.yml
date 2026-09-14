@@ -1,0 +1,29 @@
+version: 2026.249.2125
+check-omarchy-pr-10134-control:
+  vm:
+    from: check-omarchy-eval-base-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    plan:
+      # the NEGATIVE CONTROL: the negated checks on the PRISTINE golden.
+      # Every negated step must PASS (every original check failed without
+      # the PR = every knownRed claim holds). A control step failing means
+      # the original check passed without the PR — a FAKE assertion,
+      # caught at render, never shipped to a real eval.
+      - check: 'The generated Omarchy color theme inside the VS Code-family extension dir is a real file, not a symlink into current/theme'
+        id: behavior-1
+        context: [runtime]
+        command: '! ( bash /usr/share/omarchy/bin/omarchy-theme-set-vscode >/dev/null 2>&1; f=$(find "$HOME" -maxdepth 6 -path ''*extensions*'' -name omarchy-color-theme.json 2>/dev/null | head -1); [ -n "$f" ] && [ -f "$f" ] && [ ! -L "$f" ] )'
+      - check: 'The generated extension manifest declares "_watch": true on the Omarchy theme contribution so VS Code attaches its ThemeFileWatcher'
+        id: behavior-2
+        context: [runtime]
+        command: '! ( p=$(find "$HOME" -maxdepth 6 -path ''*extensions*omarchy*'' -name package.json 2>/dev/null | head -1); [ -n "$p" ] && grep -q ''"_watch": true'' "$p" )'
+      - check: 'The generated extension version is derived from the theme content (1.0.<cksum of the theme file>) so a palette change invalidates the editor''s cached registry entry'
+        id: behavior-3
+        context: [runtime]
+        command: '! ( p=$(find "$HOME" -maxdepth 6 -path ''*extensions*omarchy*'' -name package.json 2>/dev/null | head -1); f=$(find "$HOME" -maxdepth 6 -path ''*extensions*'' -name omarchy-color-theme.json 2>/dev/null | head -1); [ -n "$p" ] && [ -n "$f" ] && [ "$(grep -o ''"version": *"[^"]*"'' "$p" | head -1 | cut -d''"'' -f4)" = "1.0.$(cksum "$f" | cut -d'' '' -f1)" ] )'
+      - check: 'The script no longer symlinks the theme into the extension dir (the removed ln -sfn line)'
+        id: behavior-4
+        context: [runtime]
+        command: '! ( ! grep -q ''ln -sfn "$GENERATED_THEME" "$ext_dir/themes/omarchy-color-theme.json"'' /usr/share/omarchy/bin/omarchy-theme-set-vscode )'

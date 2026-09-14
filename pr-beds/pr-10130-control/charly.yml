@@ -1,0 +1,33 @@
+version: 2026.249.2125
+check-omarchy-pr-10130-control:
+  vm:
+    from: check-omarchy-eval-base-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    plan:
+      # the NEGATIVE CONTROL: the negated checks on the PRISTINE golden.
+      # Every negated step must PASS (every original check failed without
+      # the PR = every knownRed claim holds). A control step failing means
+      # the original check passed without the PR — a FAKE assertion,
+      # caught at render, never shipped to a real eval.
+      - check: 'shell/plugins/lock/Service.qml declares the new IdleMonitor that is enabled only while locked, ignores inhibitors, and re-arms the blank on every resume'
+        id: behavior-1
+        context: [runtime]
+        command: '! ( grep -Pzo ''IdleMonitor \{\s*id: activityMonitor[\s\S]*?enabled: root\.lockRequested[\s\S]*?timeout: 1[\s\S]*?respectInhibitors: false[\s\S]*?onIsIdleChanged: if \(!isIdle\) root\.handleActivityResumed\(\)'' /usr/share/omarchy/shell/plugins/lock/Service.qml >/dev/null )'
+      - check: 'the new handleActivityResumed() gates on lockRequested/authenticatingPassword, journals blank-rearmed: activity only when the timer was spent, and re-arms the blank timer'
+        id: behavior-2
+        context: [runtime]
+        command: '! ( grep -Pzo ''function handleActivityResumed\(\) \{[\s\S]*?if \(!lockRequested \|\| authenticatingPassword\) return[\s\S]*?logEvent\("blank-rearmed: activity"\)[\s\S]*?armBlankTimer\(\)'' /usr/share/omarchy/shell/plugins/lock/Service.qml >/dev/null )'
+      - check: 'the lock service exposes blankArmed (idleBlankTimer.running) and the activityMonitor alias, and lock status reports blankArmed/activityIdle'
+        id: behavior-3
+        context: [runtime]
+        command: '! ( grep -q ''readonly property bool blankArmed: idleBlankTimer.running'' /usr/share/omarchy/shell/plugins/lock/Service.qml && grep -q ''readonly property alias activityMonitor: activityMonitor'' /usr/share/omarchy/shell/plugins/lock/Service.qml && grep -q ''blankArmed: root.blankArmed'' /usr/share/omarchy/shell/plugins/lock/Service.qml && grep -q ''activityIdle: root.activityMonitor.isIdle'' /usr/share/omarchy/shell/plugins/lock/Service.qml )'
+      - check: 'the blank process journals blank-started when it spawns, so the re-armed blank is observable in the journal'
+        id: behavior-4
+        context: [runtime]
+        command: '! ( grep -Pzo ''id: blankProcess[\s\S]*?onStarted: root\.logEvent\("blank-started"\)'' /usr/share/omarchy/shell/plugins/lock/Service.qml >/dev/null )'
+      - check: 'the PR''s own regression test and its quickshell fixture are installed at their system paths and the test script parses'
+        id: behavior-5
+        context: [runtime]
+        command: '! ( test -f /usr/share/omarchy/test/shell.d/lock-activity-reblank-test.sh && bash -n /usr/share/omarchy/test/shell.d/lock-activity-reblank-test.sh && test -f /usr/share/omarchy/test/shell.d/fixtures/lock-activity-reblank/shell.qml )'

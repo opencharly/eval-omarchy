@@ -1,0 +1,29 @@
+version: 2026.249.2125
+check-omarchy-pr-10129-control:
+  vm:
+    from: check-omarchy-eval-base-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    plan:
+      # the NEGATIVE CONTROL: the negated checks on the PRISTINE golden.
+      # Every negated step must PASS (every original check failed without
+      # the PR = every knownRed claim holds). A control step failing means
+      # the original check passed without the PR — a FAKE assertion,
+      # caught at render, never shipped to a real eval.
+      - check: 'the new presentation-restore helper is installed in the omarchy bin tree with its float dispatch'
+        id: behavior-1
+        context: [runtime]
+        command: '! ( test -f /usr/share/omarchy/bin/omarchy-hyprland-window-restore-presentation && grep -qF ''hl.dsp.window.float({ window = "$window", action = "on" })'' /usr/share/omarchy/bin/omarchy-hyprland-window-restore-presentation )'
+      - check: 'omarchy-restart-shell re-applies the presentation float after the new shell answers ping'
+        id: behavior-2
+        context: [runtime]
+        command: '! ( grep -qF ''omarchy-hyprland-window-restore-presentation'' /usr/share/omarchy/bin/omarchy-restart-shell )'
+      - check: 'with a live-shaped hyprctl, the script dispatches float/resize 875x600/center for an org.omarchy.terminal client'
+        id: behavior-3
+        context: [runtime]
+        command: '! ( t=$(mktemp -d); mkdir -p "$t/bin"; printf ''#!/bin/bash\nif [[ $1 == clients ]]; then printf "%%s" "$OMARCHY_TEST_CLIENTS_JSON"; else echo "$*" >>"$HYPRCTL_LOG"; fi\n'' >"$t/bin/hyprctl"; chmod +x "$t/bin/hyprctl"; PATH="$t/bin:$PATH" HYPRCTL_LOG="$t/log" OMARCHY_TEST_CLIENTS_JSON=''[{"address":"0xabc","class":"org.omarchy.terminal","initialClass":"org.omarchy.terminal"}]'' bash /usr/share/omarchy/bin/omarchy-hyprland-window-restore-presentation && grep -qF ''dispatch hl.dsp.window.resize({ window = "address:0xabc", x = 875, y = 600 })'' "$t/log" && grep -qF ''dispatch hl.dsp.window.center({ window = "address:0xabc" })'' "$t/log" )'
+      - check: 'the restore helper leaves non-presentation terminals untouched'
+        id: behavior-4
+        context: [runtime]
+        command: '! ( t=$(mktemp -d); mkdir -p "$t/bin"; printf ''#!/bin/bash\nif [[ $1 == clients ]]; then printf "%%s" "$OMARCHY_TEST_CLIENTS_JSON"; else echo "$*" >>"$HYPRCTL_LOG"; fi\n'' >"$t/bin/hyprctl"; chmod +x "$t/bin/hyprctl"; PATH="$t/bin:$PATH" HYPRCTL_LOG="$t/log" OMARCHY_TEST_CLIENTS_JSON=''[{"address":"0xfoot","class":"foot","initialClass":"foot"}]'' bash /usr/share/omarchy/bin/omarchy-hyprland-window-restore-presentation && [[ ! -s "$t/log" ]] )'

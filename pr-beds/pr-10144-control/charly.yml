@@ -1,0 +1,49 @@
+version: 2026.249.2125
+check-omarchy-pr-10144-control:
+  vm:
+    from: check-omarchy-eval-base-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    plan:
+      # the NEGATIVE CONTROL: the negated checks on the PRISTINE golden.
+      # Every negated step must PASS (every original check failed without
+      # the PR = every knownRed claim holds). A control step failing means
+      # the original check passed without the PR — a FAKE assertion,
+      # caught at render, never shipped to a real eval.
+      - check: 'the PR installs the rename helper at its system path with its omarchy metadata'
+        id: behavior-1
+        context: [runtime]
+        command: '! ( test -f /usr/share/omarchy/bin/omarchy-rename-launcher-entry && grep -Fq ''omarchy:summary=Rename an application in the launcher'' /usr/share/omarchy/bin/omarchy-rename-launcher-entry && grep -Fq ''omarchy:hidden=true'' /usr/share/omarchy/bin/omarchy-rename-launcher-entry )'
+      - check: 'renaming a system entry writes a per-user override carrying the new Name and the X-Omarchy-Renamed marker'
+        id: behavior-2
+        context: [runtime]
+        command: '! ( tmp=$(mktemp -d) && mkdir -p "$tmp/data/applications" "$tmp/system/applications" && printf ''[Desktop Entry]\nName=Editor\nExec=editor\n'' > "$tmp/system/applications/org.example.Editor.desktop" && XDG_DATA_HOME="$tmp/data" XDG_DATA_DIRS="$tmp/system" bash /usr/share/omarchy/bin/omarchy-rename-launcher-entry org.example.Editor ''Work Editor'' && grep -Fxq ''Name=Work Editor'' "$tmp/data/applications/org.example.Editor.desktop" && grep -Fxq ''X-Omarchy-Renamed=true'' "$tmp/data/applications/org.example.Editor.desktop" )'
+      - check: 'the override keeps desktop-action names and Exec, drops localized Name[...] keys, and is mode 644'
+        id: behavior-3
+        context: [runtime]
+        command: '! ( tmp=$(mktemp -d) && mkdir -p "$tmp/data/applications" "$tmp/system/applications" && printf ''[Desktop Entry]\nName=Editor\nName[fr]=Éditeur\nExec=editor --open %%F\nType=Application\n\n[Desktop Action New]\nName=New document\nExec=editor --new\n'' > "$tmp/system/applications/org.example.Editor.desktop" && XDG_DATA_HOME="$tmp/data" XDG_DATA_DIRS="$tmp/system" bash /usr/share/omarchy/bin/omarchy-rename-launcher-entry org.example.Editor ''Work Editor'' && grep -Fxq ''Name=New document'' "$tmp/data/applications/org.example.Editor.desktop" && grep -Fxq ''Exec=editor --open %F'' "$tmp/data/applications/org.example.Editor.desktop" && ! grep -q ''^Name\['' "$tmp/data/applications/org.example.Editor.desktop" && [[ $(stat -c ''%a'' "$tmp/data/applications/org.example.Editor.desktop") == 644 ]] )'
+      - check: 'the helper refuses a path-syntax desktop id and never touches files outside the applications dir'
+        id: behavior-4
+        context: [runtime]
+        command: '! ( test -f /usr/share/omarchy/bin/omarchy-rename-launcher-entry && tmp=$(mktemp -d) && mkdir -p "$tmp/data/applications" "$tmp/system/applications" && printf ''keep\n'' > "$tmp/outside" && ! XDG_DATA_HOME="$tmp/data" XDG_DATA_DIRS="$tmp/system" bash /usr/share/omarchy/bin/omarchy-rename-launcher-entry ''../outside'' Changed 2>/dev/null && grep -Fxq ''keep'' "$tmp/outside" )'
+      - check: 'a control-character name is refused and no override is written'
+        id: behavior-5
+        context: [runtime]
+        command: '! ( test -f /usr/share/omarchy/bin/omarchy-rename-launcher-entry && tmp=$(mktemp -d) && mkdir -p "$tmp/data/applications" "$tmp/system/applications" && printf ''[Desktop Entry]\nName=Editor\nExec=editor\n'' > "$tmp/system/applications/org.example.Editor.desktop" && ! XDG_DATA_HOME="$tmp/data" XDG_DATA_DIRS="$tmp/system" bash /usr/share/omarchy/bin/omarchy-rename-launcher-entry org.example.Editor $''Injected\nExec=bad'' 2>/dev/null && [[ ! -e "$tmp/data/applications/org.example.Editor.desktop" ]] )'
+      - check: 'uninstall of a renamed package also removes the managed override and refreshes the desktop database'
+        id: behavior-6
+        context: [runtime]
+        command: '! ( grep -Fq ''X-Omarchy-Renamed=true'' /usr/share/omarchy/bin/omarchy-remove-launcher-entry && grep -Fq ''rm -f -- $quoted_override'' /usr/share/omarchy/bin/omarchy-remove-launcher-entry && grep -Fq ''update-desktop-database $quoted_applications_dir'' /usr/share/omarchy/bin/omarchy-remove-launcher-entry )'
+      - check: 'the menu binds Ctrl+R on app rows to the rename request'
+        id: behavior-7
+        context: [runtime]
+        command: '! ( grep -Fq ''event.key === Qt.Key_R'' /usr/share/omarchy/shell/plugins/menu/Menu.qml && grep -Fq ''(event.modifiers & Qt.ControlModifier)'' /usr/share/omarchy/shell/plugins/menu/Menu.qml && grep -Fq ''root.requestRenameSelected()'' /usr/share/omarchy/shell/plugins/menu/Menu.qml && grep -Fq ''if (!row || row.kind !== "app") return false'' /usr/share/omarchy/shell/plugins/menu/Menu.qml )'
+      - check: 'AppLibrary exposes rename() and invokes the rename helper'
+        id: behavior-8
+        context: [runtime]
+        command: '! ( grep -Fq ''function rename(desktopId, name)'' /usr/share/omarchy/shell/services/AppLibrary.qml && grep -Fq ''/bin/omarchy-rename-launcher-entry'' /usr/share/omarchy/shell/services/AppLibrary.qml )'
+      - check: 'the rename field consumes Return/Enter so the app is not launched after confirming'
+        id: behavior-9
+        context: [runtime]
+        command: '! ( grep -Fq ''Keys.onReturnPressed'' /usr/share/omarchy/shell/plugins/menu/Menu.qml && grep -Fq ''Keys.onEnterPressed'' /usr/share/omarchy/shell/plugins/menu/Menu.qml && grep -Fq ''root.confirmRename()'' /usr/share/omarchy/shell/plugins/menu/Menu.qml && grep -Fq ''event.accepted = true'' /usr/share/omarchy/shell/plugins/menu/Menu.qml )'

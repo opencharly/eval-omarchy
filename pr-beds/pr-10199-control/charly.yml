@@ -1,0 +1,45 @@
+version: 2026.249.2125
+check-omarchy-pr-10199-control:
+  vm:
+    from: check-omarchy-eval-dev-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    plan:
+      # the NEGATIVE CONTROL: the negated checks on the PRISTINE golden.
+      # Every negated step must PASS (every original check failed without
+      # the PR = every knownRed claim holds). A control step failing means
+      # the original check passed without the PR — a FAKE assertion,
+      # caught at render, never shipped to a real eval.
+      - check: 'All nine new omarchy-workspace-scripts are installed in the omarchy tree'
+        id: behavior-1
+        context: [runtime]
+        command: '! ( test -f /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-monitor-base && test -f /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-hyprland-workspace-global-switch && test -f /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-hyprland-workspace-global-move-window && test -f /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-switch-to-aw && test -f /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-move-window-to-aw && test -f /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-ensure-workspaces && test -f /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-init-global-workspaces && test -f /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-recover-stranded-windows && test -f /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-diagnose-workspace-state )'
+      - check: 'omarchy-monitor-base sync assigns deterministic name-keyed bases (0/10/20) and persists them to monitor-bases.json'
+        id: behavior-2
+        context: [runtime]
+        command: '! ( tmp=$(mktemp -d); mkdir -p "$tmp/bin" "$tmp/home" cat > "$tmp/bin/hyprctl" <<''EOS'' #!/bin/bash echo ''[{"id":0,"name":"eDP-1"},{"id":1,"name":"HDMI-1"},{"id":2,"name":"DP-2"}]'' EOS chmod +x "$tmp/bin/hyprctl" out=$(HOME="$tmp/home" PATH="$tmp/bin:$PATH" python3 /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-monitor-base sync) echo "$out" | grep -q ''^DP-2 20$'' && grep -q ''"DP-2": 20'' "$tmp/home/.local/state/omarchy/monitor-bases.json" )'
+      - check: 'omarchy-switch-to-aw dispatches the global switch script when the workspace-global flag exists, and raw hyprctl workspace focus when it does not'
+        id: behavior-3
+        context: [runtime]
+        command: '! ( tmp=$(mktemp -d); mkdir -p "$tmp/bin" "$tmp/home" cat > "$tmp/bin/hyprctl" <<''EOS'' #!/bin/bash printf ''%s\n'' "$*" >> "$ARGS_FILE" EOS chmod +x "$tmp/bin/hyprctl" ARGS_FILE="$tmp/args" HOME="$tmp/home" PATH="$tmp/bin:$PATH" bash /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-switch-to-aw 3 grep -q ''^dispatch workspace 3$'' "$tmp/args" tmp2=$(mktemp -d); mkdir -p "$tmp2/bin" "$tmp2/home/.local/state/omarchy/toggles/hypr" touch "$tmp2/home/.local/state/omarchy/toggles/hypr/workspace-global.lua" cat > "$tmp2/bin/omarchy-hyprland-workspace-global-switch" <<''EOS'' #!/bin/bash printf ''%s\n'' "$*" >> "$ARGS_FILE" EOS chmod +x "$tmp2/bin/omarchy-hyprland-workspace-global-switch" ARGS_FILE="$tmp2/args" HOME="$tmp2/home" PATH="$tmp2/bin:$PATH" bash /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-switch-to-aw 4 grep -q ''^4$'' "$tmp2/args" )'
+      - check: 'omarchy-move-window-to-aw routes to the global move-window script in global mode and to hyprctl movetoworkspacesilent in local mode'
+        id: behavior-4
+        context: [runtime]
+        command: '! ( tmp=$(mktemp -d); mkdir -p "$tmp/bin" "$tmp/home" cat > "$tmp/bin/hyprctl" <<''EOS'' #!/bin/bash printf ''%s\n'' "$*" >> "$ARGS_FILE" EOS chmod +x "$tmp/bin/hyprctl" ARGS_FILE="$tmp/args" HOME="$tmp/home" PATH="$tmp/bin:$PATH" bash /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-move-window-to-aw 5 grep -q ''^dispatch movetoworkspacesilent 5$'' "$tmp/args" tmp2=$(mktemp -d); mkdir -p "$tmp2/bin" "$tmp2/home/.local/state/omarchy/toggles/hypr" touch "$tmp2/home/.local/state/omarchy/toggles/hypr/workspace-global.lua" cat > "$tmp2/bin/omarchy-hyprland-workspace-global-move-window" <<''EOS'' #!/bin/bash printf ''%s\n'' "$*" >> "$ARGS_FILE" EOS chmod +x "$tmp2/bin/omarchy-hyprland-workspace-global-move-window" ARGS_FILE="$tmp2/args" HOME="$tmp2/home" PATH="$tmp2/bin:$PATH" bash /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-move-window-to-aw 6 grep -q ''^6$'' "$tmp2/args" )'
+      - check: 'omarchy-hyprland-workspace-global-switch computes WS = base(monitor)+slot from the name-keyed base map and dispatches workspace.move/focus to it'
+        id: behavior-5
+        context: [runtime]
+        command: '! ( tmp=$(mktemp -d); mkdir -p "$tmp/bin" cat > "$tmp/bin/hyprctl" <<''EOS'' #!/bin/bash printf ''%s\n'' "$*" >> "$ARGS_FILE" case "$1 $2" in   "monitors -j") echo ''[{"id":0,"name":"eDP-1","focused":false},{"id":1,"name":"HDMI-1","focused":true}]'' ;;   "clients -j") echo ''[]'' ;;   "workspaces -j") echo ''[]'' ;; esac EOS chmod +x "$tmp/bin/hyprctl" cat > "$tmp/bin/omarchy-monitor-base" <<''EOS'' #!/bin/bash printf ''eDP-1 0\nHDMI-1 10\n'' EOS chmod +x "$tmp/bin/omarchy-monitor-base" ARGS_FILE="$tmp/args" PATH="$tmp/bin:$PATH" bash /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-hyprland-workspace-global-switch 3 >/dev/null 2>&1 grep -q "workspace = ''13''" "$tmp/args" )'
+      - check: 'omarchy-recover-stranded-windows maps an orphaned workspace to slot=(ws-1)%10+1 on the home monitor and moves its windows there'
+        id: behavior-6
+        context: [runtime]
+        command: '! ( tmp=$(mktemp -d); mkdir -p "$tmp/bin" cat > "$tmp/bin/hyprctl" <<''EOS'' #!/bin/bash printf ''%s\n'' "$*" >> "$ARGS_FILE" case "$1 $2" in   "monitors -j") echo ''[{"id":0,"name":"eDP-1"}]'' ;;   "workspaces -j") echo ''[{"id":13,"monitor":{"name":"HDMI-1"}}]'' ;;   "clients -j") echo ''[{"address":"0xabc","workspace":{"id":13},"monitor":1}]'' ;; esac EOS chmod +x "$tmp/bin/hyprctl" ARGS_FILE="$tmp/args" PATH="$tmp/bin:$PATH" bash /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-recover-stranded-windows >/dev/null 2>&1 grep -q "workspace = ''3''" "$tmp/args" )'
+      - check: 'Workspaces.qml carries the global-mode AW logic: toggle probe, name-keyed base map, awIsFocused/awIsOccupied, the omarchy.workspaces IPC refresh handler and the global-switch call'
+        id: behavior-7
+        context: [runtime]
+        command: '! ( f=/usr/share/omarchy/shell/plugins/bar/widgets/Workspaces.qml; test -f "$f" && grep -q ''target: "omarchy.workspaces"'' "$f" && grep -q ''function awIsFocused'' "$f" && grep -q ''function awIsOccupied'' "$f" && grep -q ''monitor-bases.json'' "$f" && grep -q ''omarchy-hyprland-workspace-global-switch'' "$f" && grep -q ''function switchToAW'' "$f" )'
+      - check: 'The workspace-global toggle Lua, the SUPER+N bindings Lua, the autostart materialization block and the Workspace Mode menu extension are installed'
+        id: behavior-8
+        context: [runtime]
+        command: '! ( ok=0; for d in /usr/share/omarchy/config/hypr "$HOME/.config/hypr"; do if [ -f "$d/toggles/workspace-global.lua" ] && grep -q ''omarchy_monitor_bases'' "$d/toggles/workspace-global.lua" && [ -f "$d/bindings-global-workspaces.lua" ] && grep -q ''omarchy-switch-to-aw'' "$d/bindings-global-workspaces.lua" && grep -q ''omarchy_monitor_bases'' "$d/autostart.lua"; then ok=1; fi; done; ok2=0; for e in /usr/share/omarchy/config/omarchy/extensions "$HOME/.config/omarchy/extensions"; do if [ -f "$e/omarchy-menu-global-workspaces.jsonc" ] && grep -q ''workspace-mode.global'' "$e/omarchy-menu-global-workspaces.jsonc"; then ok2=1; fi; done; [ "$ok" = 1 ] && [ "$ok2" = 1 ] )'

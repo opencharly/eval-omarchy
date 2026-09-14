@@ -1,0 +1,102 @@
+version: 2026.249.2125
+check-omarchy-pr-10139-vm:
+  vm:
+    from: check-omarchy-eval-base-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    add_candy:
+      - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+      - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+      # the updated pr-apply (the test-context closure) overwrites the
+      # golden's baked script at deploy time — no golden re-provision.
+      - omarchy-pr-apply
+      # upstream's own contract surfaces run per PR (the whole corpus is
+      # 25 cheap file-presence/CLI assertions (the selection vocabulary in the skill); the oracle's selection
+      # drives the report emphasis, the corpus facts land in the ledger)
+      - omarchy-corpus
+    plan:
+      - check: apply PR 10139 via the single apply seam
+        id: pr-apply
+        context: [runtime]
+        command: 'pr-apply 10139 38c07810ee3d06e22eaa069c630d7a33fbbf3475 bin/omarchy-cmd-apple-sd-reader bin/omarchy-hw-apple-sd-reader install/hardware/all.sh install/hardware/apple/fix-sd-card-reader.sh manual/44-mac-support.md migrations/1788508170.sh test/shell.d/apple-sd-reader-test.sh'
+      - check: the PR's OWN test suite passes on the applied system
+        id: pr-tests
+        context: [runtime]
+        command: 'for t in /usr/share/omarchy/test/shell.d/apple-sd-reader-test.sh; do bash "$t" || exit 1; done'
+      - check: 'the new omarchy cmd helper is installed and carries the Apple XHCI SPWR/SRST ACPI recovery path'
+        id: behavior-1
+        context: [runtime]
+        command: 'test -f /usr/share/omarchy/bin/omarchy-cmd-apple-sd-reader && grep -q ''\\_SB.PCI0.XHC1.SPWR'' /usr/share/omarchy/bin/omarchy-cmd-apple-sd-reader && grep -q ''\\_SB.PCI0.XHC1.SRST'' /usr/share/omarchy/bin/omarchy-cmd-apple-sd-reader && grep -q ''05ac'' /usr/share/omarchy/bin/omarchy-cmd-apple-sd-reader'
+      - check: 'the helper''s status subcommand reports reader/acpi_call state and an unknown subcommand prints the usage line'
+        id: behavior-2
+        context: [runtime]
+        command: 'out=$(bash /usr/share/omarchy/bin/omarchy-cmd-apple-sd-reader status 2>&1 || true); printf ''%s\n'' "$out" | grep -q ''acpi_call''; u=$(bash /usr/share/omarchy/bin/omarchy-cmd-apple-sd-reader bogus 2>&1 || true); printf ''%s\n'' "$u" | grep -q ''usage: omarchy cmd apple-sd-reader'''
+      - check: 'the DMI detector accepts MacBookPro12,1 and rejects a Mac without the Apple USB reader'
+        id: behavior-3
+        context: [runtime]
+        command: 'd=$(mktemp); printf ''MacBookPro12,1\n'' >"$d"; OMARCHY_DMI_PRODUCT_NAME="$d" bash /usr/share/omarchy/bin/omarchy-hw-apple-sd-reader && printf ''MacBookPro14,1\n'' >"$d" && ! OMARCHY_DMI_PRODUCT_NAME="$d" bash /usr/share/omarchy/bin/omarchy-hw-apple-sd-reader; rc=$?; rm -f "$d"; exit $rc'
+      - check: 'the install leaf, on matching DMI, writes the Limine usbcore quirk drop-in, the udev keep-alive rule and the post-resume sleep hook'
+        id: behavior-4
+        context: [runtime]
+        command: 't=$(mktemp -d); mkdir -p "$t/bin" "$t/out"; printf ''#!/bin/bash\nexit 0\n'' >"$t/bin/omarchy-hw-apple-sd-reader"; printf ''#!/bin/bash\nexit 0\n'' >"$t/bin/omarchy-pkg-add"; printf ''#!/bin/bash\n[[ $1 == limine-mkinitcpio ]]\n'' >"$t/bin/omarchy-cmd-present"; printf ''#!/bin/bash\nexit 0\n'' >"$t/bin/omarchy-state"; printf ''#!/bin/bash\n"$@"\n'' >"$t/bin/sudo"; printf ''#!/bin/bash\nexit 0\n'' >"$t/bin/limine-mkinitcpio"; chmod +x "$t"/bin/*; printf ''MacBookPro12,1\n'' >"$t/dmi"; PATH="$t/bin:$PATH" OMARCHY_DMI_PRODUCT_NAME="$t/dmi" OMARCHY_PATH=/usr/share/omarchy OMARCHY_APPLE_SD_LIMINE_CONF="$t/out/limine.conf" OMARCHY_APPLE_SD_UDEV_RULES="$t/out/udev.rules" OMARCHY_APPLE_SD_SLEEP_HOOK="$t/out/sleep-hook" bash -euo pipefail -c ''source "$1"'' _ /usr/share/omarchy/install/hardware/apple/fix-sd-card-reader.sh && grep -q ''usbcore.quirks=05ac:8406:bk'' "$t/out/limine.conf" && grep -q ''idProduct}="8406"'' "$t/out/udev.rules" && grep -q ''omarchy-cmd-apple-sd-reader'' "$t/out/sleep-hook"'
+      - check: 'hardware setup invokes the Apple SD reader leaf'
+        id: behavior-5
+        context: [runtime]
+        command: 'grep -q ''apple/fix-sd-card-reader.sh'' /usr/share/omarchy/install/hardware/all.sh'
+      - check: 'the new migration re-applies the leaf on existing Macs'
+        id: behavior-6
+        context: [runtime]
+        command: 'test -f /usr/share/omarchy/migrations/1788508170.sh && grep -q ''omarchy-hw-apple-sd-reader'' /usr/share/omarchy/migrations/1788508170.sh && grep -q ''fix-sd-card-reader.sh'' /usr/share/omarchy/migrations/1788508170.sh'
+      - check: 'the Mac support manual documents the SD reader keep-alive and the manual reset command'
+        id: behavior-7
+        context: [runtime]
+        command: 'grep -q ''05ac:8406'' /usr/share/omarchy/manual/44-mac-support.md && grep -q ''omarchy cmd apple-sd-reader reset'' /usr/share/omarchy/manual/44-mac-support.md'
+      - check: start a terminal recording
+        id: rec-start
+        context: [runtime]
+        record: {method: start, record_mode: terminal, record_name: pr-10139}
+      - check: start the SPICE display video capture
+        id: rec-spice-start
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: record, action: start, record_name: pr-10139, fps: 5}
+      - check: drive the PR key command inside the recording
+        id: rec-drive
+        context: [runtime]
+        record:
+          method: run
+          record_name: pr-10139
+          # the drive is ARBITRARY shell — a block scalar, never a flow
+          # mapping (RCA 2026.252.2250: the inlined text broke the
+          # rendered YAML on shell metacharacters).
+          text: |-
+            bash /usr/share/omarchy/bin/omarchy-cmd-apple-sd-reader status; bash /usr/share/omarchy/bin/omarchy-cmd-apple-sd-reader reset; echo "reset exit=$? (non-zero expected: no 05ac:8406 reader on this venue)"
+          settle_ms: 1000
+      - check: capture the VM display via SPICE
+        id: rec-screen-spice
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: screenshot, artifact: /tmp/pr-10139.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+      - check: stop the SPICE capture and pull the MJPEG stream
+        id: rec-spice-stop
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: record, action: stop, record_name: pr-10139, artifact: /tmp/pr-10139.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+      - check: stop the terminal recording and pull the .cast
+        id: rec-stop
+        context: [runtime]
+        record: {method: stop, record_name: pr-10139, artifact: /tmp/pr-10139.cast, artifact_min_bytes: 200}
+      - check: render the .cast to an animated GIF
+        id: rec-gif
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        record: {method: gif, record_name: pr-10139, artifact: /tmp/pr-10139.gif, artifact_min_bytes: 100}
+      - run: transcode the SPICE MJPEG capture to MP4
+        id: rec-mp4
+        context: [runtime]
+        command: 'ffmpeg -y -loglevel error -i /tmp/pr-10139.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/pr-10139.mp4'

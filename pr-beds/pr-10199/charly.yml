@@ -1,0 +1,106 @@
+version: 2026.249.2125
+check-omarchy-pr-10199-vm:
+  vm:
+    from: check-omarchy-eval-dev-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    add_candy:
+      - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+      - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+      # the updated pr-apply (the test-context closure) overwrites the
+      # golden's baked script at deploy time — no golden re-provision.
+      - omarchy-pr-apply
+      # upstream's own contract surfaces run per PR (the whole corpus is
+      # 25 cheap file-presence/CLI assertions (the selection vocabulary in the skill); the oracle's selection
+      # drives the report emphasis, the corpus facts land in the ledger)
+      - omarchy-corpus
+    plan:
+      - check: apply PR 10199 via the single apply seam
+        id: pr-apply
+        context: [runtime]
+        command: 'pr-apply 10199 feefe5642d29e5741dabc2a74a40dde6bf02b828 bin/omarchy-workspace-scripts/omarchy-diagnose-workspace-state bin/omarchy-workspace-scripts/omarchy-ensure-workspaces bin/omarchy-workspace-scripts/omarchy-hyprland-workspace-global-move-window bin/omarchy-workspace-scripts/omarchy-hyprland-workspace-global-switch bin/omarchy-workspace-scripts/omarchy-init-global-workspaces bin/omarchy-workspace-scripts/omarchy-monitor-base bin/omarchy-workspace-scripts/omarchy-move-window-to-aw bin/omarchy-workspace-scripts/omarchy-recover-stranded-windows bin/omarchy-workspace-scripts/omarchy-switch-to-aw config/hypr/autostart.lua config/hypr/bindings-global-workspaces.lua config/hypr/toggles/workspace-global.lua config/omarchy/extensions/omarchy-menu-global-workspaces.jsonc shell/plugins/bar/widgets/Workspaces.qml'
+      - check: the PR's OWN test suite passes on the applied system
+        id: pr-tests
+        context: [runtime]
+        command: 'for t in ; do bash "$t" || exit 1; done'
+      - check: 'All nine new omarchy-workspace-scripts are installed in the omarchy tree'
+        id: behavior-1
+        context: [runtime]
+        command: 'test -f /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-monitor-base && test -f /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-hyprland-workspace-global-switch && test -f /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-hyprland-workspace-global-move-window && test -f /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-switch-to-aw && test -f /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-move-window-to-aw && test -f /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-ensure-workspaces && test -f /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-init-global-workspaces && test -f /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-recover-stranded-windows && test -f /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-diagnose-workspace-state'
+      - check: 'omarchy-monitor-base sync assigns deterministic name-keyed bases (0/10/20) and persists them to monitor-bases.json'
+        id: behavior-2
+        context: [runtime]
+        command: 'tmp=$(mktemp -d); mkdir -p "$tmp/bin" "$tmp/home" cat > "$tmp/bin/hyprctl" <<''EOS'' #!/bin/bash echo ''[{"id":0,"name":"eDP-1"},{"id":1,"name":"HDMI-1"},{"id":2,"name":"DP-2"}]'' EOS chmod +x "$tmp/bin/hyprctl" out=$(HOME="$tmp/home" PATH="$tmp/bin:$PATH" python3 /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-monitor-base sync) echo "$out" | grep -q ''^DP-2 20$'' && grep -q ''"DP-2": 20'' "$tmp/home/.local/state/omarchy/monitor-bases.json"'
+      - check: 'omarchy-switch-to-aw dispatches the global switch script when the workspace-global flag exists, and raw hyprctl workspace focus when it does not'
+        id: behavior-3
+        context: [runtime]
+        command: 'tmp=$(mktemp -d); mkdir -p "$tmp/bin" "$tmp/home" cat > "$tmp/bin/hyprctl" <<''EOS'' #!/bin/bash printf ''%s\n'' "$*" >> "$ARGS_FILE" EOS chmod +x "$tmp/bin/hyprctl" ARGS_FILE="$tmp/args" HOME="$tmp/home" PATH="$tmp/bin:$PATH" bash /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-switch-to-aw 3 grep -q ''^dispatch workspace 3$'' "$tmp/args" tmp2=$(mktemp -d); mkdir -p "$tmp2/bin" "$tmp2/home/.local/state/omarchy/toggles/hypr" touch "$tmp2/home/.local/state/omarchy/toggles/hypr/workspace-global.lua" cat > "$tmp2/bin/omarchy-hyprland-workspace-global-switch" <<''EOS'' #!/bin/bash printf ''%s\n'' "$*" >> "$ARGS_FILE" EOS chmod +x "$tmp2/bin/omarchy-hyprland-workspace-global-switch" ARGS_FILE="$tmp2/args" HOME="$tmp2/home" PATH="$tmp2/bin:$PATH" bash /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-switch-to-aw 4 grep -q ''^4$'' "$tmp2/args"'
+      - check: 'omarchy-move-window-to-aw routes to the global move-window script in global mode and to hyprctl movetoworkspacesilent in local mode'
+        id: behavior-4
+        context: [runtime]
+        command: 'tmp=$(mktemp -d); mkdir -p "$tmp/bin" "$tmp/home" cat > "$tmp/bin/hyprctl" <<''EOS'' #!/bin/bash printf ''%s\n'' "$*" >> "$ARGS_FILE" EOS chmod +x "$tmp/bin/hyprctl" ARGS_FILE="$tmp/args" HOME="$tmp/home" PATH="$tmp/bin:$PATH" bash /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-move-window-to-aw 5 grep -q ''^dispatch movetoworkspacesilent 5$'' "$tmp/args" tmp2=$(mktemp -d); mkdir -p "$tmp2/bin" "$tmp2/home/.local/state/omarchy/toggles/hypr" touch "$tmp2/home/.local/state/omarchy/toggles/hypr/workspace-global.lua" cat > "$tmp2/bin/omarchy-hyprland-workspace-global-move-window" <<''EOS'' #!/bin/bash printf ''%s\n'' "$*" >> "$ARGS_FILE" EOS chmod +x "$tmp2/bin/omarchy-hyprland-workspace-global-move-window" ARGS_FILE="$tmp2/args" HOME="$tmp2/home" PATH="$tmp2/bin:$PATH" bash /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-move-window-to-aw 6 grep -q ''^6$'' "$tmp2/args"'
+      - check: 'omarchy-hyprland-workspace-global-switch computes WS = base(monitor)+slot from the name-keyed base map and dispatches workspace.move/focus to it'
+        id: behavior-5
+        context: [runtime]
+        command: 'tmp=$(mktemp -d); mkdir -p "$tmp/bin" cat > "$tmp/bin/hyprctl" <<''EOS'' #!/bin/bash printf ''%s\n'' "$*" >> "$ARGS_FILE" case "$1 $2" in   "monitors -j") echo ''[{"id":0,"name":"eDP-1","focused":false},{"id":1,"name":"HDMI-1","focused":true}]'' ;;   "clients -j") echo ''[]'' ;;   "workspaces -j") echo ''[]'' ;; esac EOS chmod +x "$tmp/bin/hyprctl" cat > "$tmp/bin/omarchy-monitor-base" <<''EOS'' #!/bin/bash printf ''eDP-1 0\nHDMI-1 10\n'' EOS chmod +x "$tmp/bin/omarchy-monitor-base" ARGS_FILE="$tmp/args" PATH="$tmp/bin:$PATH" bash /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-hyprland-workspace-global-switch 3 >/dev/null 2>&1 grep -q "workspace = ''13''" "$tmp/args"'
+      - check: 'omarchy-recover-stranded-windows maps an orphaned workspace to slot=(ws-1)%10+1 on the home monitor and moves its windows there'
+        id: behavior-6
+        context: [runtime]
+        command: 'tmp=$(mktemp -d); mkdir -p "$tmp/bin" cat > "$tmp/bin/hyprctl" <<''EOS'' #!/bin/bash printf ''%s\n'' "$*" >> "$ARGS_FILE" case "$1 $2" in   "monitors -j") echo ''[{"id":0,"name":"eDP-1"}]'' ;;   "workspaces -j") echo ''[{"id":13,"monitor":{"name":"HDMI-1"}}]'' ;;   "clients -j") echo ''[{"address":"0xabc","workspace":{"id":13},"monitor":1}]'' ;; esac EOS chmod +x "$tmp/bin/hyprctl" ARGS_FILE="$tmp/args" PATH="$tmp/bin:$PATH" bash /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-recover-stranded-windows >/dev/null 2>&1 grep -q "workspace = ''3''" "$tmp/args"'
+      - check: 'Workspaces.qml carries the global-mode AW logic: toggle probe, name-keyed base map, awIsFocused/awIsOccupied, the omarchy.workspaces IPC refresh handler and the global-switch call'
+        id: behavior-7
+        context: [runtime]
+        command: 'f=/usr/share/omarchy/shell/plugins/bar/widgets/Workspaces.qml; test -f "$f" && grep -q ''target: "omarchy.workspaces"'' "$f" && grep -q ''function awIsFocused'' "$f" && grep -q ''function awIsOccupied'' "$f" && grep -q ''monitor-bases.json'' "$f" && grep -q ''omarchy-hyprland-workspace-global-switch'' "$f" && grep -q ''function switchToAW'' "$f"'
+      - check: 'The workspace-global toggle Lua, the SUPER+N bindings Lua, the autostart materialization block and the Workspace Mode menu extension are installed'
+        id: behavior-8
+        context: [runtime]
+        command: 'ok=0; for d in /usr/share/omarchy/config/hypr "$HOME/.config/hypr"; do if [ -f "$d/toggles/workspace-global.lua" ] && grep -q ''omarchy_monitor_bases'' "$d/toggles/workspace-global.lua" && [ -f "$d/bindings-global-workspaces.lua" ] && grep -q ''omarchy-switch-to-aw'' "$d/bindings-global-workspaces.lua" && grep -q ''omarchy_monitor_bases'' "$d/autostart.lua"; then ok=1; fi; done; ok2=0; for e in /usr/share/omarchy/config/omarchy/extensions "$HOME/.config/omarchy/extensions"; do if [ -f "$e/omarchy-menu-global-workspaces.jsonc" ] && grep -q ''workspace-mode.global'' "$e/omarchy-menu-global-workspaces.jsonc"; then ok2=1; fi; done; [ "$ok" = 1 ] && [ "$ok2" = 1 ]'
+      - check: start a terminal recording
+        id: rec-start
+        context: [runtime]
+        record: {method: start, record_mode: terminal, record_name: pr-10199}
+      - check: start the SPICE display video capture
+        id: rec-spice-start
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: record, action: start, record_name: pr-10199, fps: 5}
+      - check: drive the PR key command inside the recording
+        id: rec-drive
+        context: [runtime]
+        record:
+          method: run
+          record_name: pr-10199
+          # the drive is ARBITRARY shell — a block scalar, never a flow
+          # mapping (RCA 2026.252.2250: the inlined text broke the
+          # rendered YAML on shell metacharacters).
+          text: |-
+            bash /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-monitor-base sync; bash /usr/share/omarchy/bin/omarchy-workspace-scripts/omarchy-hyprland-workspace-global-switch 2; sleep 1; hyprctl monitors -j | jq -r '.[] | "\(.name) -> ws \(.activeWorkspace.id)"'; hyprctl workspaces -j | jq -r '.[] | "ws \(.id) on \(.monitor.name)"'
+          settle_ms: 1000
+      - check: capture the VM display via SPICE
+        id: rec-screen-spice
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: screenshot, artifact: /tmp/pr-10199.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+      - check: stop the SPICE capture and pull the MJPEG stream
+        id: rec-spice-stop
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: record, action: stop, record_name: pr-10199, artifact: /tmp/pr-10199.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+      - check: stop the terminal recording and pull the .cast
+        id: rec-stop
+        context: [runtime]
+        record: {method: stop, record_name: pr-10199, artifact: /tmp/pr-10199.cast, artifact_min_bytes: 200}
+      - check: render the .cast to an animated GIF
+        id: rec-gif
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        record: {method: gif, record_name: pr-10199, artifact: /tmp/pr-10199.gif, artifact_min_bytes: 100}
+      - run: transcode the SPICE MJPEG capture to MP4
+        id: rec-mp4
+        context: [runtime]
+        command: 'ffmpeg -y -loglevel error -i /tmp/pr-10199.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/pr-10199.mp4'

@@ -1,0 +1,33 @@
+version: 2026.249.2125
+check-omarchy-pr-10115-control:
+  vm:
+    from: check-omarchy-eval-base-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    plan:
+      # the NEGATIVE CONTROL: the negated checks on the PRISTINE golden.
+      # Every negated step must PASS (every original check failed without
+      # the PR = every knownRed claim holds). A control step failing means
+      # the original check passed without the PR — a FAKE assertion,
+      # caught at render, never shipped to a real eval.
+      - check: 'NotificationCard declares the countdownReservedHeight property that reserves bottom room only for timed cards'
+        id: behavior-1
+        context: [runtime]
+        command: '! ( grep -qF ''readonly property real countdownReservedHeight: showCountdown ? Style.space(12) : 0'' /usr/share/omarchy/shell/plugins/notifications/components/NotificationCard.qml )'
+      - check: 'The card''s implicitHeight adds countdownReservedHeight so the track never overlaps content'
+        id: behavior-2
+        context: [runtime]
+        command: '! ( grep -qF ''implicitHeight: mainColumn.implicitHeight + borderTop + borderBottom + countdownReservedHeight'' /usr/share/omarchy/shell/plugins/notifications/components/NotificationCard.qml )'
+      - check: 'A countdownTrack rectangle is visible only for timed cards and its fill width tracks remainingLifetime'
+        id: behavior-3
+        context: [runtime]
+        command: '! ( grep -Pzoq ''id: countdownTrack[\s\S]{0,700}?visible: root\.showCountdown[\s\S]{0,700}?width: parent\.width \* root\.remainingLifetime'' /usr/share/omarchy/shell/plugins/notifications/components/NotificationCard.qml )'
+      - check: 'The notifications service forwards the popup''s remainingLifetime and gates showCountdown on a positive lifetime'
+        id: behavior-4
+        context: [runtime]
+        command: '! ( grep -Pzoq ''remainingLifetime: cardSlot\.remainingLifetime\s*\n\s*showCountdown: cardSlot\.lifetime > 0'' /usr/share/omarchy/shell/plugins/notifications/Service.qml )'
+      - check: 'Persistent (lifetime 0) notifications get no countdown and no extra padding'
+        id: behavior-5
+        context: [runtime]
+        command: '! ( grep -qF ''showCountdown: cardSlot.lifetime > 0'' /usr/share/omarchy/shell/plugins/notifications/Service.qml && grep -qF ''countdownReservedHeight: showCountdown ? Style.space(12) : 0'' /usr/share/omarchy/shell/plugins/notifications/components/NotificationCard.qml )'

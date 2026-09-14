@@ -1,0 +1,90 @@
+version: 2026.249.2125
+check-omarchy-pr-10129-vm:
+  vm:
+    from: check-omarchy-eval-base-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    add_candy:
+      - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+      - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+      # the updated pr-apply (the test-context closure) overwrites the
+      # golden's baked script at deploy time — no golden re-provision.
+      - omarchy-pr-apply
+      # upstream's own contract surfaces run per PR (the whole corpus is
+      # 25 cheap file-presence/CLI assertions (the selection vocabulary in the skill); the oracle's selection
+      # drives the report emphasis, the corpus facts land in the ledger)
+      - omarchy-corpus
+    plan:
+      - check: apply PR 10129 via the single apply seam
+        id: pr-apply
+        context: [runtime]
+        command: 'pr-apply 10129 0681cadf28aae14f9cc46271ecb2af76e5958a36 bin/omarchy-hyprland-window-restore-presentation bin/omarchy-restart-shell test/shell.d/hyprland-window-restore-presentation-test.sh'
+      - check: the PR's OWN test suite passes on the applied system
+        id: pr-tests
+        context: [runtime]
+        command: 'for t in /usr/share/omarchy/test/shell.d/hyprland-window-restore-presentation-test.sh; do bash "$t" || exit 1; done'
+      - check: 'the new presentation-restore helper is installed in the omarchy bin tree with its float dispatch'
+        id: behavior-1
+        context: [runtime]
+        command: 'test -f /usr/share/omarchy/bin/omarchy-hyprland-window-restore-presentation && grep -qF ''hl.dsp.window.float({ window = "$window", action = "on" })'' /usr/share/omarchy/bin/omarchy-hyprland-window-restore-presentation'
+      - check: 'omarchy-restart-shell re-applies the presentation float after the new shell answers ping'
+        id: behavior-2
+        context: [runtime]
+        command: 'grep -qF ''omarchy-hyprland-window-restore-presentation'' /usr/share/omarchy/bin/omarchy-restart-shell'
+      - check: 'with a live-shaped hyprctl, the script dispatches float/resize 875x600/center for an org.omarchy.terminal client'
+        id: behavior-3
+        context: [runtime]
+        command: 't=$(mktemp -d); mkdir -p "$t/bin"; printf ''#!/bin/bash\nif [[ $1 == clients ]]; then printf "%%s" "$OMARCHY_TEST_CLIENTS_JSON"; else echo "$*" >>"$HYPRCTL_LOG"; fi\n'' >"$t/bin/hyprctl"; chmod +x "$t/bin/hyprctl"; PATH="$t/bin:$PATH" HYPRCTL_LOG="$t/log" OMARCHY_TEST_CLIENTS_JSON=''[{"address":"0xabc","class":"org.omarchy.terminal","initialClass":"org.omarchy.terminal"}]'' bash /usr/share/omarchy/bin/omarchy-hyprland-window-restore-presentation && grep -qF ''dispatch hl.dsp.window.resize({ window = "address:0xabc", x = 875, y = 600 })'' "$t/log" && grep -qF ''dispatch hl.dsp.window.center({ window = "address:0xabc" })'' "$t/log"'
+      - check: 'the restore helper leaves non-presentation terminals untouched'
+        id: behavior-4
+        context: [runtime]
+        command: 't=$(mktemp -d); mkdir -p "$t/bin"; printf ''#!/bin/bash\nif [[ $1 == clients ]]; then printf "%%s" "$OMARCHY_TEST_CLIENTS_JSON"; else echo "$*" >>"$HYPRCTL_LOG"; fi\n'' >"$t/bin/hyprctl"; chmod +x "$t/bin/hyprctl"; PATH="$t/bin:$PATH" HYPRCTL_LOG="$t/log" OMARCHY_TEST_CLIENTS_JSON=''[{"address":"0xfoot","class":"foot","initialClass":"foot"}]'' bash /usr/share/omarchy/bin/omarchy-hyprland-window-restore-presentation && [[ ! -s "$t/log" ]]'
+      - check: start a terminal recording
+        id: rec-start
+        context: [runtime]
+        record: {method: start, record_mode: terminal, record_name: pr-10129}
+      - check: start the SPICE display video capture
+        id: rec-spice-start
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: record, action: start, record_name: pr-10129, fps: 5}
+      - check: drive the PR key command inside the recording
+        id: rec-drive
+        context: [runtime]
+        record:
+          method: run
+          record_name: pr-10129
+          # the drive is ARBITRARY shell — a block scalar, never a flow
+          # mapping (RCA 2026.252.2250: the inlined text broke the
+          # rendered YAML on shell metacharacters).
+          text: |-
+            xdg-terminal-exec --app-id=org.omarchy.terminal >/dev/null 2>&1 & sleep 2; bash /usr/share/omarchy/bin/omarchy-hyprland-window-restore-presentation; hyprctl clients -j | jq -c '.[] | select((.class // "") == "org.omarchy.terminal") | {address, size, at, floating}'
+          settle_ms: 1000
+      - check: capture the VM display via SPICE
+        id: rec-screen-spice
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: screenshot, artifact: /tmp/pr-10129.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+      - check: stop the SPICE capture and pull the MJPEG stream
+        id: rec-spice-stop
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: record, action: stop, record_name: pr-10129, artifact: /tmp/pr-10129.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+      - check: stop the terminal recording and pull the .cast
+        id: rec-stop
+        context: [runtime]
+        record: {method: stop, record_name: pr-10129, artifact: /tmp/pr-10129.cast, artifact_min_bytes: 200}
+      - check: render the .cast to an animated GIF
+        id: rec-gif
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        record: {method: gif, record_name: pr-10129, artifact: /tmp/pr-10129.gif, artifact_min_bytes: 100}
+      - run: transcode the SPICE MJPEG capture to MP4
+        id: rec-mp4
+        context: [runtime]
+        command: 'ffmpeg -y -loglevel error -i /tmp/pr-10129.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/pr-10129.mp4'

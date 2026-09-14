@@ -1,0 +1,90 @@
+version: 2026.249.2125
+check-omarchy-pr-10148-vm:
+  vm:
+    from: check-omarchy-eval-base-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    add_candy:
+      - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
+      - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+      # the updated pr-apply (the test-context closure) overwrites the
+      # golden's baked script at deploy time — no golden re-provision.
+      - omarchy-pr-apply
+      # upstream's own contract surfaces run per PR (the whole corpus is
+      # 25 cheap file-presence/CLI assertions (the selection vocabulary in the skill); the oracle's selection
+      # drives the report emphasis, the corpus facts land in the ledger)
+      - omarchy-corpus
+    plan:
+      - check: apply PR 10148 via the single apply seam
+        id: pr-apply
+        context: [runtime]
+        command: 'pr-apply 10148 a68df9c8cac7a78925001006fe64d9f7bfbf9429 config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf migrations/1788513270.sh test/shell.d/audient-soft-mixer-migration-test.sh'
+      - check: the PR's OWN test suite passes on the applied system
+        id: pr-tests
+        context: [runtime]
+        command: 'for t in /usr/share/omarchy/test/shell.d/audient-soft-mixer-migration-test.sh; do bash "$t" || exit 1; done'
+      - check: 'the shipped WirePlumber rule exists and matches vendor 0x2708 with api.alsa.soft-mixer=true'
+        id: behavior-1
+        context: [runtime]
+        command: 'test -f /usr/share/omarchy/config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf && grep -q ''device.vendor.id = "0x2708"'' /usr/share/omarchy/config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf && grep -q ''api.alsa.soft-mixer = true'' /usr/share/omarchy/config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf'
+      - check: 'the migration script exists and carries the vendor guard, the audio restart and the Speaker reset'
+        id: behavior-2
+        context: [runtime]
+        command: 'test -f /usr/share/omarchy/migrations/1788513270.sh && grep -q ''2708:'' /usr/share/omarchy/migrations/1788513270.sh && grep -q ''omarchy-restart-audio'' /usr/share/omarchy/migrations/1788513270.sh && grep -q ''sset Speaker 100%'' /usr/share/omarchy/migrations/1788513270.sh'
+      - check: 'with an Audient card attached the migration seeds the shipped rule, restarts audio, resets only the Audient card''s Speaker element, and leaves other vendors alone'
+        id: behavior-3
+        context: [runtime]
+        command: 'd=$(mktemp -d) && mkdir -p "$d/home" "$d/asound/card0" "$d/asound/card2" "$d/bin" && printf ''8086:2668\n'' > "$d/asound/card0/usbid" && printf ''2708:0002\n'' > "$d/asound/card2/usbid" && printf ''#!/bin/bash\necho omarchy-restart-audio >>"$CALLS"\n'' > "$d/bin/omarchy-restart-audio" && printf ''#!/bin/bash\necho amixer $* >>"$CALLS"\n'' > "$d/bin/amixer" && chmod +x "$d/bin"/* && CALLS="$d/calls" HOME="$d/home" OMARCHY_PATH=/usr/share/omarchy OMARCHY_ALSA_PROCFS="$d/asound" PATH="$d/bin:/usr/share/omarchy/bin:$PATH" bash /usr/share/omarchy/migrations/1788513270.sh && cmp -s "$d/home/.config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf" /usr/share/omarchy/config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf && grep -qx ''omarchy-restart-audio'' "$d/calls" && grep -qx ''amixer -c 2 sset Speaker 100%'' "$d/calls" && ! grep -q ''amixer -c 0'' "$d/calls"'
+      - check: 'with no Audient card attached the migration still seeds the rule but touches no audio state'
+        id: behavior-4
+        context: [runtime]
+        command: 'd=$(mktemp -d) && mkdir -p "$d/home" "$d/asound/card0" "$d/bin" && printf ''8086:2668\n'' > "$d/asound/card0/usbid" && printf ''#!/bin/bash\necho omarchy-restart-audio >>"$CALLS"\n'' > "$d/bin/omarchy-restart-audio" && printf ''#!/bin/bash\necho amixer $* >>"$CALLS"\n'' > "$d/bin/amixer" && chmod +x "$d/bin"/* && CALLS="$d/calls" HOME="$d/home" OMARCHY_PATH=/usr/share/omarchy OMARCHY_ALSA_PROCFS="$d/asound" PATH="$d/bin:/usr/share/omarchy/bin:$PATH" bash /usr/share/omarchy/migrations/1788513270.sh && cmp -s "$d/home/.config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf" /usr/share/omarchy/config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf && test ! -s "$d/calls"'
+      - check: start a terminal recording
+        id: rec-start
+        context: [runtime]
+        record: {method: start, record_mode: terminal, record_name: pr-10148}
+      - check: start the SPICE display video capture
+        id: rec-spice-start
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: record, action: start, record_name: pr-10148, fps: 5}
+      - check: drive the PR key command inside the recording
+        id: rec-drive
+        context: [runtime]
+        record:
+          method: run
+          record_name: pr-10148
+          # the drive is ARBITRARY shell — a block scalar, never a flow
+          # mapping (RCA 2026.252.2250: the inlined text broke the
+          # rendered YAML on shell metacharacters).
+          text: |-
+            d=$(mktemp -d); mkdir -p "$d/home" "$d/asound/card2" "$d/bin"; printf '2708:0002\n' > "$d/asound/card2/usbid"; printf '#!/bin/bash\necho omarchy-restart-audio >>"$CALLS"\n' > "$d/bin/omarchy-restart-audio"; printf '#!/bin/bash\necho amixer $* >>"$CALLS"\n' > "$d/bin/amixer"; chmod +x "$d/bin"/*; CALLS="$d/calls" HOME="$d/home" OMARCHY_PATH=/usr/share/omarchy OMARCHY_ALSA_PROCFS="$d/asound" PATH="$d/bin:/usr/share/omarchy/bin:$PATH" bash /usr/share/omarchy/migrations/1788513270.sh; echo '--- seeded rule ---'; cat "$d/home/.config/wireplumber/wireplumber.conf.d/audient-soft-mixer.conf"; echo '--- calls ---'; cat "$d/calls"
+          settle_ms: 1000
+      - check: capture the VM display via SPICE
+        id: rec-screen-spice
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: screenshot, artifact: /tmp/pr-10148.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+      - check: stop the SPICE capture and pull the MJPEG stream
+        id: rec-spice-stop
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        spice: {method: record, action: stop, record_name: pr-10148, artifact: /tmp/pr-10148.mjpeg, artifact_min_bytes: 10000, artifact_not_uniform: true}
+      - check: stop the terminal recording and pull the .cast
+        id: rec-stop
+        context: [runtime]
+        record: {method: stop, record_name: pr-10148, artifact: /tmp/pr-10148.cast, artifact_min_bytes: 200}
+      - check: render the .cast to an animated GIF
+        id: rec-gif
+        eventually: 25s
+        retry_interval: 3s
+        context: [runtime]
+        record: {method: gif, record_name: pr-10148, artifact: /tmp/pr-10148.gif, artifact_min_bytes: 100}
+      - run: transcode the SPICE MJPEG capture to MP4
+        id: rec-mp4
+        context: [runtime]
+        command: 'ffmpeg -y -loglevel error -i /tmp/pr-10148.mjpeg -c:v libx264 -pix_fmt yuv420p /tmp/pr-10148.mp4'

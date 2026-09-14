@@ -1,0 +1,29 @@
+version: 2026.249.2125
+check-omarchy-pr-10200-control:
+  vm:
+    from: check-omarchy-eval-base-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    plan:
+      # the NEGATIVE CONTROL: the negated checks on the PRISTINE golden.
+      # Every negated step must PASS (every original check failed without
+      # the PR = every knownRed claim holds). A control step failing means
+      # the original check passed without the PR — a FAKE assertion,
+      # caught at render, never shipped to a real eval.
+      - check: 'omarchy-default-editor carries the new XDG sync call that applies the selection to the user mimeapps defaults'
+        id: behavior-1
+        context: [runtime]
+        command: '! ( grep -qF ''sync_xdg_defaults "$desktop_id"'' /usr/share/omarchy/bin/omarchy-default-editor )'
+      - check: 'selecting code rewrites ~/.config/mimeapps.list so text/plain maps to code.desktop'
+        id: behavior-2
+        context: [runtime]
+        command: '! ( tmp=$(mktemp -d); mkdir -p "$tmp/bin"; printf ''#!/bin/bash\nexit 0\n'' > "$tmp/bin/code"; chmod +x "$tmp/bin/code"; PATH="$tmp/bin:$PATH" HOME="$tmp" timeout 60 bash /usr/share/omarchy/bin/omarchy-default-editor code </dev/null >/dev/null 2>&1; grep -Fxq ''text/plain=code.desktop'' "$tmp/.config/mimeapps.list" )'
+      - check: 'selecting a GUI editor installs a per-user desktop override whose MimeType line declares text/plain'
+        id: behavior-3
+        context: [runtime]
+        command: '! ( tmp=$(mktemp -d); mkdir -p "$tmp/bin" "$tmp/data/applications"; printf ''#!/bin/bash\nexit 0\n'' > "$tmp/bin/code"; chmod +x "$tmp/bin/code"; printf ''[Desktop Entry]\nName=Code\nMimeType=application/x-code-workspace;\n'' > "$tmp/data/applications/code.desktop"; PATH="$tmp/bin:$PATH" HOME="$tmp" XDG_DATA_HOME="$tmp/data" timeout 60 bash /usr/share/omarchy/bin/omarchy-default-editor code </dev/null >/dev/null 2>&1; grep -q ''^MimeType=.*text/plain'' "$tmp/data/applications/code.desktop" )'
+      - check: 'switching the default editor to nvim rewrites the text handlers to nvim.desktop while preserving the [Added Associations] section verbatim'
+        id: behavior-4
+        context: [runtime]
+        command: '! ( tmp=$(mktemp -d); mkdir -p "$tmp/bin" "$tmp/.config"; for b in code nvim; do printf ''#!/bin/bash\nexit 0\n'' > "$tmp/bin/$b"; chmod +x "$tmp/bin/$b"; done; printf ''[Default Applications]\ntext/plain=code.desktop\n\n[Added Associations]\ntext/plain=code.desktop;\n'' > "$tmp/.config/mimeapps.list"; PATH="$tmp/bin:$PATH" HOME="$tmp" timeout 60 bash /usr/share/omarchy/bin/omarchy-default-editor nvim </dev/null >/dev/null 2>&1; grep -Fxq ''text/plain=nvim.desktop'' "$tmp/.config/mimeapps.list" && grep -Fq ''[Added Associations]'' "$tmp/.config/mimeapps.list" && grep -Fq ''text/plain=code.desktop;'' "$tmp/.config/mimeapps.list" )'

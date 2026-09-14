@@ -1,0 +1,29 @@
+version: 2026.249.2125
+check-omarchy-pr-10116-control:
+  vm:
+    from: check-omarchy-eval-base-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    plan:
+      # the NEGATIVE CONTROL: the negated checks on the PRISTINE golden.
+      # Every negated step must PASS (every original check failed without
+      # the PR = every knownRed claim holds). A control step failing means
+      # the original check passed without the PR — a FAKE assertion,
+      # caught at render, never shipped to a real eval.
+      - check: 'Model.js defines and exports the new shouldShowAdapter helper'
+        id: behavior-1
+        context: [runtime]
+        command: '! ( grep -q ''function shouldShowAdapter(devices, connectionType, wifiType, wiredType)'' /usr/share/omarchy/shell/plugins/panels/network/Model.js && grep -q ''shouldShowAdapter: shouldShowAdapter,'' /usr/share/omarchy/shell/plugins/panels/network/Model.js )'
+      - check: 'Panel.qml derives showAdapter from the model with the active connection type and the Wifi/Wired device types'
+        id: behavior-2
+        context: [runtime]
+        command: '! ( grep -q ''readonly property bool showAdapter: Model.shouldShowAdapter('' /usr/share/omarchy/shell/plugins/panels/network/Panel.qml && grep -q ''networkDevices, info.type, DeviceType.Wifi, DeviceType.Wired)'' /usr/share/omarchy/shell/plugins/panels/network/Panel.qml )'
+      - check: 'Panel.qml renders the Adapter label/value pair bound to root.info.iface and gated on root.showAdapter'
+        id: behavior-3
+        context: [runtime]
+        command: '! ( grep -q ''text: "Adapter"'' /usr/share/omarchy/shell/plugins/panels/network/Panel.qml && grep -q ''text: root.info.iface || "--"'' /usr/share/omarchy/shell/plugins/panels/network/Panel.qml && test "$(grep -c ''visible: root.showAdapter'' /usr/share/omarchy/shell/plugins/panels/network/Panel.qml)" -ge 2 )'
+      - check: 'the helper maps the connection type to the matching device type and returns true only when more than one device matches'
+        id: behavior-4
+        context: [runtime]
+        command: '! ( grep -q ''if (connectionType === "wifi") targetType = wifiType'' /usr/share/omarchy/shell/plugins/panels/network/Model.js && grep -q ''else if (connectionType === "ethernet") targetType = wiredType'' /usr/share/omarchy/shell/plugins/panels/network/Model.js && grep -q ''return count > 1'' /usr/share/omarchy/shell/plugins/panels/network/Model.js )'

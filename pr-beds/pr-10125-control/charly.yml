@@ -1,0 +1,29 @@
+version: 2026.249.2125
+check-omarchy-pr-10125-control:
+  vm:
+    from: check-omarchy-eval-base-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    plan:
+      # the NEGATIVE CONTROL: the negated checks on the PRISTINE golden.
+      # Every negated step must PASS (every original check failed without
+      # the PR = every knownRed claim holds). A control step failing means
+      # the original check passed without the PR — a FAKE assertion,
+      # caught at render, never shipped to a real eval.
+      - check: 'the installed recorder defines the Baffin CPU-encoder detector'
+        id: behavior-1
+        context: [runtime]
+        command: '! ( grep -q ''screenrecording_needs_cpu_encoder()'' /usr/share/omarchy/bin/omarchy-capture-screenrecording )'
+      - check: 'the detector matches the Baffin device id 1002:67ef'
+        id: behavior-2
+        context: [runtime]
+        command: '! ( grep -qE ''1002:67ef'' /usr/share/omarchy/bin/omarchy-capture-screenrecording )'
+      - check: 'the gpu-screen-recorder invocation forwards the encoder_args array'
+        id: behavior-3
+        context: [runtime]
+        command: '! ( grep -qF ''"${encoder_args[@]}"'' /usr/share/omarchy/bin/omarchy-capture-screenrecording )'
+      - check: 'with a stubbed lspci reporting Baffin, the installed recorder starts gpu-screen-recorder with -encoder cpu'
+        id: behavior-4
+        context: [runtime]
+        command: '! ( tmp=$(mktemp -d) && export tmp && mkdir -p "$tmp/bin" "$tmp/Videos" && printf ''%s\n'' ''#!/bin/bash'' ''printf "%s\n" "$@" >"$tmp/args"'' ''while (($#)); do [[ $1 == -o ]] && { touch "$2"; break; }; shift; done'' >"$tmp/bin/gpu-screen-recorder" && printf ''%s\n'' ''#!/bin/bash'' ''printf "%s\n" "[{\"focused\":true,\"width\":1920,\"height\":1080}]"'' >"$tmp/bin/hyprctl" && printf ''%s\n'' ''#!/bin/bash'' ''printf "%s\n" "0000:01:00.0 0300: 1002:67ef (rev c0)"'' >"$tmp/bin/lspci" && for c in omarchy-hyprland-monitor-focused omarchy-shell omarchy-notification-send; do printf ''%s\n'' ''#!/bin/bash'' ''[[ ${0##*/} == omarchy-hyprland-monitor-focused ]] && echo eDP-1'' >"$tmp/bin/$c"; done && chmod +x "$tmp/bin"/* && HOME="$tmp" PATH="$tmp/bin:$PATH" OMARCHY_SCREENRECORD_DIR="$tmp/Videos" bash /usr/share/omarchy/bin/omarchy-capture-screenrecording --fullscreen && grep -Fx -- -encoder "$tmp/args" >/dev/null && grep -Fx -- cpu "$tmp/args" >/dev/null )'

@@ -1,0 +1,29 @@
+version: 2026.249.2125
+check-omarchy-pr-10147-control:
+  vm:
+    from: check-omarchy-eval-base-inst:golden
+    disposable: true
+    lifecycle: dev
+    update_gate: restart-only
+    plan:
+      # the NEGATIVE CONTROL: the negated checks on the PRISTINE golden.
+      # Every negated step must PASS (every original check failed without
+      # the PR = every knownRed claim holds). A control step failing means
+      # the original check passed without the PR — a FAKE assertion,
+      # caught at render, never shipped to a real eval.
+      - check: 'the install menu JSONC carries the new install.ai.vibecad-preview row'
+        id: behavior-1
+        context: [runtime]
+        command: '! ( grep -q ''"install.ai.vibecad-preview"'' /usr/share/omarchy/default/omarchy/omarchy-menu.jsonc )'
+      - check: 'the row''s action installs vibecad-preview-bin from the Omarchy package repository and launches vibecad'
+        id: behavior-2
+        context: [runtime]
+        command: '! ( grep -qF "omarchy-install-and-launch ''VibeCAD Preview'' vibecad-preview-bin vibecad" /usr/share/omarchy/default/omarchy/omarchy-menu.jsonc )'
+      - check: 'the row dims itself once vibecad-preview-bin is present (omarchy-pkg-present guard)'
+        id: behavior-3
+        context: [runtime]
+        command: '! ( grep -qF ''"disabled":"omarchy-pkg-present vibecad-preview-bin"'' /usr/share/omarchy/default/omarchy/omarchy-menu.jsonc )'
+      - check: 'the row is labeled VibeCAD Preview and no stable install.ai.vibecad row is offered before upstream publishes one'
+        id: behavior-4
+        context: [runtime]
+        command: '! ( grep -qF ''"label":"VibeCAD Preview"'' /usr/share/omarchy/default/omarchy/omarchy-menu.jsonc && ! grep -q ''"install.ai.vibecad":'' /usr/share/omarchy/default/omarchy/omarchy-menu.jsonc )'
