@@ -1,0 +1,218 @@
+# candy/eval-pr/charly.yml — the minimal omarchy PR-eval lane wiring + skills.
+#
+# ONE self-contained per-PR evaluation: an instrumented golden clone, the PR
+# applied via the single pr-apply seam, the oracle's known-red checks + the drive
+# recording, and the NEGATIVE CONTROL (the same checks negated on the pristine
+# golden). Everything the run produces lands in ONE directory:
+#
+#   eval/pr-<N>/charly.yml   — both beds (treatment + control entities, COMMITTED)
+#   eval/pr-<N>/eval.yml     — the single record: oracle + eval + control + gates
+#                              + cold-read + the user-voice report + media links
+#   eval/pr-<N>/media/       — the recordings (GITIGNORED)
+#
+# The pipeline entity is eval-pr-plan (in the project charly.yml). The skill
+# BODIES below are the SINGLE SOURCE; `charly marketplace generate` projects each
+# to marketplace/distros/skills/<name>/SKILL.md (family: distros). The lane's
+# eval-pr-plan consumes that corpus via skills.corpus.
+
+eval-pr:
+  candy:
+    version: 2026.257.1700
+    description: |-
+      The minimal omarchy PR-eval lane: one disposable golden clone per PR, the
+      PR applied via the pr-apply seam, known-red checks proven by a negative
+      control, both recording lanes, and ONE self-contained eval/pr-<N>/eval.yml
+      record. Composes the generic pipeline engine + the PR tools.
+    candy:
+      - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.257.1506'
+      - '@github.com/opencharly/plugin-review/candy/plugin-review:v2026.251.1939'
+    var:
+      EVAL_LANES: "16"
+      EVAL_REPO: omacom/omarchy
+    env_require:
+      - name: EVAL_UMBRELLA
+        description: "Path to the opencharly umbrella checkout (the skills corpus root)"
+        default: ""
+    env_accept:
+      - name: EVAL_LLM_BASE_URL
+        description: "LLM chat-completions base URL (default: the local ollama server)"
+      - name: EVAL_LLM_MODEL
+        description: "LLM model id (default: deepseek-v4.1-flash:cloud on the local ollama)"
+      - name: EVAL_LLM_PROVIDER
+        description: "LLM provider name"
+      - name: EVAL_DRY_RUN
+        description: "Dry-run flag"
+      - name: EVAL_DEBUG
+        description: "Verbose run debugging"
+      - name: EVAL_LANES
+        description: "Concurrency lanes"
+      - name: EVAL_PUBLISH
+        description: "approve -> the publication gate posts"
+      - name: BARE_PROMPT
+        description: "Inline prompt for the standalone agent surface"
+    secret_accept:
+      - name: EVAL_LLM_API_KEY
+        description: "LLM provider API key"
+        key: charly/api-key/eval-llm
+    plan:
+      - check: the pipeline executor self-tests
+        id: ade-pipeline-present
+        context: [runtime]
+        command: charly pipeline --self-test
+        exit_status: 0
+      - check: the v2 pipeline entity validates against #PipelineInput
+        id: ade-pipeline-valid
+        context: [runtime]
+        command: charly pipeline validate eval-pr-plan
+        exit_status: 0
+
+eval-pr-entry-skill:
+    skill:
+        name: omarchy-eval
+        family: distros
+        owner: eval-omarchy
+        description: |-
+            The omarchy PR-eval lane procedure — the terminal states, the never-mock rule, known-red checks, the negative control, and cold-read validation.
+        content: |-
+            # omarchy-eval
+
+            The omarchy PR-eval lane procedure. Every agent in the lane follows this;
+            the stage prompts point here and never restate it.
+
+            ## The lane's job
+
+            Evaluate an omacom/omarchy PR the way another user would: apply the PR to a
+            real omarchy system, use it, and report what happened — on a disposable
+            golden-VM clone, with full evidence rigor.
+
+            ## The one experiment
+
+            - **Treatment**: a fresh clone of the chosen channel golden, the PR applied
+              via the single `pr-apply` seam, the oracle's known-red checks, then ONE
+              drive command inside the recording.
+            - **Control**: a fresh clone of the SAME golden, the SAME checks NEGATED, no
+              apply. Every negated step must PASS on the pristine golden — that is the
+              assertion-integrity proof.
+            - The lane's claims are Tier-2 live-VM claims: a real omarchy system.
+
+            ## The terminal states (typed, never ambiguous)
+
+            - TESTED — real observed outcomes; the record renders with the report.
+            - NOT_TESTABLE_PR — the PR itself cannot be exercised on this machine (draft,
+              hardware-bound, out of scope). A SHORT factual note: what the PR does, the
+              CONCRETE reason, what a setup that could would need. No lament, no fakes.
+            - SETUP_DEFECT — the harness failed (missing entity, plugin load, golden
+              absence, a fake assertion caught by the control bed). The lane NEVER
+              renders a report: it renders the defect and triggers the informed redo.
+
+            ## The rules
+
+            - Never mock. Test like a user. Install missing software before declaring
+              "couldn't be tested". Test to the maximum extent on a live system.
+            - Every PR-specific check is known-red: it MUST fail on the pristine golden.
+              The control bed proves it — a check that passes without the PR is a FAKE
+              assertion and the lane re-renders informed.
+            - Every result is cold-read validated against the ledger, never against prose.
+            - The evidence packet is linked, never inlined.
+
+            ## The per-PR artifact
+
+            Everything for a PR lives in `eval/pr-<N>/`: the two beds (`charly.yml`), the
+            single record (`eval.yml`, which carries the report prose), and the
+            recordings (`media/`, gitignored). The record is self-contained: it needs no
+            other file to be read.
+
+eval-pr-oracle-skill:
+    skill:
+        name: omarchy-eval-oracle
+        family: distros
+        owner: eval-omarchy
+        description: |-
+            The Config Oracle (triage) contract — classify the PR, pick the golden image, author the known-red check plan.
+        content: |-
+            # omarchy-eval-oracle
+
+            The triage (Config Oracle) procedure. The oracle decides WHAT to test and HOW
+            — it never runs a bed.
+
+            ## The output contract
+
+            The reply is ONE JSON object with the declared outputs. Every field must be a
+            real resolved value from the tools — a placeholder in any field fails the
+            whole lane at render time.
+
+            ## The triage steps
+
+            1. Classify the diff: system / packaging / visual / skip. A draft or WIP PR is
+               class "skip" — never a faked bed.
+            2. Resolve the PR head sha, the changed files, and the PR's OWN test files
+               (the changed test/shell.d/*.sh — never invent tests).
+            3. Author the checks: each check is a shell assertion (grep/test) that
+               PROVES the PR's behavior on the live system at its ABSOLUTE system paths
+               (/usr/share/omarchy/..., /etc/..., ~/.config/...). Scripts may not be +x
+               after apply: invoke them via their interpreter (bash <abs path>).
+            4. knownRed is a CONTRACT, not prose: the control bed runs the negated
+               assertion on the pristine golden. If the assertion passes without the PR,
+               the check is fake and the lane re-renders informed. Author assertions
+               that are red by construction: they reference the PR's own added lines.
+            5. The drive command: ONE shell command that exercises the PR's key behavior
+               inside the recording.
+
+            ## The golden image (the oracle's pick)
+
+            The oracle PICKS the golden image for the PR. The available goldens (the
+            registry) are:
+
+            - `check-omarchy-eval-base-inst` — the STABLE channel golden.
+            - `check-omarchy-eval-rc-inst` — the RC channel golden.
+            - `check-omarchy-eval-edge-inst` — the EDGE channel golden.
+            - `check-omarchy-eval-dev-inst` — the DEV channel golden.
+
+            A PR that targets a specific omarchy channel MUST use that channel's golden.
+            A visual/desktop PR uses the stable golden unless the PR is channel-specific.
+            A script/packaging PR uses the stable golden. NEVER invent a golden name that
+            is not in this registry — the lane validates the choice at render time and an
+            unknown golden fails the lane.
+
+            ## The control contract
+
+            When the ledger facts show the control bed FAILED (a negated check failed =
+            an original check PASSED on the pristine golden = a FAKE assertion), call
+            run_outcomes on the control bed FIRST — read the FAILING step — then RE-AUTHOR
+            that check: remove or replace the fake assertion (it must be red by
+            construction). Never re-emit the same checks.
+            YOUR REPLY IS ALWAYS THE JSON OBJECT — even when the conclusion is that the
+            control failure is environmental, the JSON carries the re-authored checks.
+
+eval-pr-cold-reader-skill:
+    skill:
+        name: omarchy-eval-cold-reader
+        family: distros
+        owner: eval-omarchy
+        description: |-
+            The cold-read rubric — the artifacts-only validation of the evidence packet against the ledger facts.
+        content: |-
+            # omarchy-eval-cold-reader
+
+            The cold-read rubric — the artifacts-only validation of the evidence packet.
+            You are a FRESH reader: you did not author the checks, and you judge the
+            artifacts and the ledger facts, never the prose alone.
+
+            ## The deterministic gates (from the ledger, never from prose)
+
+            - executed_checks >= 1: at least one check actually ran (PASS or FAIL). A
+              packet with zero executed checks is a SETUP_DEFECT, never a publish.
+            - control_ok: the control bed ran and passed (every knownRed claim proven).
+            - media_ok: the evidence recordings exist and are non-empty.
+
+            ## The prose gates
+
+            - Every material claim in the report is corroborated by the ledger facts.
+            - The voice is user-voice: what I did, what I saw. No verdict language, no
+              maintainer voice, no lament.
+            - The suggestions are actionable user words.
+
+            ## The verdict
+
+            PASS | FAIL | NO_VALIDATION — the PACKET verdict, never the lane state.
+            SETUP_DEFECT is a lane classification, not a verdict.

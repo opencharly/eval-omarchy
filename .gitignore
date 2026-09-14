@@ -3,7 +3,10 @@
 .check/
 .containerignore
 .dockerignore
+# the per-PR recordings live INSIDE the record dir now (eval/pr-<N>/media/) and
+# are ignored by the rule below; the old top-level media/ layout is retired.
 media/
+eval/*/media/
 output/
 capture/
 *.bak*
@@ -37,8 +40,8 @@ __pycache__/
 
 # Deliberately NOT ignored (tracked as the lane produces them) so a fresh clone
 # can rerun every eval and read every result:
-#   pr-beds/                 the generated per-PR eval config (oracle-authored beds)
-#   metrics/                 the per-PR lane metrics
-#   stage-findings.yml       the per-run lane ledger dump
-#   setup-defects/           the improvement ledger (the self-improving loop's memory)
+#   eval/pr-<N>/charly.yml   the per-PR eval beds (treatment + negative control)
+#   eval/pr-<N>/eval.yml     the single per-PR record (oracle + eval + control +
+#                            gates + cold-read + the user-voice report + media links)
 #   eval/omarchy-acceptance-matrix.md  the generated acceptance-corpus matrix
+# The recordings under eval/pr-<N>/media/ ARE ignored (the rule above).
