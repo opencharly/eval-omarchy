@@ -163,10 +163,10 @@ eval-pr-oracle-skill:
             The oracle PICKS the golden image for the PR. The available goldens (the
             registry) are:
 
-            - `check-omarchy-eval-base-inst` — the STABLE channel golden.
-            - `check-omarchy-eval-rc-inst` — the RC channel golden.
-            - `check-omarchy-eval-edge-inst` — the EDGE channel golden.
-            - `check-omarchy-eval-dev-inst` — the DEV channel golden.
+            - `check-omarchy-eval-base-inst:golden` — the STABLE channel golden (the `:golden` snapshot).
+            - `check-omarchy-eval-rc-inst:golden` — the RC channel golden.
+            - `check-omarchy-eval-edge-inst:golden` — the EDGE channel golden.
+            - `check-omarchy-eval-dev-inst:golden` — the DEV channel golden.
 
             A PR that targets a specific omarchy channel MUST use that channel's golden.
             A visual/desktop PR uses the stable golden unless the PR is channel-specific.

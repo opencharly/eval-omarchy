@@ -1651,7 +1651,7 @@ eval-pr-plan:
           triggers: { redo-plan: oracle }
         outputs:
           class: { type: enum, enum: [system, packaging, visual, skip], description: "the PR's change class" }
-          golden: { type: enum, enum: [check-omarchy-eval-base-inst, check-omarchy-eval-rc-inst, check-omarchy-eval-edge-inst, check-omarchy-eval-dev-inst], description: "the golden image the oracle picked for this PR (one of the registry)" }
+          golden: { type: enum, enum: [check-omarchy-eval-base-inst:golden, check-omarchy-eval-rc-inst:golden, check-omarchy-eval-edge-inst:golden, check-omarchy-eval-dev-inst:golden], description: "the golden snapshot the oracle picked for this PR (one of the registry; the :golden snapshot of the channel)" }
           sha: { type: string, description: "the PR head sha" }
           files: { type: string_list, description: "the PR's changed file paths" }
           drive: { type: string, description: "one shell command exercising the PR's key behavior" }
@@ -1664,7 +1664,7 @@ eval-pr-plan:
           markdown fences, no trailing text. The object carries EXACTLY these
           fields, every one present:
             class: "system" | "packaging" | "visual" | "skip"
-            golden: one of "check-omarchy-eval-base-inst" | "check-omarchy-eval-rc-inst" | "check-omarchy-eval-edge-inst" | "check-omarchy-eval-dev-inst"
+            golden: one of "check-omarchy-eval-base-inst:golden" | "check-omarchy-eval-rc-inst:golden" | "check-omarchy-eval-edge-inst:golden" | "check-omarchy-eval-dev-inst:golden"  (the :golden snapshot ref — include the suffix)
             sha: the PR head sha
             files: [the PR's changed file paths]
             drive: one shell command exercising the PR's key behavior

@@ -45,3 +45,9 @@ __pycache__/
 #                            gates + cold-read + the user-voice report + media links)
 #   eval/omarchy-acceptance-matrix.md  the generated acceptance-corpus matrix
 # The recordings under eval/pr-<N>/media/ ARE ignored (the rule above).
+
+# VM disk images (configurable root; default `image`, the vm.image_dir setting)
+image/
+
+# transient per-run pipeline ledger dump (never committed)
+stage-findings.yml
