@@ -1532,7 +1532,7 @@ eval-lane-plan:
     # the pipeline executor does not read a top-level channels: block.
     media:
       files: [cast, gif, mjpeg, mp4, png]
-      min: { cast: 200, gif: 1024, mjpeg: 4096, mp4: 4096, png: 1024 }
+      min: { cast: 200, gif: 1024, mjpeg: 4096, mp4: 512, png: 1024 }
       # the {CalVer}/{bed} direct-write layout (G-wave): the lane derives
       # {bed} = pr-$pr (the PR bed short name — the pipeline's own $pr) and
       # {calver} = $calver (the lane calver pipeline var). NOTE: the BED var
@@ -1882,7 +1882,7 @@ eval-lane-plan:
         verbs: [media_gate, lock_audit]
         skip_when: "@triage.class == skip"
         input:
-          media_gate: { dir: "media/$calver/pr-$pr", files: [cast, gif, mjpeg, mp4, png], min: {cast: 200, gif: 1024, mjpeg: 4096, mp4: 4096, png: 1024} }
+          media_gate: { dir: "media/$calver/pr-$pr", files: [cast, gif, mjpeg, mp4, png], min: {cast: 200, gif: 1024, mjpeg: 4096, mp4: 512, png: 1024} }
           # the lock audit scopes to THIS run's trees — the whole .check tree
           # carries stale .lock files from unrelated historical runs.
           lock_audit: { trees: ["$workdir/.check/check-omarchy-pr-$pr-vm", "$workdir/.check/check-omarchy-pr-$pr-control"] }
@@ -1999,7 +1999,7 @@ eval-lane-plan:
           triggers: { redo-plan: cold-read }
         outputs:
           verdict: { type: enum, enum: [PASS, FAIL, NO_VALIDATION], description: "the packet verdict" }
-          suggestions: { type: string, description: "the user-voice suggestions" }
+          suggestions: { type: string_list, description: "the user-voice suggestions: a LIST of short strings, one suggestion per element (never a single joined paragraph)" }
         prompt: |-
           Fresh-context validation of the evidence packet against the ledger facts
           in your user message — the deterministic gates first (executed_checks >= 1,
@@ -2015,6 +2015,9 @@ eval-lane-plan:
           The first character is '{'. No prose, no preamble, no markdown fences
           (never wrap the object in ```json — the fence breaks the parse). The
           object carries EXACTLY the declared outputs (verdict, suggestions).
+          TYPES: "verdict" is one of the strings PASS | FAIL | NO_VALIDATION.
+          "suggestions" is a JSON ARRAY of short strings (e.g. ["do X","fix Y"]),
+          NEVER a single joined string and never null.
           The verdict is the PACKET verdict: PASS | FAIL | NO_VALIDATION — never
           the lane state (SETUP_DEFECT is a lane classification, not a verdict).
       - id: render-report
