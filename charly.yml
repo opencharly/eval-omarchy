@@ -1856,7 +1856,9 @@ eval-pr-plan:
           # own `verdict:` KEY (a real field, unindented) is legitimate, so anchor
           # the banned form to a YAML comment or a heading, not a key.
           if grep -qE "^[[:space:]]*#.*\b(PASS|FAIL|NO_VALIDATION)\b" "$f"; then echo "record: verdict language present — the report is user-voice" >&2; exit 1; fi
-          sed -n "/^## Tests/,/^## Suggestions/p" "$f" | grep -qiE "(worked|didn't|did not|failed|passed|N/A|not testable|could not|couldn't)" || { echo "record: Tests lacks observed outcomes" >&2; exit 1; }
+          # Same block-scalar indent as the footers: the report's section headings
+          # are INDENTED, so anchor the range on optional leading whitespace too.
+          sed -nE "/^[[:space:]]*## Tests/,/^[[:space:]]*## Suggestions/p" "$f" | grep -qiE "(worked|didn't|did not|failed|passed|N/A|not testable|could not|couldn't)" || { echo "record: Tests lacks observed outcomes" >&2; exit 1; }
           if grep -qE "no entity|ktree is not installed|harness failed|NO_VALIDATION" "$f"; then echo "record: harness-failure language — SETUP_DEFECT, not an eval" >&2; exit 1; fi
           for p in cast gif mjpeg mp4 png; do test -s "eval/pr-$pr/media/pr-$pr.$p" || { echo "record: evidence path missing: media/pr-$pr.$p" >&2; exit 1; }; done
           test -d ".check/check-omarchy-pr-$pr-vm" || { echo "record: the run matrix dir is missing" >&2; exit 1; }
