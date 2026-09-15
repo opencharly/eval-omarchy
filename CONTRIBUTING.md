@@ -19,33 +19,36 @@ environments — read `VISION.md` for what that is and `README.md` for how it wo
 
 ## How the lane works
 
-The lane is the `eval-lane-plan` `kind: pipeline` entity in `charly.yml`, running on
+The lane is the `eval-pr-plan` `kind: pipeline` entity in `charly.yml`, running on
 the `plugin-pipeline` engine. There is **no GitHub Action** in the eval path. The
-binding lane contract is the `omarchy-eval-*` skill entities in
-`candy/eval-lane/charly.yml`, generated to `marketplace/distros/skills/`; the report
-template is the inline `eval-lane-plan` template in `charly.yml`.
+binding lane contract is the `omarchy-eval` skill entity (with its
+`omarchy-eval-oracle` and `omarchy-eval-cold-reader` siblings) in
+`candy/eval-pr/charly.yml`, generated to `marketplace/distros/skills/`; the record
+template is the inline `report.template` block of the `eval-pr-plan` pipeline in
+`charly.yml`.
 
 ## Running one evaluation
 
 ```sh
-charly pipeline run eval-lane-plan --pr <N>     # triage → control → eval → cold-read
+charly pipeline run eval-pr-plan --pr <N>       # oracle → render → control → eval → gate → report → cold-read → record
 ```
 
-or, to run a single generated bed by hand:
+or, to run a single rendered bed by hand:
 
 ```sh
 charly check run check-omarchy-pr-<N>-vm         # the eval bed (apply + checks + evidence)
 charly check run check-omarchy-pr-<N>-control    # the control twin (negated checks, must PASS)
 ```
 
-The bed files under `pr-beds/pr-<N>/` are **oracle-generated** — never hand-edit
-them; regenerate via the config-oracle. Before any run, the head-freshness
-preflight compares the plan's headSha with the live PR head.
+`eval/pr-<N>/charly.yml` (both beds) is **rendered by the pipeline's `render` stage** —
+never hand-edit it; re-run the oracle (or delete the cached `eval/pr-<N>/eval.yml` to
+force fresh triage). The oracle stage caches its reply in `eval/pr-<N>/eval.yml` keyed
+on the PR head sha, so a re-run at an unchanged head reuses the plan.
 
 ## The publication gate
 
-Reports are rendered from the inline `eval-lane-plan` report template in
-`charly.yml` (user-testing voice, the `*Assisted-by:*` footer).
+The record is rendered from the inline `report.template` of the `eval-pr-plan` pipeline
+in `charly.yml` (user-testing voice, the `*Assisted-by:*` footer).
 **Nothing posts to omacom/omarchy without explicit operator approval.** Every posted
 comment is the operator's call, outside the repo's automated flows.
 
@@ -65,9 +68,9 @@ comment is the operator's call, outside the repo's automated flows.
 
 ## Which skills to load
 
-The lane instructions are the `omarchy-eval-*` skill entities in
-`candy/eval-lane/charly.yml` (generated to `marketplace/distros/skills/`) — see
-the entry `omarchy-eval` and AGENTS.md R0. Load the entry + the skills your
-task touches (oracle for authoring beds, golden for provisioning, media for
-evidence, cold-reader for grading, full-loop for the redo contract) before any
-eval work.
+The lane instructions are the `omarchy-eval` skill entity and its
+`omarchy-eval-oracle` and `omarchy-eval-cold-reader` siblings in
+`candy/eval-pr/charly.yml` (generated to `marketplace/distros/skills/`) — see
+the entry `omarchy-eval` and AGENTS.md R0. Load the entry + the skill your
+task touches (oracle for triage, cold-reader for grading) before any eval
+work.

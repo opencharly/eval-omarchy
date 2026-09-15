@@ -2,9 +2,10 @@
 
 - Status: **active** — the operator contract for the golden test environments.
 - Owner: eval-omarchy maintainers; the config lives in charly.yml (the single source).
-- Source of truth: this page for the OPERATOR view; the binding lane rules in the
-  `omarchy-eval-golden` skill entity (`candy/eval-lane/charly.yml`); VM mechanics in
-  /charly-vm:vm and /charly-internals:disposable.
+- Source of truth: this page for the OPERATOR view; the binding golden chain entities live
+  in `charly.yml` (`omarchy-vm`, `check-omarchy-eval-base`, the four
+  `check-omarchy-eval-*-inst` twins); VM mechanics in /charly-vm:vm and
+  /charly-internals:disposable.
 
 ## The chain
 
@@ -19,12 +20,12 @@
                                       + the same eval payload; the acceptance corpus clones it)
       → check-omarchy-eval-rc-inst   (the RC twin)
       → check-omarchy-eval-dev-inst  (the DEV twin)
-      → per-PR clones (oracle-generated `pr-beds/pr-<N>/charly.yml`:
+      → per-PR clones (oracle-rendered `eval/pr-<N>/charly.yml`:
                       from: <channel-golden>:golden)
 
 The instrumented goldens are `disposable: true`, `lifecycle: dev` deploys with
-`snapshot: {on_finalize: golden, mode: external, keep_venue: true}`; per-PR beds are
-disposable with `lifecycle: dev` and `update_gate: restart-only`. Disposability is a
+`snapshot: {on_finalize: golden, mode: external, keep_venue: true}`; the rendered per-PR
+beds are disposable with `lifecycle: dev` and `update_gate: skip`. Disposability is a
 DEPLOY property, never a VM-entity field (/charly-internals:disposable).
 
 ## When to re-provision the golden
@@ -37,9 +38,8 @@ DEPLOY property, never a VM-entity field (/charly-internals:disposable).
 
 ## Provision / re-provision operator loop (condensed)
 
-The BINDING rules (dual-state delete-before-recapture, libvirt metadata, stop-after-capture,
-golden-presence verification) are in the `omarchy-eval-golden` skill entity
-(`candy/eval-lane/charly.yml`) — run that contract.
+The binding golden chain lives in `charly.yml` (`omarchy-vm` → `check-omarchy-eval-base`
+→ the four `check-omarchy-eval-*-inst` twins) — run those entities.
 Operator summary: clear BOTH the charly store snapshot AND the libvirt metadata, destroy the
 old bed domain, run the FRESH lane (`check-omarchy-eval-base` → the channel twins), stop the
 domain so the golden is never held exclusively, then VERIFY `snapshots/golden/disk.qcow2`
@@ -47,14 +47,17 @@ exists — a missing golden after capture is a BLOCK.
 
 ## Per-PR clones
 
-- The eval bed + the negative-control twin are oracle-generated (config-oracle) into
-  `pr-beds/pr-<N>/charly.yml` and `pr-beds/pr-<N>-control/charly.yml`; never
-  hand-edited; `charly box validate` gates any change. The committed beds let a
+- The eval bed + the negative-control twin are rendered by the `render` stage from the
+  oracle's reply, both into ONE committed file `eval/pr-<N>/charly.yml` (treatment
+  `check-omarchy-pr-<N>-vm` + control `check-omarchy-pr-<N>-control`); never hand-edited;
+  the render stage's validate gate runs `charly box validate`. The committed beds let a
   fresh clone rerun every eval.
-- Before any run: head-freshness preflight (plan headSha == live PR head).
+- Head freshness: the oracle stage caches its result in the committed
+  `eval/pr-<N>/eval.yml` keyed on `$env.PR_HEAD_SHA` — a cache hit skips triage; a new PR
+  head (or a first run) re-authors the plan fresh.
 
 ## Update triggers
 
-- charly.yml golden chain changes → this page + the `omarchy-eval-golden` skill entity.
+- charly.yml golden chain changes → this page.
 - VM snapshot/clone/disposability semantics change → the skills (/charly-vm:vm,
   /charly-internals:disposable), referenced here, never restated.
