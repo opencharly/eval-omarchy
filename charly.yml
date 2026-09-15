@@ -1846,9 +1846,16 @@ eval-pr-plan:
           f="eval/pr-$pr/eval.yml"
           test -s "$f"
           for s in "## Tests" "## Suggestions"; do grep -qF "$s" "$f" || { echo "record: missing section: $s" >&2; exit 1; }; done
-          grep -qE "^\*Assisted-by: .+\*" "$f" || { echo "record: missing Assisted-by footer" >&2; exit 1; }
-          grep -qE "^\*Tested-by: .+\*" "$f" || { echo "record: missing Tested-by footer" >&2; exit 1; }
-          if grep -qE "^#.*\b(PASS|FAIL|NO_VALIDATION)\b" "$f"; then echo "record: verdict language present — the report is user-voice" >&2; exit 1; fi
+          # The report prose is a YAML block scalar (`report: |-`), so its lines
+          # are INDENTED — the footer is not at column 0. Anchor on the line's
+          # content after optional leading spaces, or the check rejects a perfectly
+          # valid record (it did: the footer renders at indent 2).
+          grep -qE "^[[:space:]]*\*Assisted-by: .+\*[[:space:]]*$" "$f" || { echo "record: missing Assisted-by footer" >&2; exit 1; }
+          grep -qE "^[[:space:]]*\*Tested-by: .+\*[[:space:]]*$" "$f" || { echo "record: missing Tested-by footer" >&2; exit 1; }
+          # Verdict language must not leak into the USER-VOICE report; the record's
+          # own `verdict:` KEY (a real field, unindented) is legitimate, so anchor
+          # the banned form to a YAML comment or a heading, not a key.
+          if grep -qE "^[[:space:]]*#.*\b(PASS|FAIL|NO_VALIDATION)\b" "$f"; then echo "record: verdict language present — the report is user-voice" >&2; exit 1; fi
           sed -n "/^## Tests/,/^## Suggestions/p" "$f" | grep -qiE "(worked|didn't|did not|failed|passed|N/A|not testable|could not|couldn't)" || { echo "record: Tests lacks observed outcomes" >&2; exit 1; }
           if grep -qE "no entity|ktree is not installed|harness failed|NO_VALIDATION" "$f"; then echo "record: harness-failure language — SETUP_DEFECT, not an eval" >&2; exit 1; fi
           for p in cast gif mjpeg mp4 png; do test -s "eval/pr-$pr/media/pr-$pr.$p" || { echo "record: evidence path missing: media/pr-$pr.$p" >&2; exit 1; }; done
