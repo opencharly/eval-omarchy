@@ -1738,8 +1738,15 @@ eval-pr-plan:
         # FAIL/NO_VALIDATION/SKIP are all LANE DEFECTS: a control that could not
         # RUN is not "ok" (RCA 2026.257 — NO_VALIDATION silently passed as "ok").
         fail_on: [FAIL, NO_VALIDATION, SKIP]
+        # The `ade` stage signals a `fail_on` verdict with the trigger named
+        # `setup-defect` (plugin-pipeline executor.go), NOT `redo-plan`/`redo-run`.
+        # The oracle skill's control contract mandates: on a control FAIL, read the
+        # control bed's failing step and RE-AUTHOR the fake assertion (`setup-defect`
+        # -> re-plan). So the trigger map MUST key `setup-defect`; keying only
+        # `redo-plan` left the trigger unmapped, so the redo never fired and the
+        # lane flowed a fake assertion downstream (found live, RCA 2026.258).
         redo:
-          triggers: { redo-plan: oracle }
+          triggers: { setup-defect: oracle }
 
       - id: eval
         kind: ade
@@ -1747,8 +1754,10 @@ eval-pr-plan:
         skip_when: "@oracle.class == skip"
         # PASS/FAIL are real outcomes and flow on; NO_VALIDATION/SKIP are lane defects.
         fail_on: [NO_VALIDATION, SKIP]
+        # Same trigger-vocabulary fix as `control`: the ade `fail_on` emits
+        # `setup-defect` (an unrunnable bed), which re-plans via the oracle.
         redo:
-          triggers: { redo-run: control }
+          triggers: { setup-defect: oracle }
 
       - id: media
         kind: media
