@@ -2,7 +2,7 @@ omarchy-eval-harden:
     candy:
         version: 2026.248.0100
         description: |
-            The eval-lane golden hardening whose steps run at DEPLOY time (the only
+            The PR-eval lane's golden hardening whose steps run at DEPLOY time (the only
             mutation path the check-run honors — plan `run:` steps are verify-only
             skips by design). Installs: the guest sshd MaxStartups raise (the wave's
             ssh burst refused the pulls), the pr-apply bare-clone pre-seed (the batch
