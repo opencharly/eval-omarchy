@@ -57,10 +57,14 @@ measured runs) belongs in the CHANGELOG, never on the standing pages.
 7. **The bench evaluates itself.** The lane is the `eval-pr-plan` charly
    pipeline driving disposable beds, with a cold-read/redo loop that grades every
    stage — the evaluation loop is part of the factory that builds the factory:
-   factory-in-the-loop, self-hosting verification.
+   factory-in-the-loop, self-hosting verification. It grades each PR by the SAME
+   criteria every opencharly repo uses for its own PRs — the org `pr-validator` —
+   except that this lane RUNS the R10 the pr-validator would otherwise assume the
+   author pasted.
    → charly's tenet 12 (charly/VISION.md), the full-loop contract
    (the `eval-pr-plan` pipeline's `redo:` edges + the `cold-read` stage in
-   `charly.yml`).
+   `charly.yml`), the org pr-validator spec
+   (`opencharly/layer-charly-internals-extra` → `marketplace/internals/agents/pr-validator.md`).
 
 ## Where the evaluation is heading
 
