@@ -184,12 +184,13 @@ eval-pr-entry-skill:
             never a hand-written or string-templated file:
 
               - the per-PR record: the `record`/`not-testable` stages are `kind: emit`
-                with `schema: candy/eval-pr/record.cue` (`#EvalRecord` /
-                `#NotTestableRecord`). The stage assembles the value from ledger refs
-                (typed: an array stays an array), unifies it against the schema with
-                Concreteness required, and marshals it through the CUE YAML encoder —
-                so quoting and block scalars are the encoder's job and an invalid
-                record is impossible. A field must be added to `record.cue` first.
+                with `schema: candy/eval-pr/record.cue#EvalRecord` /
+                `...#NotTestableRecord` (the explicit `#Def` form). The stage
+                assembles the value from ledger refs (typed: an array stays an
+                array), unifies it against the schema with Concreteness required, and
+                marshals it through the CUE YAML encoder — so quoting and block
+                scalars are the encoder's job and an invalid record is impossible. A
+                field must be added to `record.cue` first.
               - the per-PR beds: the `render` stage still uses the `bed_template`, BUT
                 it is followed by `charly box validate` in the same stage, so a bed
                 that does not parse as a valid charly.yml fails the lane immediately.
