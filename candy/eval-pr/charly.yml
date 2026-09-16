@@ -33,7 +33,7 @@ eval-pr:
       the lane's own R10 ledger, and ONE self-contained eval/pr-<N>/eval.yml
       record. Composes the generic pipeline engine + the PR tools.
     candy:
-      - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.259.0809'
+      - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.259.1825'
       - '@github.com/opencharly/plugin-review/candy/plugin-review:v2026.251.1939'
     var:
       EVAL_LANES: "16"
