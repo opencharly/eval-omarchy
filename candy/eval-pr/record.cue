@@ -61,12 +61,12 @@
 	report!: string
 })
 
-#EvalCheck: {
+#EvalCheck: close({
 	id!:        string
 	what!:      string
 	assertion!: string
 	knownRed!:  bool
-}
+})
 
 // #NotTestableRecord — the record for a class "skip" (draft/WIP) PR: a plain
 // disclosure, not a bed-run record (R1). Same schema-first contract: the value
@@ -96,8 +96,8 @@
 	checks!: [...#EvalCheck]
 })
 
-#EvalStep: {
+#EvalStep: close({
 	id!:     string
 	name!:   string
 	status!: string
-}
+})
