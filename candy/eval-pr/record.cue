@@ -2,11 +2,12 @@
 // shape). The `record` stage of eval-pr-plan emits `#EvalRecord` and the
 // `not-testable` stage emits `#NotTestableRecord`, both via the `emit` stage:
 //
-//   - id: record        schema: candy/eval-pr/record.cue                       (bare path -> #EvalRecord)
-//   - id: not-testable  schema: candy/eval-pr/record.cue#NotTestableRecord      (file#Def -> the named def)
+//   - id: record        schema: candy/eval-pr/record.cue#EvalRecord            (file#Def -> #EvalRecord)
+//   - id: not-testable  schema: candy/eval-pr/record.cue#NotTestableRecord      (file#Def -> #NotTestableRecord)
 //
-// A BARE `.cue` path selects the first `#Def` in the file; a `#Def` suffix
-// selects that def explicitly. The value is validated BEFORE it is written, so
+// A `#Def` suffix selects that def explicitly; a BARE `.cue` path would select
+// the file's first `#Def` (not used by this lane — both stages name their def).
+// The value is validated BEFORE it is written, so
 // the record can never be malformed YAML. EVERY level is `close(...)`d — the top
 // def AND each nested struct — so an unknown field at any depth is a stage
 // failure, not a silent drop (a bare-path schema resolving to an open top level
