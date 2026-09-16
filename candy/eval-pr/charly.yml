@@ -97,8 +97,7 @@ eval-pr-entry-skill:
             ## The grading criteria are the org pr-validator's
 
             The lane grades the PR against the SAME criteria every opencharly repo uses
-            for its own PRs — the org-wide **pr-validator** agent spec. That spec is the
-            single source of the checklist and the verdict discipline:
+            for its own PRs — the org-wide **pr-validator** agent spec:
 
               - origin: the `pr-validator-agent` `skill:` entity in
                 `opencharly/layer-charly-internals-extra` (charly.yml);
@@ -107,15 +106,16 @@ eval-pr-entry-skill:
                 FAIL and the burden is on the PR to prove compliance. Verdict: PASS or
                 BLOCK. Never a rubber stamp, never benefit of the doubt.
 
-            The org spec remains the AUTHORITATIVE definition. This lane carries the
-            APPLICABILITY MAP below (and the `validate` stage prompt mirrors it): which
-            of the spec's items the lane grades, which are N/A with a reason, and which
-            ledger fact supplies the evidence for each. The map is a deliberately SCOPED
-            restatement, not a second definition — it exists because the lane's skills
-            corpus is the `distros` family (`$env.EVAL_UMBRELLA/marketplace/distros/
-            skills`), which does NOT include the `internals` agent spec, so the grader
-            cannot load the org spec directly. When an item's scope changes, change the
-            org spec and re-derive the map from it (R1).
+            The org spec is the ORIGIN and remains authoritative for the criteria. The
+            APPLICABILITY MAP below is this lane's SCOPED authority for WHAT to grade —
+            which of the spec's items apply to an upstream omacom/omarchy PR, which are
+            N/A with a reason, and which ledger fact supplies the evidence for each. The
+            map is a derivation of the spec, not a second definition of it, and it is the
+            document the `validate` stage grades against: the lane's skills corpus is the
+            `distros` family (`$EVAL_UMBRELLA/marketplace/distros/skills`), which does
+            NOT include the `internals` agent spec, so the grader cannot load the spec
+            directly. When an item's scope changes, change the org spec and re-derive
+            the map from it (R1).
 
             ## The one substitution — the lane RUNS the R10
 
@@ -294,10 +294,10 @@ eval-pr-cold-reader-skill:
             You are a FRESH reader: you did not author the checks, and you judge the
             artifacts and the ledger facts, never the prose alone.
 
-            The pr-validator checklist and the applicability map live ONCE in the entry
-            `omarchy-eval` skill (the org pr-validator spec scoped to an upstream PR);
-            this rubric does not restate them. It grades whether the PACKET the lane
-            produced can support the verdict the grading stage reached.
+            The grading authority is the APPLICABILITY MAP in the entry `omarchy-eval`
+            skill (the org pr-validator spec scoped to an upstream PR); this rubric
+            points at it and grades only whether the PACKET the lane produced can
+            support the verdict the grading stage reached.
 
             ## The deterministic gates (from the ledger, never from prose)
 
