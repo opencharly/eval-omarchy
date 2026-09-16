@@ -1565,9 +1565,14 @@ eval-pr-plan:
                 retry_interval: 5s
                 context: [runtime]
                 vision:
-                  prompt: "Reply with ONLY a JSON object: {\"desktop\": true/false, \"panel\": true/false} — is this a rendered Linux desktop screenshot (a panel/bar and a wallpaper), not a blank or error screen?"
+                  prompt: "Reply with ONLY the single word YES if this screenshot shows a rendered Linux desktop (a panel/bar and a wallpaper) and NOT a blank, black, or error screen; reply NO otherwise."
                   artifact: /tmp/pr-$pr.png
-                  expect: {matches: "desktop"}
+                  # The assertion must require the JUDGEMENT VALUE, not a key: a
+                  # JSON reply like {"desktop": false} would contain the literal
+                  # "desktop" and pass a naive contains/match — a self-defeating
+                  # check. A single-word YES/NO cannot be satisfied by a false
+                  # verdict, so `contains: "yes"` genuinely gates on the answer.
+                  expect: {contains: "yes"}
               - check: stop the SPICE capture and pull the MJPEG stream
                 id: rec-spice-stop
                 eventually: 25s
