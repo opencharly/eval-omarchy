@@ -107,9 +107,15 @@ eval-pr-entry-skill:
                 FAIL and the burden is on the PR to prove compliance. Verdict: PASS or
                 BLOCK. Never a rubber stamp, never benefit of the doubt.
 
-            This lane does not restate that spec. It carries only the APPLICABILITY MAP
-            below — which of the spec's items the lane grades, and which ledger fact or
-            artifact supplies the evidence for each.
+            The org spec remains the AUTHORITATIVE definition. This lane carries the
+            APPLICABILITY MAP below (and the `validate` stage prompt mirrors it): which
+            of the spec's items the lane grades, which are N/A with a reason, and which
+            ledger fact supplies the evidence for each. The map is a deliberately SCOPED
+            restatement, not a second definition — it exists because the lane's skills
+            corpus is the `distros` family (`$env.EVAL_UMBRELLA/marketplace/distros/
+            skills`), which does NOT include the `internals` agent spec, so the grader
+            cannot load the org spec directly. When an item's scope changes, change the
+            org spec and re-derive the map from it (R1).
 
             ## The one substitution — the lane RUNS the R10
 
