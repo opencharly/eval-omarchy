@@ -49,5 +49,8 @@ __pycache__/
 # VM disk images (configurable root; default `image`, the vm.image_dir setting)
 image/
 
-# transient per-run pipeline ledger dump (never committed)
-stage-findings.yml
+# transient per-run pipeline ledger dumps (never committed). The engine writes
+# one PER LANE (`stage-findings-pr-<pr>.yml`) so concurrent batch lanes cannot
+# overwrite each other's forensics; the bare `stage-findings.yml` is the
+# no-PR single-entity form. The glob covers both.
+stage-findings*.yml

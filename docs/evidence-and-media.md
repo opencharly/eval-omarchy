@@ -14,7 +14,7 @@
 | `eval/pr-<N>/media/` | recordings: asciinema `.cast`/`.gif` + SPICE `.mjpeg`/`.mp4`/`.png`, named `pr-<N>.<ext>` | **gitignored** (large) |
 | `eval/pr-<N>/charly.yml` | the per-PR eval + control beds (treatment `check-omarchy-pr-<N>-vm` + negated control `check-omarchy-pr-<N>-control`) | committed |
 | `eval/pr-<N>/eval.yml` | the single per-PR record: oracle + eval + control + gates + cold-read + the user-voice report + media links | committed |
-| `stage-findings.yml` | transient per-run pipeline ledger dump | **gitignored** (never committed) |
+| `stage-findings*.yml` | transient per-run pipeline ledger dump — ONE PER LANE (`stage-findings-pr-<N>.yml`) so concurrent batch lanes cannot overwrite each other; the bare `stage-findings.yml` is the no-PR form. Records each stage's status and `duration_seconds` | **gitignored** (never committed) |
 
 ## The media contract (mandatory)
 
