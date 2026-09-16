@@ -1,15 +1,24 @@
-// record.cue — the per-PR eval record schema (the single source for the record
-// shape). The `record` stage of eval-pr-plan emits this def via the `emit` stage
-// (`kind: emit`, `schema: eval/pr-<N>/record.cue`), so the record is validated
-// BEFORE it is written and can never be malformed YAML. A field added to the
-// record MUST be added here first — an unknown or missing field fails the stage.
+// record.cue — the per-PR eval record schema (the SINGLE source for the record
+// shape). The `record` stage of eval-pr-plan emits `#EvalRecord` and the
+// `not-testable` stage emits `#NotTestableRecord`, both via the `emit` stage:
+//
+//   - id: record        schema: candy/eval-pr/record.cue                       (bare path -> #EvalRecord)
+//   - id: not-testable  schema: candy/eval-pr/record.cue#NotTestableRecord      (file#Def -> the named def)
+//
+// A BARE `.cue` path selects the first `#Def` in the file; a `#Def` suffix
+// selects that def explicitly. The value is validated BEFORE it is written, so
+// the record can never be malformed YAML. EVERY level is `close(...)`d — the top
+// def AND each nested struct — so an unknown field at any depth is a stage
+// failure, not a silent drop (a bare-path schema resolving to an open top level
+// would accept a record vacuously). A field added to the record MUST be added
+// here first.
 #EvalRecord: close({
 	pr!:        string | int
 	repo!:      string
 	head!:      string
 	generated!: string
 
-	oracle!: {
+	oracle!: close({
 		class!:  string
 		golden!: string
 		sha!:    string
@@ -18,44 +27,44 @@
 		files!:  [...string]
 		tests!:  [...string]
 		checks!: [...#EvalCheck]
-	}
+	})
 
-	control!: {
+	control!: close({
 		ok!:    bool
 		steps!: [...#EvalStep]
-	}
+	})
 
-	eval!: {
+	eval!: close({
 		verdict!:         string
 		executed_checks!: int
 		steps!:           [...#EvalStep]
-	}
+	})
 
-	gates!: {
+	gates!: close({
 		control_ok!:      bool
 		executed_checks!: int
 		media_ok!:        bool
-	}
+	})
 
-	validate!: {
+	validate!: close({
 		verdict!:   string
 		security!:  string
 		checklist!: [...string]
 		findings!:  [...string]
-	}
+	})
 
-	media!: {
+	media!: close({
 		cast!:  string
 		gif!:   string
 		mjpeg!: string
 		mp4!:   string
 		png!:   string
-	}
+	})
 
-	cold_read!: {
+	cold_read!: close({
 		verdict!:     string
 		suggestions!: [...string]
-	}
+	})
 
 	report!: string
 })
@@ -76,7 +85,7 @@
 	repo!:      string
 	head!:      string
 	generated!: string
-	oracle!: {
+	oracle!: close({
 		class!:  string
 		golden!: string
 		sha!:    string
@@ -85,7 +94,7 @@
 		files!:  [...string]
 		tests!:  [...string]
 		checks!: [...#EvalCheck]
-	}
+	})
 	result!: string
 	report!: string
 })
