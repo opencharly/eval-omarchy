@@ -1560,7 +1560,7 @@ eval-pr-plan:
                 context: [runtime]
                 spice: {method: screenshot, artifact: /tmp/pr-$pr.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
               - check: the vision model sees a rendered omarchy desktop in the captured screenshot (the PR's applied UI is evaluated on the live VM, not just asserted by grep)
-                id: rec-screen-vision
+                id: screen-vision-judged
                 eventually: 120s
                 retry_interval: 5s
                 context: [runtime]
