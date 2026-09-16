@@ -54,6 +54,15 @@ pipeline's `redo:` edges + the `cold-read` stage contract in `charly.yml` — th
 runner never leaves a VM running when done; the cold-reader grades the artifact
 packet only.
 
+The lane grades the PR against the **org-wide `pr-validator` criteria** (the
+`pr-validator-agent` `skill:` entity in `opencharly/layer-charly-internals-extra`,
+projection `marketplace/internals/agents/pr-validator.md`), scoped to an upstream
+PR by the applicability map in the entry `omarchy-eval` skill entity. The one
+substitution: the pr-validator assumes the author ran R10 and pasted the evidence;
+this lane RUNS the R10 itself (the `gate` ledger) and the `validate` stage grades
+from THAT, never from the PR body. The pr-validator PASS/BLOCK verdict is a
+separate record field from the packet cold-read verdict.
+
 ## The per-PR artifact pattern
 
 Every evaluated PR gets ONE self-contained directory, following the established pattern:
@@ -62,13 +71,25 @@ Every evaluated PR gets ONE self-contained directory, following the established 
 |---|---|
 | `candy/omarchy-pr-apply/` | The ONE runtime apply seam: `pr-apply <pr> <sha> <files...>` fetches the PR head (SHA-pinned) and installs only its changed files over the installed tree. The git-fetch block lives here and nowhere else (S9) |
 | `eval/pr-<N>/charly.yml` | The per-PR eval + control beds, RENDERED by the pipeline's `render` stage from the config-oracle's reply (the §Template is the `bed_template` block of the `eval-pr-plan` pipeline, `charly.yml`; the oracle contract is the `omarchy-eval-oracle` skill entity, `candy/eval-pr/charly.yml`) — the charly.yml IS the plan: the treatment bed `check-omarchy-pr-<N>-vm` (the clone `from: ${golden}` + apply via the single seam + known-red behavior checks + the FULL record:/spice: evidence loop) and the control twin `check-omarchy-pr-<N>-control` in the SAME file. Gate: `charly box validate` (run by the render stage's validate script); NO hand-edits; NO `run:` steps |
-| `eval/pr-<N>/eval.yml` | The single self-contained record: the oracle decision + eval + control + gates + media links + cold read + the user-voice report. The record needs no other file to be read |
+| `eval/pr-<N>/eval.yml` | The single self-contained record: the oracle decision + eval + control + gates + the org pr-validator verdict/checklist + media links + cold read + the user-voice report. EMITTED by the `emit` stage from a structured value validated against `candy/eval-pr/record.cue` (`#EvalRecord`) BEFORE the write — charly writes the YAML, an agent never hand-writes it. The record needs no other file to be read |
 | `eval/pr-<N>/media/` | The recordings (gitignored) |
 | `charly.yml` | The hand-authored config (VM template + the per-channel instrumented goldens + the `eval-pr-plan` pipeline); the per-PR beds + record are rendered into `eval/pr-<N>/` and COMMITTED so a clone can rerun every eval |
 
 The checks must be **known-red**: every PR-specific check fails without the PR
 applied. A behavior that cannot be tested with the container's real tools is routed
 to the Tier-2 live VM, never mocked.
+
+## charly writes the YAML — never hand-write a YAML file
+
+Every YAML artifact here is produced by charly from a STRUCTURED value validated
+against a CUE schema BEFORE the bytes hit disk: the per-PR record via the `emit`
+stage (`candy/eval-pr/record.cue`, `#EvalRecord`/`#NotTestableRecord`), the beds
+via the `render` stage followed by `charly box validate`. An agent that must
+change a YAML file uses charly (`charly box set`/`add-candy`/`write`, or a new
+`emit`/`generate` stage with a schema) — never a hand-written file or an
+unvalidated string template. A single colon in an unquoted scalar produced a
+record no parser could read (RCA 2026.259); schema-first emission makes that
+class impossible. Adding a record field means editing `record.cue` first.
 
 ## The report contract
 

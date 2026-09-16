@@ -6,8 +6,10 @@ Every evaluation answers one binary question — **does the PR actually work?** 
 real omarchy system, the way another user would try it. The PR's files are applied at
 RUNTIME to a lean clone of a **golden VM image** (built from the official Omarchy
 installer ISO), the behavior is asserted with known-red checks, the negative-control
-twin proves every check really is red without the PR, both recording lanes run, and a
-cold reader grades the artifact packet before anything is finalized.
+twin proves every check really is red without the PR, both recording lanes run, and the
+result is graded against the **org-wide `pr-validator` criteria** — fed by the lane's
+own R10 run, not by author-pasted evidence — before a cold reader validates the packet
+and anything is finalized.
 
 The repo serves **two roles**:
 
@@ -62,14 +64,19 @@ The lane is the `eval-pr-plan` `kind: pipeline` entity in `charly.yml`; it runs 
    `pr-apply <N> <sha> <files...>` seam, runs the known-red checks, and records
    (asciinema `.cast`/`.gif` + SPICE screen capture → `.mjpeg`/`.mp4`/`.png`) in one
    disposable run.
-4. **GATE + REPORT + COLD-READ.** A deterministic gate reads the lane ledger
-   (`executed_checks`, `control_ok`, `media_ok`); a fellow-user voice writes the Tests
-   paragraph; a fresh-context cold reader grades the artifacts and the ledger facts and
-   emits the packet verdict (PASS/FAIL/NO_VALIDATION) — a packet that fails is a
-   SETUP_DEFECT, never a whited-out eval.
+4. **GATE + VALIDATE + REPORT + COLD-READ.** A deterministic gate reads the lane ledger
+   (`executed_checks`, `control_ok`, `media_ok`). A fresh-context **grading stage** then
+   applies the org `pr-validator` criteria to the PR, consuming THAT ledger as the R10
+   evidence — the lane runs the R10 the pr-validator would otherwise assume the author
+   pasted — and emits the **PASS/BLOCK** verdict, the T1–T4 security screen, and the
+   per-item checklist. A fellow-user voice writes the Tests paragraph; a second
+   fresh-context cold reader grades the artifacts and the ledger facts and emits the
+   packet verdict (PASS/FAIL/NO_VALIDATION) — a packet that fails is a SETUP_DEFECT,
+   never a whited-out eval.
 5. **RECORD.** Every stage's output renders into the ONE self-contained
-   `eval/pr-<N>/eval.yml` (oracle + control + eval + gates + media links + cold read +
-   the user-voice report). The record needs no other file to be read.
+   `eval/pr-<N>/eval.yml` (oracle + control + eval + gates + the pr-validator
+   verdict/checklist + media links + cold read + the user-voice report). The record
+   needs no other file to be read.
 
 Lean PRs run in parallel — one eval lane per core (`--lanes 16`). Each evaluation lands
 in `eval/pr-<N>/`: the committed `charly.yml` beds + `eval.yml` record and the
@@ -84,9 +91,9 @@ via `skills.corpus: "$env.EVAL_UMBRELLA/marketplace/distros/skills"`:
 
 | Skill | Covers |
 |---|---|
-| `omarchy-eval` | The entry: the one experiment (treatment + control), the terminal states, the never-mock and known-red rules, the Tier-2 live-VM claim, and the per-PR artifact |
-| `omarchy-eval-oracle` | The triage contract: classify the PR, pick the channel golden from the registry, author the known-red checks at absolute system paths, and the control re-author contract |
-| `omarchy-eval-cold-reader` | The cold-reader rubric: the deterministic gates (executed_checks >= 1, control_ok, media_ok) + the prose gates, and the packet verdict |
+| `omarchy-eval` | The entry: the one experiment (treatment + control), the terminal states, the never-mock and known-red rules, the Tier-2 live-VM claim, the per-PR artifact, and the **applicability map** that scopes the org `pr-validator` criteria to an upstream PR |
+| `omarchy-eval-oracle` | The triage contract: classify the PR, pick the channel golden from the registry, author the known-red checks at absolute system paths (the plan IS the lane's R10 coverage), and the control re-author contract |
+| `omarchy-eval-cold-reader` | The cold-reader rubric: the deterministic gates (executed_checks >= 1, control_ok, media_ok) + the prose gates, and the packet verdict (distinct from the grading stage's pr-validator PASS/BLOCK) |
 
 The stage mechanics that the v1 corpus documented as separate skills (the golden chain,
 the media contract, the redo loop, the stage ordering) are now owned by the

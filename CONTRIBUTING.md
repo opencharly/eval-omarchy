@@ -27,10 +27,19 @@ binding lane contract is the `omarchy-eval` skill entity (with its
 template is the inline `report.template` block of the `eval-pr-plan` pipeline in
 `charly.yml`.
 
+The lane grades each PR against the **org-wide `pr-validator` criteria** — the
+`pr-validator-agent` `skill:` entity in `opencharly/layer-charly-internals-extra`
+(projection: `marketplace/internals/agents/pr-validator.md`), scoped to an upstream
+PR by the applicability map in the entry `omarchy-eval` skill. The one difference from
+that spec: the pr-validator ASSUMES the author ran R10 and pasted the evidence, whereas
+this lane RUNS the R10 itself and feeds its ledger facts (the `gate` stage) to the
+`validate` grading stage. The pr-validator PASS/BLOCK verdict and the packet cold-read
+verdict are SEPARATE record fields.
+
 ## Running one evaluation
 
 ```sh
-charly pipeline run eval-pr-plan --pr <N>       # oracle → render → control → eval → gate → report → cold-read → record
+charly pipeline run eval-pr-plan --pr <N>       # oracle → render → control → eval → gate → validate → report → cold-read → record
 ```
 
 or, to run a single rendered bed by hand:
