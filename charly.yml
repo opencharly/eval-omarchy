@@ -1522,6 +1522,7 @@ eval-pr-plan:
             add_candy:
               - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.246.1624'
               - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.245.1508'
+              - '@github.com/opencharly/plugin-vision/candy/plugin-vision:v2026.259.2147'
               - omarchy-pr-apply
             plan:
               - check: apply PR $pr via the single apply seam
@@ -1558,6 +1559,15 @@ eval-pr-plan:
                 retry_interval: 3s
                 context: [runtime]
                 spice: {method: screenshot, artifact: /tmp/pr-$pr.png, artifact_min_bytes: 1000, artifact_not_uniform: true}
+              - check: the vision model sees a rendered omarchy desktop in the captured screenshot (the PR's applied UI is evaluated on the live VM, not just asserted by grep)
+                id: rec-screen-vision
+                eventually: 120s
+                retry_interval: 5s
+                context: [runtime]
+                vision:
+                  prompt: "Reply with ONLY a JSON object: {\"desktop\": true/false, \"panel\": true/false} — is this a rendered Linux desktop screenshot (a panel/bar and a wallpaper), not a blank or error screen?"
+                  artifact: /tmp/pr-$pr.png
+                  expect: {matches: "desktop"}
               - check: stop the SPICE capture and pull the MJPEG stream
                 id: rec-spice-stop
                 eventually: 25s
