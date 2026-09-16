@@ -18,16 +18,7 @@
 	head!:      string
 	generated!: string
 
-	oracle!: close({
-		class!:  string
-		golden!: string
-		sha!:    string
-		what!:   string
-		drive!:  string
-		files!:  [...string]
-		tests!:  [...string]
-		checks!: [...#EvalCheck]
-	})
+	oracle!: #EvalOracle
 
 	control!: close({
 		ok!:    bool
@@ -85,18 +76,23 @@
 	repo!:      string
 	head!:      string
 	generated!: string
-	oracle!: close({
-		class!:  string
-		golden!: string
-		sha!:    string
-		what!:   string
-		drive!:  string
-		files!:  [...string]
-		tests!:  [...string]
-		checks!: [...#EvalCheck]
-	})
-	result!: string
-	report!: string
+	oracle!:    #EvalOracle
+	result!:    string
+	report!:    string
+})
+
+// #EvalOracle — the config-oracle triage block SHARED by #EvalRecord and
+// #NotTestableRecord (one definition, so a field added to one record's oracle
+// cannot drift from the other).
+#EvalOracle: close({
+	class!:  string
+	golden!: string
+	sha!:    string
+	what!:   string
+	drive!:  string
+	files!:  [...string]
+	tests!:  [...string]
+	checks!: [...#EvalCheck]
 })
 
 #EvalStep: {
