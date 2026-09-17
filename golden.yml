@@ -1,0 +1,361 @@
+check-omarchy-eval-edge-inst:
+    vm:
+        from: omarchy.omarchy-vm
+        disposable: true
+        lifecycle: dev
+        snapshot:
+            on_finalize: golden
+            mode: external
+            keep_venue: true
+        add_candy:
+            - omarchy-autologin
+            - omarchy-channel-bootstrap
+            - omarchy-eval-record
+            - omarchy-eval-harden
+            - omarchy-pr-apply
+            - '@github.com/opencharly/layer-asciinema:v2026.246.1622'
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.254.0459'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.254.0449'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.254.0527'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.254.0539'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.254.0445'
+            - omarchy-corpus
+        install_opts:
+            allow_repo_changes: true
+            allow_root_tasks: true
+            with_service: true
+            skip_incompatible: true
+        plan:
+            - check: the edge twin reaches the FULL desktop (the shell stack required)
+              id: inst-autologin
+              context: [runtime]
+              command: 'pgrep -x quickshell >/dev/null'
+              eventually: 240s
+              retry_interval: 10s
+            - check: switch the base to the edge channel (channel-set + full update accepting downgrades)
+              id: inst-channel-switch
+              context: [runtime]
+              command: 'OMARCHY_PATH=/usr/share/omarchy channel-bootstrap edge'
+              timeout: 10m
+            - check: the active channel is edge (the round-trip via the reader)
+              id: inst-channel-edge
+              context: [runtime]
+              command: 'OMARCHY_PATH=/usr/share/omarchy omarchy-channel-current'
+              stdout:
+                  - contains: edge
+            - check: apply the pending omarchy migrations (the edge channel's migration set — the golden must be fully provisioned for the accept corpus; channel-bootstrap's raw pacman update never runs them)
+              id: inst-migrate-apply
+              context: [runtime]
+              command: 'omarchy-migrate'
+              timeout: 10m
+            - check: no pending omarchy migrations remain (the golden is fully provisioned; the runner exits 1 when the queue is empty)
+              id: inst-migrate-pending
+              context: [runtime]
+              command: 'omarchy-migrate --pending'
+              exit_status: 1
+            - check: the screenlocker is disabled in the golden (the systemd paths AND the shell's own idle lock — the stay-awake state file; RCA 2026.253.2216 the shell's idle plugin locked the provision bed mid-run)
+              id: inst-screenlock-disabled
+              context: [runtime]
+              command: '! pgrep -x hypridle >/dev/null && ! systemctl is-active omarchy-sleep-lock.service >/dev/null 2>&1 && test -f ~/.local/state/omarchy/indicators/stay-awake'
+            - check: the always-on shell unit is enabled for every future user session
+              id: inst-shell-unit-enabled
+              context: [runtime]
+              command: 'systemctl --global is-enabled omarchy-eval-shell.service | grep -q enabled'
+            - check: the agg gif generator is installed and runnable
+              id: inst-agg-present
+              context: [runtime]
+              command: 'test -s /usr/local/bin/agg && /usr/local/bin/agg --version'
+            - check: acpid is enabled (ACPI power-off handling present)
+              id: inst-acpid
+              context: [runtime]
+              service:
+                  service: acpid
+                  enabled: true
+            - check: the pr-apply helper is present NON-EMPTY
+              id: inst-pr-apply
+              context: [runtime]
+              command: 'test -s /usr/local/bin/pr-apply && head -1 /usr/local/bin/pr-apply | grep -q "#!/usr/bin/env bash"'
+            - check: the upstream test tree is carried on the golden (M7)
+              id: inst-upstream-tests
+              context: [runtime]
+              command: 'test -d /opt/omarchy-upstream-test/test/shell.d && test -d /opt/omarchy-upstream-test/test/acceptance.d'
+            - check: the tool manifest is present (grim, tesseract, wtype, jq)
+              id: inst-tool-manifest
+              context: [runtime]
+              command: 'for t in grim tesseract wtype jq; do command -v $t >/dev/null || exit 1; done'
+
+check-omarchy-eval-rc-inst:
+    vm:
+        from: omarchy.omarchy-vm
+        disposable: true
+        lifecycle: dev
+        snapshot:
+            on_finalize: golden
+            mode: external
+            keep_venue: true
+        add_candy:
+            - omarchy-autologin
+            - omarchy-channel-bootstrap
+            - omarchy-eval-record
+            - omarchy-eval-harden
+            - omarchy-pr-apply
+            - '@github.com/opencharly/layer-asciinema:v2026.246.1622'
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.254.0459'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.254.0449'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.254.0527'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.254.0539'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.254.0445'
+            - omarchy-corpus
+        install_opts:
+            allow_repo_changes: true
+            allow_root_tasks: true
+            with_service: true
+            skip_incompatible: true
+        plan:
+            - check: the rc twin reaches the FULL desktop (the shell stack required)
+              id: inst-autologin
+              context: [runtime]
+              command: 'pgrep -x quickshell >/dev/null'
+              eventually: 240s
+              retry_interval: 10s
+            - check: switch the base to the rc channel (channel-set + full update accepting downgrades)
+              id: inst-channel-switch
+              context: [runtime]
+              command: 'OMARCHY_PATH=/usr/share/omarchy channel-bootstrap rc'
+              timeout: 10m
+            - check: the active channel is rc (the round-trip via the reader)
+              id: inst-channel-rc
+              context: [runtime]
+              command: 'OMARCHY_PATH=/usr/share/omarchy omarchy-channel-current'
+              stdout:
+                  - contains: rc
+            - check: apply the pending omarchy migrations (the rc channel's migration set — the golden must be fully provisioned for the accept corpus; channel-bootstrap's raw pacman update never runs them)
+              id: inst-migrate-apply
+              context: [runtime]
+              command: 'omarchy-migrate'
+              timeout: 10m
+            - check: no pending omarchy migrations remain (the golden is fully provisioned; the runner exits 1 when the queue is empty)
+              id: inst-migrate-pending
+              context: [runtime]
+              command: 'omarchy-migrate --pending'
+              exit_status: 1
+            - check: the screenlocker is disabled in the golden (the systemd paths AND the shell's own idle lock — the stay-awake state file; RCA 2026.253.2216 the shell's idle plugin locked the provision bed mid-run)
+              id: inst-screenlock-disabled
+              context: [runtime]
+              command: '! pgrep -x hypridle >/dev/null && ! systemctl is-active omarchy-sleep-lock.service >/dev/null 2>&1 && test -f ~/.local/state/omarchy/indicators/stay-awake'
+            - check: the always-on shell unit is enabled for every future user session
+              id: inst-shell-unit-enabled
+              context: [runtime]
+              command: 'systemctl --global is-enabled omarchy-eval-shell.service | grep -q enabled'
+            - check: the agg gif generator is installed and runnable
+              id: inst-agg-present
+              context: [runtime]
+              command: 'test -s /usr/local/bin/agg && /usr/local/bin/agg --version'
+            - check: acpid is enabled (ACPI power-off handling present)
+              id: inst-acpid
+              context: [runtime]
+              service:
+                  service: acpid
+                  enabled: true
+            - check: the pr-apply helper is present NON-EMPTY
+              id: inst-pr-apply
+              context: [runtime]
+              command: 'test -s /usr/local/bin/pr-apply && head -1 /usr/local/bin/pr-apply | grep -q "#!/usr/bin/env bash"'
+            - check: the upstream test tree is carried on the golden (M7)
+              id: inst-upstream-tests
+              context: [runtime]
+              command: 'test -d /opt/omarchy-upstream-test/test/shell.d && test -d /opt/omarchy-upstream-test/test/acceptance.d'
+            - check: the tool manifest is present (grim, tesseract, wtype, jq)
+              id: inst-tool-manifest
+              context: [runtime]
+              command: 'for t in grim tesseract wtype jq; do command -v $t >/dev/null || exit 1; done'
+
+check-omarchy-eval-dev-inst:
+    vm:
+        from: omarchy.omarchy-vm
+        disposable: true
+        lifecycle: dev
+        snapshot:
+            on_finalize: golden
+            mode: external
+            keep_venue: true
+        add_candy:
+            - omarchy-autologin
+            - omarchy-channel-bootstrap
+            - omarchy-eval-record
+            - omarchy-eval-harden
+            - omarchy-pr-apply
+            - '@github.com/opencharly/layer-asciinema:v2026.246.1622'
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.254.0459'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.254.0449'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.254.0527'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.254.0539'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.254.0445'
+            - omarchy-corpus
+        install_opts:
+            allow_repo_changes: true
+            allow_root_tasks: true
+            with_service: true
+            skip_incompatible: true
+        plan:
+            - check: the dev twin reaches the FULL desktop (the shell stack required)
+              id: inst-autologin
+              context: [runtime]
+              command: 'pgrep -x quickshell >/dev/null'
+              eventually: 240s
+              retry_interval: 10s
+            - check: switch the base to the dev channel (channel-set + full update accepting downgrades)
+              id: inst-channel-switch
+              context: [runtime]
+              command: 'OMARCHY_PATH=/usr/share/omarchy channel-bootstrap dev'
+              timeout: 10m
+            - check: the active channel is dev (the round-trip via the reader — the dev channel reports edge, its package state)
+              id: inst-channel-dev
+              context: [runtime]
+              command: 'OMARCHY_PATH=/usr/share/omarchy omarchy-channel-current'
+              stdout:
+                  - contains: edge
+            - check: apply the pending omarchy migrations (the dev channel's migration set — the golden must be fully provisioned for the accept corpus; channel-bootstrap's raw pacman update never runs them)
+              id: inst-migrate-apply
+              context: [runtime]
+              command: 'omarchy-migrate'
+              timeout: 10m
+            - check: no pending omarchy migrations remain (the golden is fully provisioned; the runner exits 1 when the queue is empty)
+              id: inst-migrate-pending
+              context: [runtime]
+              command: 'omarchy-migrate --pending'
+              exit_status: 1
+            - check: the screenlocker is disabled in the golden (the systemd paths AND the shell's own idle lock — the stay-awake state file; RCA 2026.253.2216 the shell's idle plugin locked the provision bed mid-run)
+              id: inst-screenlock-disabled
+              context: [runtime]
+              command: '! pgrep -x hypridle >/dev/null && ! systemctl is-active omarchy-sleep-lock.service >/dev/null 2>&1 && test -f ~/.local/state/omarchy/indicators/stay-awake'
+            - check: the always-on shell unit is enabled for every future user session
+              id: inst-shell-unit-enabled
+              context: [runtime]
+              command: 'systemctl --global is-enabled omarchy-eval-shell.service | grep -q enabled'
+            - check: the agg gif generator is installed and runnable
+              id: inst-agg-present
+              context: [runtime]
+              command: 'test -s /usr/local/bin/agg && /usr/local/bin/agg --version'
+            - check: acpid is enabled (ACPI power-off handling present)
+              id: inst-acpid
+              context: [runtime]
+              service:
+                  service: acpid
+                  enabled: true
+            - check: the pr-apply helper is present NON-EMPTY
+              id: inst-pr-apply
+              context: [runtime]
+              command: 'test -s /usr/local/bin/pr-apply && head -1 /usr/local/bin/pr-apply | grep -q "#!/usr/bin/env bash"'
+            - check: the upstream test tree is carried on the golden (M7)
+              id: inst-upstream-tests
+              context: [runtime]
+              command: 'test -d /opt/omarchy-upstream-test/test/shell.d && test -d /opt/omarchy-upstream-test/test/acceptance.d'
+            - check: the tool manifest is present (grim, tesseract, wtype, jq)
+              id: inst-tool-manifest
+              context: [runtime]
+              command: 'for t in grim tesseract wtype jq; do command -v $t >/dev/null || exit 1; done'
+
+# ── the golden base: provisions the omarchy VM and captures the golden ──────
+check-omarchy-eval-base:
+    vm:
+        from: omarchy-vm
+        disposable: true
+        snapshot:
+            on_finalize: golden
+            mode: external
+            keep_venue: true
+        add_candy:
+            - '@github.com/opencharly/layer-charly:v2026.243.0408'
+        plan:
+            - check: the omarchy guest reports its hostname
+              id: ocb-hostname
+              command: "uname -n"
+              stdout:
+                matches: ".+"
+              eventually: 300s
+              retry_interval: 10s
+              context: [runtime]
+
+# ── the INSTRUMENTED golden base (the stable channel): the golden PLUS the
+# eval-tooling payload (charly, autologin, record tools incl. acpid, pr-apply)
+# captured as its own golden. Per-PR evals clone from THIS golden; per-eval
+# add_candy carries ONLY the record/spice PLUGIN providers (verbs register at
+# check-run time — baking them gave 'no provider registered'). Provision once via
+# the FRESH lane; re-provision = delete-before-recapture + golden-presence
+# verification (RCA #7); the runner stops the domain after capture (RCA #3).
+check-omarchy-eval-base-inst:
+    vm:
+        from: omarchy-vm
+        disposable: true
+        lifecycle: dev
+        snapshot:
+            on_finalize: golden
+            mode: external
+            keep_venue: true
+        # NOTE: derives from omarchy-vm (post-#32); the [charly] repo configured in the base
+        # golden's pacman.conf is NOT inherited here and must not be re-added — re-adding
+        # a registered repo fails pacman with 'database already registered' (errors_fatal).
+        add_candy:
+            - omarchy-autologin
+            - omarchy-eval-record
+            - omarchy-eval-harden
+            - omarchy-pr-apply
+            - '@github.com/opencharly/layer-asciinema:v2026.246.1622'
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.254.0459'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.254.0449'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.0930'
+            - omarchy-corpus
+        install_opts:
+            allow_repo_changes: true
+            allow_root_tasks: true
+            with_service: true
+            skip_incompatible: true
+        plan:
+            # VALIDATION-ONLY: every mutation lives on the INSTALL timeline (candy
+            # plans re-apply on every deploy-add; the entity plan's run: steps
+            # execute once and are then skipped by the install ledger - RCA
+            # 2026.252.1152). The omarchy-eval-harden candy owns: the FULL verified
+            # preseed, the screenlocker disable, the agg ensure, the always-on
+            # shell unit. These checks prove all of it on the final golden.
+            - check: the instrumented golden reaches the FULL desktop (the shell stack required - Hyprland alone is a bare 0x111111 background that blanks every capture)
+              id: inst-autologin
+              context: [runtime]
+              command: 'pgrep -x quickshell >/dev/null'
+              eventually: 240s
+              retry_interval: 10s
+            - check: the screenlocker is disabled in the golden (no active sleep-lock, no hypridle running)
+              id: inst-screenlock-disabled
+              context: [runtime]
+              command: '! pgrep -x hypridle >/dev/null && ! systemctl is-active omarchy-sleep-lock.service >/dev/null 2>&1'
+            - check: the always-on shell unit is enabled for every future user session
+              id: inst-shell-unit-enabled
+              context: [runtime]
+              command: 'systemctl --global is-enabled omarchy-eval-shell.service | grep -q enabled'
+            - check: the agg gif generator is installed and runnable (the rec-gif step depends on it)
+              id: inst-agg-present
+              context: [runtime]
+              command: 'test -s /usr/local/bin/agg && /usr/local/bin/agg --version'
+            - check: acpid is enabled (ACPI power-off handling present in the golden)
+              id: inst-acpid
+              context: [runtime]
+              service:
+                  service: acpid
+                  enabled: true
+            - check: the pr-apply helper is present NON-EMPTY (the executor drops heredoc stdin - an empty helper silently no-ops every apply)
+              id: inst-pr-apply
+              context: [runtime]
+              command: 'test -s /usr/local/bin/pr-apply && head -1 /usr/local/bin/pr-apply | grep -q "#!/usr/bin/env bash"'
+            - check: the pr-apply pre-seed clone exists with the head objects
+              id: inst-preseed-ok
+              context: [runtime]
+              command: 'sudo -n test -d /root/.cache/omarchy-pr-apply.git'

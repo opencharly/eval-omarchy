@@ -1,0 +1,48 @@
+# the acceptance MATRIX: the 16 beds in parallel lanes (the batch drive)
+check-omarchy-accept-matrix:
+    pipeline:
+        concurrency: {lanes: 16}
+        stages:
+            - id: bed
+              kind: command
+              command: 'charly check run check-omarchy-accept-$pr'
+              expect_exit: 0
+            - id: media
+              kind: command
+              # VERIFY-ONLY (the G-wave direct-write cutover): the bed's
+              # rec-wrap steps land artifacts DIRECTLY in
+              # media/<calver>/<bed>/, with no staging and no copy; this
+              # stage derives {bed} from the pipeline's $pr (the SAME short
+              # name bedShortName yields: check-omarchy-accept-<fn> → <fn>)
+              # and {calver} from the newest run dir, then delegates the
+              # whole 5-artifact min-size assertion to scripts/verify-media.sh
+              # — the ONE verify implementation (R3), shared by the matrix
+              # media stage and the suite aggregate stage alike.
+              command: 'latest=$(ls -t .check/check-omarchy-accept-$pr 2>/dev/null | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" | head -1); [ -n "$latest" ] || exit 1; bash scripts/verify-media.sh $pr $latest'
+              expect_exit: 0
+
+# the acceptance SUITE: the ONE-command wrapper (zero extra parameters)
+check-omarchy-accept-suite:
+    pipeline:
+        stages:
+            - id: provision
+              kind: command
+              command: 'if ! charly vm snapshot list check-omarchy-eval-edge-inst 2>/dev/null | grep -q golden; then charly check run check-omarchy-eval-edge-inst; fi'
+              expect_exit: 0
+            - id: lock
+              kind: command
+              command: 'charly vm stop check-omarchy-eval-edge-inst 2>/dev/null || true'
+              expect_exit: 0
+            - id: matrix
+              kind: command
+              command: 'charly pipeline run check-omarchy-accept-matrix --prs session shell-surfaces menu-bar panels apps system security hyprland monitors network update plugins agents theme-media power-audio dev-migrations --lanes 16'
+              expect_exit: 0
+            # the SAME 5-artifact assertion, delegated to the ONE script (R3)
+            - id: aggregate
+              kind: command
+              command: 'for b in session shell-surfaces menu-bar panels apps system security hyprland monitors network update plugins agents theme-media power-audio dev-migrations; do latest=$(ls -t ".check/check-omarchy-accept-$b" 2>/dev/null | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" | head -1); [ -n "$latest" ] || exit 1; bash scripts/verify-media.sh $b $latest; done'
+              expect_exit: 0
+            - id: report
+              kind: command
+              command: 'echo "# Omarchy acceptance matrix" > eval/omarchy-acceptance-matrix.md; for b in session shell-surfaces menu-bar panels apps system security hyprland monitors network update plugins agents theme-media power-audio dev-migrations; do latest=$(ls -t ".check/check-omarchy-accept-$b" 2>/dev/null | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" | head -1); echo "- $b ($latest): $(ls media/$latest/$b/ 2>/dev/null | tr "\n" " ")" >> eval/omarchy-acceptance-matrix.md; done'
+              expect_exit: 0

@@ -1,0 +1,36 @@
+# ── the omarchy VM template (local copy — the import does not expose the entity) ──
+omarchy-vm:
+    vm:
+        source:
+            kind: iso
+            distro: omarchy
+            url: https://iso.omarchy.org/omarchy-4.0.3.iso
+            checksum: {type: sha256, value: 03d60bc74306dca51f96e1a84b690871d8d606826b260edd0208962da8507d14}
+            installer:
+                username: user
+                password: user
+                full_name: Charly
+                email: charly@opencharly.invalid
+                hostname: omarchy
+                timezone: UTC
+                keyboard: us
+                locale: en_US.UTF-8
+                disk: /dev/vda
+                encrypt: false
+        disk_size: 40G
+        ram: 2G
+        cpu: 1
+        machine: q35
+        firmware: uefi-insecure
+        network: {mode: user}
+        ssh: {user: user, port_auto: true, key_source: generate}
+        backend: libvirt
+        libvirt:
+            devices:
+                channels: [{type: spicevmc, name: com.redhat.spice.0}]
+                graphics: [{type: spice, listen: [{type: socket}]}]
+                video: [{model: virtio, vram: 65536, heads: 1, accel3d: false}]
+                rng: [{model: virtio, backend: /dev/urandom}]
+                memballoon: {model: virtio}
+            snippets:
+                - "<channel type='unix'><target type='virtio' name='org.qemu.guest_agent.0'/></channel>"
