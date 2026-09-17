@@ -26,6 +26,25 @@ minimum size; the `media` stage assembles them and transcodes the MJPEG to MP4; 
 the record renders. The binding detail lives in the `eval-pr-plan` media block in
 `charly.yml` and the entry `omarchy-eval` skill entity.
 
+## The screenshot is JUDGED, not just captured
+
+A screenshot that exists and is non-uniform proves only that SOMETHING rendered. The
+`screen-vision-judged` step in the eval bed closes that gap: it reads the same
+`/tmp/pr-<N>.png` the `spice: screenshot` step just wrote and asks a vision model
+whether it shows a rendered desktop (a panel and a wallpaper), asserting the answer
+with `expect: {contains: "yes"}` — a single-word verdict, so a false judgement cannot
+satisfy it. The verb is served by the pinned
+`@github.com/opencharly/plugin-vision/candy/plugin-vision`.
+
+The id is deliberately NOT `rec-`-prefixed: the pipeline's bed-outcome reader
+(`probes.go` `bedStepOutcomes`) excludes the `rec-` recording loop, because media
+presence is not verification. A judgement over the pixels IS a verification step, so
+`screen-vision-judged` flows into the same `@gate.eval_steps` the grading stage reads,
+exactly like `pr-apply` and the PR's own suite.
+
+The step is in the TREATMENT bed only (the control bed renders `${checks:negate}` with
+no apply), so it is the PR's APPLIED UI under judgement.
+
 ## Retention
 
 - The per-PR record (`eval/pr-<N>/eval.yml`) and the beds (`eval/pr-<N>/charly.yml`)
