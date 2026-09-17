@@ -63,7 +63,10 @@ The lane is the `eval-pr-plan` `kind: pipeline` entity in `charly.yml`; it runs 
 3. **EVAL.** The treatment bed applies the PR via the single
    `pr-apply <N> <sha> <files...>` seam, runs the known-red checks, and records
    (asciinema `.cast`/`.gif` + SPICE screen capture → `.mjpeg`/`.mp4`/`.png`) in one
-   disposable run.
+   disposable run. The captured screenshot is also JUDGED, not just saved: the
+   `screen-vision-judged` step asks a vision model whether it shows a rendered
+   desktop, so a PR that breaks the rendered UI cannot pass on the mere existence of
+   a non-uniform PNG.
 4. **GATE + VALIDATE + REPORT + COLD-READ.** A deterministic gate reads the lane ledger
    (`executed_checks`, `control_ok`, `media_ok`). A fresh-context **grading stage** then
    applies the org `pr-validator` criteria to the PR, consuming THAT ledger as the R10
