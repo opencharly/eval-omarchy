@@ -17,9 +17,9 @@ always the linked file.
 |---|---|---|
 | Understand the evaluation boundary | VISION.md | CONTRIBUTING.md |
 | Set up a checkout + requirements | CONTRIBUTING.md | docs/golden-vm.md (provision the golden) |
-| Run one PR evaluation | marketplace/distros/skills/omarchy-eval/SKILL.md (the lane contract) | the `eval-pr-plan` pipeline in charly.yml (the stage list + redo edges) |
+| Run one PR evaluation | marketplace/distros/skills/omarchy-eval/SKILL.md (the lane contract) | the `eval-pr-plan` pipeline in eval-pr-plan.yml (the stage list + redo edges) |
 | Understand the golden test environments | docs/golden-vm.md | /charly-vm:vm |
-| Interpret evidence + media | docs/evidence-and-media.md | the `eval-pr-plan` `media:` block in charly.yml |
+| Interpret evidence + media | docs/evidence-and-media.md | the `eval-pr-plan` `media:` block in eval-pr-plan.yml |
 | Land a change to this repo | CONTRIBUTING.md (PR contract) | AGENTS.md |
 
 ## Document lifecycle
@@ -37,11 +37,11 @@ The relevant pages move in the same change when any of these surfaces move:
 
 | Surface | Pages to review in the same change |
 |---|---|
-| charly.yml golden chain entities | docs/golden-vm.md |
+| vm.yml + golden.yml chain entities | docs/golden-vm.md |
 | distro-omarchy import pin bump / channel state change | docs/golden-vm.md (re-provision trigger) |
 | oracle bed template (`eval/pr-<N>/charly.yml`) | the `omarchy-eval-oracle` skill entity + docs/golden-vm.md |
 | The lane state machine / standing rules | `candy/eval-pr/charly.yml` + VISION.md |
-| Recording/evidence steps | the `eval-pr-plan` `media:` block in charly.yml + docs/evidence-and-media.md |
+| Recording/evidence steps | the `eval-pr-plan` `media:` block in eval-pr-plan.yml + docs/evidence-and-media.md |
 | Schema floor bump | CONTRIBUTING.md (charly migrate) + README.md |
 | Posting/publication policy | VISION.md + CONTRIBUTING.md |
 

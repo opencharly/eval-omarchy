@@ -1,9 +1,9 @@
 # Evidence and media
 
 - Status: **active** — the evidence/artifact contract for every evaluation.
-- Owner: the omarchy eval lane (`eval-pr-plan` in charly.yml).
+- Owner: the omarchy eval lane (`eval-pr-plan` in eval-pr-plan.yml).
 - Source of truth: the lane's media contract — the `media:` block of the
-  `eval-pr-plan` pipeline in `charly.yml` (the five artifact types + min sizes)
+  `eval-pr-plan` pipeline in `eval-pr-plan.yml` (the five artifact types + min sizes)
   and the entry `omarchy-eval` skill entity in `candy/eval-pr/charly.yml`.
 
 ## What lives where
@@ -24,7 +24,7 @@ full-screen SPICE video (MJPEG → MP4) AND a screenshot (PNG). The `eval-pr-pla
 minimum size; the `media` stage assembles them and transcodes the MJPEG to MP4; the
 `record` stage's validate gate asserts every artifact is present and non-empty before
 the record renders. The binding detail lives in the `eval-pr-plan` media block in
-`charly.yml` and the entry `omarchy-eval` skill entity.
+`eval-pr-plan.yml` and the entry `omarchy-eval` skill entity.
 
 ## The screenshot is JUDGED, not just captured
 

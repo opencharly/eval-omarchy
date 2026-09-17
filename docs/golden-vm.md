@@ -1,18 +1,19 @@
 # The golden VM chain
 
 - Status: **active** — the operator contract for the golden test environments.
-- Owner: eval-omarchy maintainers; the config lives in charly.yml (the single source).
+- Owner: eval-omarchy maintainers; the config lives in the per-role sibling files
+  (`vm.yml`, `golden.yml`, …) flat-`import:`ed by `charly.yml` (the single source).
 - Source of truth: this page for the OPERATOR view; the binding golden chain entities live
-  in `charly.yml` (`omarchy-vm`, `check-omarchy-eval-base`, the four
+  in `vm.yml` (`omarchy-vm`) + `golden.yml` (`check-omarchy-eval-base`, the four
   `check-omarchy-eval-*-inst` twins); VM mechanics in /charly-vm:vm and
   /charly-internals:disposable.
 
 ## The chain
 
-    omarchy-vm  (ISO installer template, kind: vm; omarchy-4.0.3.iso)
+    omarchy-vm  (ISO installer template, kind: vm; omarchy-4.0.4.iso, 2G / 2 vCPU)
       → check-omarchy-eval-base      (provisions the VM, captures snapshot `golden` — external)
 
-    omarchy.omarchy-vm  (the distro import template)
+    omarchy-vm  (the SAME unified template — every chain golden derives from it)
       → check-omarchy-eval-base-inst (the STABLE instrumented golden: charly, autologin, the
                                       record tools incl. acpid, pr-apply, the harden candy,
                                       omarchy-corpus — captured as its own `golden`)
@@ -33,13 +34,15 @@ DEPLOY property, never a VM-entity field (/charly-internals:disposable).
 - The omarchy channel state must move (a fresh lane bakes a full system upgrade +
   channel update + the pending migrations into the instrumented twin).
 - The pre-seeded eval-head set (`inst-preseed-ok`) must grow/shrink.
-- A golden is corrupt/missing (the golden-presence gate fails).
+- A golden is corrupt/missing, OR **STALE** — its backing disk was rebuilt after the
+  capture (`charly vm build` then refuses a clone with an explicit STALE error).
 - The distro-omarchy import pin or the schema floor bumps (charly migrate first).
 
 ## Provision / re-provision operator loop (condensed)
 
-The binding golden chain lives in `charly.yml` (`omarchy-vm` → `check-omarchy-eval-base`
-→ the four `check-omarchy-eval-*-inst` twins) — run those entities.
+The binding golden chain lives in `vm.yml` (`omarchy-vm`) → `golden.yml`
+(`check-omarchy-eval-base` → the four `check-omarchy-eval-*-inst` twins) — run those
+entities.
 Operator summary: clear BOTH the charly store snapshot AND the libvirt metadata, destroy the
 old bed domain, run the FRESH lane (`check-omarchy-eval-base` → the channel twins), stop the
 domain so the golden is never held exclusively, then VERIFY `snapshots/golden/disk.qcow2`
@@ -58,6 +61,6 @@ exists — a missing golden after capture is a BLOCK.
 
 ## Update triggers
 
-- charly.yml golden chain changes → this page.
+- vm.yml / golden.yml golden chain changes → this page.
 - VM snapshot/clone/disposability semantics change → the skills (/charly-vm:vm,
   /charly-internals:disposable), referenced here, never restated.

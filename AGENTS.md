@@ -50,7 +50,7 @@ strict prohibition, and honesty about testing — live ONCE in the entry
 
 The **FULL LOOP** (every stage grades the previous stage and can trigger a change;
 the artifacts-only cold-read; the bounded redo budget) is the `eval-pr-plan`
-pipeline's `redo:` edges + the `cold-read` stage contract in `charly.yml` — the
+pipeline's `redo:` edges + the `cold-read` stage contract in `eval-pr-plan.yml` — the
 runner never leaves a VM running when done; the cold-reader grades the artifact
 packet only.
 
@@ -70,10 +70,10 @@ Every evaluated PR gets ONE self-contained directory, following the established 
 | Artifact | Purpose |
 |---|---|
 | `candy/omarchy-pr-apply/` | The ONE runtime apply seam: `pr-apply <pr> <sha> <files...>` fetches the PR head (SHA-pinned) and installs only its changed files over the installed tree. The git-fetch block lives here and nowhere else (S9) |
-| `eval/pr-<N>/charly.yml` | The per-PR eval + control beds, RENDERED by the pipeline's `render` stage from the config-oracle's reply (the §Template is the `bed_template` block of the `eval-pr-plan` pipeline, `charly.yml`; the oracle contract is the `omarchy-eval-oracle` skill entity, `candy/eval-pr/charly.yml`) — the charly.yml IS the plan: the treatment bed `check-omarchy-pr-<N>-vm` (the clone `from: ${golden}` + apply via the single seam + known-red behavior checks + the FULL record:/spice: evidence loop) and the control twin `check-omarchy-pr-<N>-control` in the SAME file. Gate: `charly box validate` (run by the render stage's validate script); NO hand-edits; NO `run:` steps |
+| `eval/pr-<N>/charly.yml` | The per-PR eval + control beds, RENDERED by the pipeline's `render` stage from the config-oracle's reply (the §Template is the `bed_template` block of the `eval-pr-plan` pipeline, `eval-pr-plan.yml`; the oracle contract is the `omarchy-eval-oracle` skill entity, `candy/eval-pr/charly.yml`) — the charly.yml IS the plan: the treatment bed `check-omarchy-pr-<N>-vm` (the clone `from: ${golden}` + apply via the single seam + known-red behavior checks + the FULL record:/spice: evidence loop) and the control twin `check-omarchy-pr-<N>-control` in the SAME file. Gate: `charly box validate` (run by the render stage's validate script); NO hand-edits; NO `run:` steps |
 | `eval/pr-<N>/eval.yml` | The single self-contained record: the oracle decision + eval + control + gates + the org pr-validator verdict/checklist + media links + cold read + the user-voice report. EMITTED by the `emit` stage from a structured value validated against `candy/eval-pr/record.cue` (`#EvalRecord`) BEFORE the write — charly writes the YAML, an agent never hand-writes it. The record needs no other file to be read |
 | `eval/pr-<N>/media/` | The recordings (gitignored) |
-| `charly.yml` | The hand-authored config (VM template + the per-channel instrumented goldens + the `eval-pr-plan` pipeline); the per-PR beds + record are rendered into `eval/pr-<N>/` and COMMITTED so a clone can rerun every eval |
+| `charly.yml` | Project root (header, defaults, the `omarchy:` import, `discover:`, and the flat `import:` of the per-role siblings `vm.yml` / `golden.yml` / `accept.yml` / `pipelines.yml` / `eval-pr-plan.yml`). The per-PR beds + record are rendered into `eval/pr-<N>/` and COMMITTED so a clone can rerun every eval |
 
 The checks must be **known-red**: every PR-specific check fails without the PR
 applied. A behavior that cannot be tested with the container's real tools is routed
@@ -95,7 +95,7 @@ class impossible. Adding a record field means editing `record.cue` first.
 
 - Every report (the `report:` section of `eval/pr-<N>/eval.yml`) and every posted PR
   comment is rendered from the inline `report.template` of the `eval-pr-plan` pipeline
-  in `charly.yml` — in user-testing voice, carrying the Assisted-by and Tested-by
+  in `eval-pr-plan.yml` — in user-testing voice, carrying the Assisted-by and Tested-by
   footers.
 - Claims are scoped to the tier that produced them; untested live behavior is stated
   explicitly (the lane's claims are Tier-2 live-VM claims — a real omarchy system).

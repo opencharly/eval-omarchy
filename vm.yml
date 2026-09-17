@@ -1,11 +1,13 @@
-# ── the omarchy VM template (local copy — the import does not expose the entity) ──
+# ── the omarchy VM template: the ONE base every golden in this repo derives from ──
+# This project-local node is the unified template (the distro import's `omarchy.omarchy-vm`
+# diverged — a different ISO + resources — and is no longer what the goldens clone).
 omarchy-vm:
     vm:
         source:
             kind: iso
             distro: omarchy
-            url: https://iso.omarchy.org/omarchy-4.0.3.iso
-            checksum: {type: sha256, value: 03d60bc74306dca51f96e1a84b690871d8d606826b260edd0208962da8507d14}
+            url: https://iso.omarchy.org/omarchy-4.0.4.iso
+            checksum: {type: sha256, value: ddeded2758c48318d201dfdac905ecb28f570441883f0c052ea3cd5d05acf92d}
             installer:
                 username: user
                 password: user
@@ -19,7 +21,7 @@ omarchy-vm:
                 encrypt: false
         disk_size: 40G
         ram: 2G
-        cpu: 1
+        cpu: 2
         machine: q35
         firmware: uefi-insecure
         network: {mode: user}

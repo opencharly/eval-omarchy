@@ -63,7 +63,7 @@ measured runs) belongs in the CHANGELOG, never on the standing pages.
    author pasted.
    → charly's tenet 12 (charly/VISION.md), the full-loop contract
    (the `eval-pr-plan` pipeline's `redo:` edges + the `cold-read` stage in
-   `charly.yml`), the org pr-validator spec
+   `eval-pr-plan.yml`), the org pr-validator spec
    (`opencharly/layer-charly-internals-extra` → `marketplace/internals/agents/pr-validator.md`).
 
 ## Where the evaluation is heading

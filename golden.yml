@@ -1,6 +1,6 @@
 check-omarchy-eval-edge-inst:
     vm:
-        from: omarchy.omarchy-vm
+        from: omarchy-vm
         disposable: true
         lifecycle: dev
         snapshot:
@@ -42,7 +42,7 @@ check-omarchy-eval-edge-inst:
             - include: candy:omarchy-eval-golden-steps
 check-omarchy-eval-rc-inst:
     vm:
-        from: omarchy.omarchy-vm
+        from: omarchy-vm
         disposable: true
         lifecycle: dev
         snapshot:
@@ -84,7 +84,7 @@ check-omarchy-eval-rc-inst:
             - include: candy:omarchy-eval-golden-steps
 check-omarchy-eval-dev-inst:
     vm:
-        from: omarchy.omarchy-vm
+        from: omarchy-vm
         disposable: true
         lifecycle: dev
         snapshot:

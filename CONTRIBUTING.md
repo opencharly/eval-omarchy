@@ -19,13 +19,13 @@ environments — read `VISION.md` for what that is and `README.md` for how it wo
 
 ## How the lane works
 
-The lane is the `eval-pr-plan` `kind: pipeline` entity in `charly.yml`, running on
+The lane is the `eval-pr-plan` `kind: pipeline` entity in `eval-pr-plan.yml`, running on
 the `plugin-pipeline` engine. There is **no GitHub Action** in the eval path. The
 binding lane contract is the `omarchy-eval` skill entity (with its
 `omarchy-eval-oracle` and `omarchy-eval-cold-reader` siblings) in
 `candy/eval-pr/charly.yml`, generated to `marketplace/distros/skills/`; the record
 template is the inline `report.template` block of the `eval-pr-plan` pipeline in
-`charly.yml`.
+`eval-pr-plan.yml`.
 
 The lane grades each PR against the **org-wide `pr-validator` criteria** — the
 `pr-validator-agent` `skill:` entity in `opencharly/layer-charly-internals-extra`
@@ -57,7 +57,7 @@ on the PR head sha, so a re-run at an unchanged head reuses the plan.
 ## The publication gate
 
 The record is rendered from the inline `report.template` of the `eval-pr-plan` pipeline
-in `charly.yml` (user-testing voice, the `*Assisted-by:*` footer).
+in `eval-pr-plan.yml` (user-testing voice, the `*Assisted-by:*` footer).
 **Nothing posts to omacom/omarchy without explicit operator approval.** Every posted
 comment is the operator's call, outside the repo's automated flows.
 

@@ -26,7 +26,7 @@ The repo serves **two roles**:
 
 ## The golden VM image (from the downloaded Omarchy ISO)
 
-`charly.yml` holds the golden chain — the reproducible bases every evaluation clones:
+`vm.yml` + `golden.yml` (per-role siblings flat-`import:`ed by `charly.yml`) hold the golden chain — the reproducible bases every evaluation clones:
 
 | Entity | What it is |
 |---|---|
@@ -44,7 +44,7 @@ verifies the golden is present before teardown; a missing golden after capture i
 
 ## The PR-eval lane (the charly pipeline)
 
-The lane is the `eval-pr-plan` `kind: pipeline` entity in `charly.yml`; it runs on the
+The lane is the `eval-pr-plan` `kind: pipeline` entity in `eval-pr-plan.yml`; it runs on the
 `plugin-pipeline` engine and has no GitHub Action in the eval path:
 
 1. **ORACLE (triage + plan).** Classify the PR (class, channel); pick the channel
@@ -100,7 +100,7 @@ via `skills.corpus: "$env.EVAL_UMBRELLA/marketplace/distros/skills"`:
 
 The stage mechanics that the v1 corpus documented as separate skills (the golden chain,
 the media contract, the redo loop, the stage ordering) are now owned by the
-`eval-pr-plan` pipeline blocks in `charly.yml` — the `media:` block, the `stages:`
+`eval-pr-plan` pipeline blocks in `eval-pr-plan.yml` — the `media:` block, the `stages:`
 list with its `redo:` edges, and the golden chain entities — which this README and
 `docs/golden-vm.md` describe.
 
@@ -108,7 +108,12 @@ list with its `redo:` edges, and the golden chain entities — which this README
 
 | Path | Purpose |
 |---|---|
-| `charly.yml` | The hand-authored config: the VM template, the per-channel goldens, and the `eval-pr-plan` pipeline |
+| `charly.yml` | Project root: header, defaults, the `omarchy:` import, `discover:`, and the flat `import:` of the per-role siblings |
+| `vm.yml` | The `omarchy-vm` ISO VM template (the ONE base every golden derives from) |
+| `golden.yml` | The golden chain (base, base-inst, edge/rc/dev instrumented twins) |
+| `accept.yml` | The 16 `check-omarchy-accept-*` acceptance beds |
+| `pipelines.yml` | The acceptance matrix + suite pipelines |
+| `eval-pr-plan.yml` | The PR-eval lane (the `eval-pr-plan` pipeline) |
 | `candy/eval-pr/charly.yml` | The lane skill corpus as `skill:` entities (generated to `marketplace/distros/skills/`) |
 | `candy/omarchy-pr-apply/` | The ONE runtime apply seam (`pr-apply <pr> <sha> <files...>`; the git-fetch block lives here and nowhere else) |
 | `candy/omarchy-eval-record/` `candy/omarchy-eval-harden/` | The recording + hardening candies baked into the instrumented goldens |
