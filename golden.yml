@@ -8,21 +8,7 @@ check-omarchy-eval-edge-inst:
             mode: external
             keep_venue: true
         add_candy:
-            - omarchy-autologin
-            - omarchy-channel-bootstrap
-            - omarchy-eval-record
-            - omarchy-eval-harden
-            - omarchy-pr-apply
-            - '@github.com/opencharly/layer-asciinema:v2026.246.1622'
-            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.254.0459'
-            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.254.0449'
-            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
-            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.254.0527'
-            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
-            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.254.0539'
-            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
-            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.254.0445'
-            - omarchy-corpus
+            - omarchy-eval-instrumentation
         install_opts:
             allow_repo_changes: true
             allow_root_tasks: true
@@ -51,42 +37,9 @@ check-omarchy-eval-edge-inst:
               context: [runtime]
               command: 'omarchy-migrate'
               timeout: 10m
-            - check: no pending omarchy migrations remain (the golden is fully provisioned; the runner exits 1 when the queue is empty)
-              id: inst-migrate-pending
-              context: [runtime]
-              command: 'omarchy-migrate --pending'
-              exit_status: 1
-            - check: the screenlocker is disabled in the golden (the systemd paths AND the shell's own idle lock — the stay-awake state file; RCA 2026.253.2216 the shell's idle plugin locked the provision bed mid-run)
-              id: inst-screenlock-disabled
-              context: [runtime]
-              command: '! pgrep -x hypridle >/dev/null && ! systemctl is-active omarchy-sleep-lock.service >/dev/null 2>&1 && test -f ~/.local/state/omarchy/indicators/stay-awake'
-            - check: the always-on shell unit is enabled for every future user session
-              id: inst-shell-unit-enabled
-              context: [runtime]
-              command: 'systemctl --global is-enabled omarchy-eval-shell.service | grep -q enabled'
-            - check: the agg gif generator is installed and runnable
-              id: inst-agg-present
-              context: [runtime]
-              command: 'test -s /usr/local/bin/agg && /usr/local/bin/agg --version'
-            - check: acpid is enabled (ACPI power-off handling present)
-              id: inst-acpid
-              context: [runtime]
-              service:
-                  service: acpid
-                  enabled: true
-            - check: the pr-apply helper is present NON-EMPTY
-              id: inst-pr-apply
-              context: [runtime]
-              command: 'test -s /usr/local/bin/pr-apply && head -1 /usr/local/bin/pr-apply | grep -q "#!/usr/bin/env bash"'
-            - check: the upstream test tree is carried on the golden (M7)
-              id: inst-upstream-tests
-              context: [runtime]
-              command: 'test -d /opt/omarchy-upstream-test/test/shell.d && test -d /opt/omarchy-upstream-test/test/acceptance.d'
-            - check: the tool manifest is present (grim, tesseract, wtype, jq)
-              id: inst-tool-manifest
-              context: [runtime]
-              command: 'for t in grim tesseract wtype jq; do command -v $t >/dev/null || exit 1; done'
-
+            # the shared tail (R3): the 8 identical steps of every channel twin
+            # live ONCE in candy/omarchy-eval-golden-steps.
+            - include: candy:omarchy-eval-golden-steps
 check-omarchy-eval-rc-inst:
     vm:
         from: omarchy.omarchy-vm
@@ -97,21 +50,7 @@ check-omarchy-eval-rc-inst:
             mode: external
             keep_venue: true
         add_candy:
-            - omarchy-autologin
-            - omarchy-channel-bootstrap
-            - omarchy-eval-record
-            - omarchy-eval-harden
-            - omarchy-pr-apply
-            - '@github.com/opencharly/layer-asciinema:v2026.246.1622'
-            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.254.0459'
-            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.254.0449'
-            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
-            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.254.0527'
-            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
-            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.254.0539'
-            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
-            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.254.0445'
-            - omarchy-corpus
+            - omarchy-eval-instrumentation
         install_opts:
             allow_repo_changes: true
             allow_root_tasks: true
@@ -140,42 +79,9 @@ check-omarchy-eval-rc-inst:
               context: [runtime]
               command: 'omarchy-migrate'
               timeout: 10m
-            - check: no pending omarchy migrations remain (the golden is fully provisioned; the runner exits 1 when the queue is empty)
-              id: inst-migrate-pending
-              context: [runtime]
-              command: 'omarchy-migrate --pending'
-              exit_status: 1
-            - check: the screenlocker is disabled in the golden (the systemd paths AND the shell's own idle lock — the stay-awake state file; RCA 2026.253.2216 the shell's idle plugin locked the provision bed mid-run)
-              id: inst-screenlock-disabled
-              context: [runtime]
-              command: '! pgrep -x hypridle >/dev/null && ! systemctl is-active omarchy-sleep-lock.service >/dev/null 2>&1 && test -f ~/.local/state/omarchy/indicators/stay-awake'
-            - check: the always-on shell unit is enabled for every future user session
-              id: inst-shell-unit-enabled
-              context: [runtime]
-              command: 'systemctl --global is-enabled omarchy-eval-shell.service | grep -q enabled'
-            - check: the agg gif generator is installed and runnable
-              id: inst-agg-present
-              context: [runtime]
-              command: 'test -s /usr/local/bin/agg && /usr/local/bin/agg --version'
-            - check: acpid is enabled (ACPI power-off handling present)
-              id: inst-acpid
-              context: [runtime]
-              service:
-                  service: acpid
-                  enabled: true
-            - check: the pr-apply helper is present NON-EMPTY
-              id: inst-pr-apply
-              context: [runtime]
-              command: 'test -s /usr/local/bin/pr-apply && head -1 /usr/local/bin/pr-apply | grep -q "#!/usr/bin/env bash"'
-            - check: the upstream test tree is carried on the golden (M7)
-              id: inst-upstream-tests
-              context: [runtime]
-              command: 'test -d /opt/omarchy-upstream-test/test/shell.d && test -d /opt/omarchy-upstream-test/test/acceptance.d'
-            - check: the tool manifest is present (grim, tesseract, wtype, jq)
-              id: inst-tool-manifest
-              context: [runtime]
-              command: 'for t in grim tesseract wtype jq; do command -v $t >/dev/null || exit 1; done'
-
+            # the shared tail (R3): the 8 identical steps of every channel twin
+            # live ONCE in candy/omarchy-eval-golden-steps.
+            - include: candy:omarchy-eval-golden-steps
 check-omarchy-eval-dev-inst:
     vm:
         from: omarchy.omarchy-vm
@@ -186,21 +92,7 @@ check-omarchy-eval-dev-inst:
             mode: external
             keep_venue: true
         add_candy:
-            - omarchy-autologin
-            - omarchy-channel-bootstrap
-            - omarchy-eval-record
-            - omarchy-eval-harden
-            - omarchy-pr-apply
-            - '@github.com/opencharly/layer-asciinema:v2026.246.1622'
-            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.254.0459'
-            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.254.0449'
-            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
-            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.254.0527'
-            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
-            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.254.0539'
-            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
-            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.254.0445'
-            - omarchy-corpus
+            - omarchy-eval-instrumentation
         install_opts:
             allow_repo_changes: true
             allow_root_tasks: true
@@ -229,43 +121,9 @@ check-omarchy-eval-dev-inst:
               context: [runtime]
               command: 'omarchy-migrate'
               timeout: 10m
-            - check: no pending omarchy migrations remain (the golden is fully provisioned; the runner exits 1 when the queue is empty)
-              id: inst-migrate-pending
-              context: [runtime]
-              command: 'omarchy-migrate --pending'
-              exit_status: 1
-            - check: the screenlocker is disabled in the golden (the systemd paths AND the shell's own idle lock — the stay-awake state file; RCA 2026.253.2216 the shell's idle plugin locked the provision bed mid-run)
-              id: inst-screenlock-disabled
-              context: [runtime]
-              command: '! pgrep -x hypridle >/dev/null && ! systemctl is-active omarchy-sleep-lock.service >/dev/null 2>&1 && test -f ~/.local/state/omarchy/indicators/stay-awake'
-            - check: the always-on shell unit is enabled for every future user session
-              id: inst-shell-unit-enabled
-              context: [runtime]
-              command: 'systemctl --global is-enabled omarchy-eval-shell.service | grep -q enabled'
-            - check: the agg gif generator is installed and runnable
-              id: inst-agg-present
-              context: [runtime]
-              command: 'test -s /usr/local/bin/agg && /usr/local/bin/agg --version'
-            - check: acpid is enabled (ACPI power-off handling present)
-              id: inst-acpid
-              context: [runtime]
-              service:
-                  service: acpid
-                  enabled: true
-            - check: the pr-apply helper is present NON-EMPTY
-              id: inst-pr-apply
-              context: [runtime]
-              command: 'test -s /usr/local/bin/pr-apply && head -1 /usr/local/bin/pr-apply | grep -q "#!/usr/bin/env bash"'
-            - check: the upstream test tree is carried on the golden (M7)
-              id: inst-upstream-tests
-              context: [runtime]
-              command: 'test -d /opt/omarchy-upstream-test/test/shell.d && test -d /opt/omarchy-upstream-test/test/acceptance.d'
-            - check: the tool manifest is present (grim, tesseract, wtype, jq)
-              id: inst-tool-manifest
-              context: [runtime]
-              command: 'for t in grim tesseract wtype jq; do command -v $t >/dev/null || exit 1; done'
-
-# ── the golden base: provisions the omarchy VM and captures the golden ──────
+            # the shared tail (R3): the 8 identical steps of every channel twin
+            # live ONCE in candy/omarchy-eval-golden-steps.
+            - include: candy:omarchy-eval-golden-steps
 check-omarchy-eval-base:
     vm:
         from: omarchy-vm

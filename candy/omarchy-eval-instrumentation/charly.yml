@@ -1,0 +1,40 @@
+# the shared instrumented-golden PAYLOAD (R3): the 15 add_candy entries the three
+# channel twins (edge/rc/dev) each repeated verbatim, collapsed into ONE meta-candy.
+# Each twin's add_candy is a single ref; the meta-candy composes the eval-tooling
+# payload (autologin, channel-bootstrap, the record/harden/apply candies + the
+# record/spice/omarchy/wl/quickshell/cdp/dbus/media plugin providers) plus the corpus.
+#
+# The providers register at check-run time (the 'no provider registered' lesson —
+# never baked); the plan's canary dispatches the omarchy version verb through the
+# host registry to prove the composition registers.
+omarchy-eval-instrumentation:
+    candy:
+        version: 2026.260.1400
+        description: |-
+            The instrumented-golden eval payload: the autologin / channel-bootstrap /
+            record / harden / pr-apply candies, asciinema, the record/spice/omarchy/
+            wl/quickshell/cdp/dbus/media plugin providers, and the omarchy corpus.
+            Composed by check-omarchy-eval-{edge,rc,dev}-inst.
+        candy:
+            - omarchy-autologin
+            - omarchy-channel-bootstrap
+            - omarchy-eval-record
+            - omarchy-eval-harden
+            - omarchy-pr-apply
+            - '@github.com/opencharly/layer-asciinema:v2026.246.1622'
+            - '@github.com/opencharly/plugin-record/candy/plugin-record:v2026.254.0459'
+            - '@github.com/opencharly/plugin-spice/candy/plugin-spice:v2026.254.0449'
+            - '@github.com/opencharly/plugin-omarchy/candy/plugin-omarchy:v2026.253.1645'
+            - '@github.com/opencharly/plugin-wl/candy/plugin-wl:v2026.254.0527'
+            - '@github.com/opencharly/plugin-quickshell/candy/plugin-quickshell:v2026.243.1942'
+            - '@github.com/opencharly/plugin-cdp/candy/plugin-cdp:v2026.254.0539'
+            - '@github.com/opencharly/plugin-dbus/candy/plugin-dbus:v2026.242.0556'
+            - '@github.com/opencharly/plugin-media/candy/plugin-media:v2026.254.0445'
+            - omarchy-corpus
+        plan:
+            - check: the instrumented-golden eval payload registers (the meta-candy's composition dispatches the omarchy version verb)
+              id: eval-instrumentation-present
+              context: [runtime]
+              omarchy: {method: version}
+              stdout:
+                  - matches: '^[0-9]+.[0-9]+.[0-9]+'

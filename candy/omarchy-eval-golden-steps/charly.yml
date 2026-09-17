@@ -1,0 +1,59 @@
+# the shared instrumented-golden verification STEPS (R3: the 8 exactly-identical
+# tail steps of the three channel twins — edge/rc/dev — collapsed into ONE
+# included candy). Each twin authors only its 4 channel-specific steps
+# (autologin, channel-switch, channel-current, migrate-apply) then
+# `include: candy:omarchy-eval-golden-steps`; the splicer expands this plan in
+# place (recursively, cycle-safe), so the executed sequence is identical to the
+# former hand-copied tail.
+#
+# NOTE: a SINGLE-entity candy directory — the include ref must match the
+# DISCOVERY key (the directory name), and a multi-entity manifest would only
+# expose its FIRST entity to the include splicer.
+omarchy-eval-golden-steps:
+    candy:
+        version: 2026.260.1400
+        description: |-
+            The shared tail verification steps of the instrumented golden twins:
+            no pending migrations, the screenlocker disabled, the always-on shell
+            unit, agg present, acpid enabled, the pr-apply helper, the upstream
+            test tree, and the tool manifest. Included by
+            check-omarchy-eval-{edge,rc,dev}-inst.
+        distro:
+            arch:
+                package: [bash]
+        plan:
+            - check: no pending omarchy migrations remain (the golden is fully provisioned; the runner exits 1 when the queue is empty)
+              id: inst-migrate-pending
+              context: [runtime]
+              command: 'omarchy-migrate --pending'
+              exit_status: 1
+            - check: the screenlocker is disabled in the golden (the systemd paths AND the shell's own idle lock — the stay-awake state file; RCA 2026.253.2216 the shell's idle plugin locked the provision bed mid-run)
+              id: inst-screenlock-disabled
+              context: [runtime]
+              command: '! pgrep -x hypridle >/dev/null && ! systemctl is-active omarchy-sleep-lock.service >/dev/null 2>&1 && test -f ~/.local/state/omarchy/indicators/stay-awake'
+            - check: the always-on shell unit is enabled for every future user session
+              id: inst-shell-unit-enabled
+              context: [runtime]
+              command: 'systemctl --global is-enabled omarchy-eval-shell.service | grep -q enabled'
+            - check: the agg gif generator is installed and runnable
+              id: inst-agg-present
+              context: [runtime]
+              command: 'test -s /usr/local/bin/agg && /usr/local/bin/agg --version'
+            - check: acpid is enabled (ACPI power-off handling present)
+              id: inst-acpid
+              context: [runtime]
+              service:
+                  service: acpid
+                  enabled: true
+            - check: the pr-apply helper is present NON-EMPTY
+              id: inst-pr-apply
+              context: [runtime]
+              command: 'test -s /usr/local/bin/pr-apply && head -1 /usr/local/bin/pr-apply | grep -q "#!/usr/bin/env bash"'
+            - check: the upstream test tree is carried on the golden (M7)
+              id: inst-upstream-tests
+              context: [runtime]
+              command: 'test -d /opt/omarchy-upstream-test/test/shell.d && test -d /opt/omarchy-upstream-test/test/acceptance.d'
+            - check: the tool manifest is present (grim, tesseract, wtype, jq)
+              id: inst-tool-manifest
+              context: [runtime]
+              command: 'for t in grim tesseract wtype jq; do command -v $t >/dev/null || exit 1; done'
