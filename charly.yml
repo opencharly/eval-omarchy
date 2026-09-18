@@ -75,7 +75,7 @@ omarchy-vm:
 
 check-omarchy-eval-edge-inst:
     vm:
-        from: omarchy.omarchy-vm
+        from: omarchy-vm
         disposable: true
         lifecycle: dev
         snapshot:
@@ -164,7 +164,7 @@ check-omarchy-eval-edge-inst:
 
 check-omarchy-eval-rc-inst:
     vm:
-        from: omarchy.omarchy-vm
+        from: omarchy-vm
         disposable: true
         lifecycle: dev
         snapshot:
@@ -253,7 +253,7 @@ check-omarchy-eval-rc-inst:
 
 check-omarchy-eval-dev-inst:
     vm:
-        from: omarchy.omarchy-vm
+        from: omarchy-vm
         disposable: true
         lifecycle: dev
         snapshot:
