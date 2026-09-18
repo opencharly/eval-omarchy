@@ -30,7 +30,7 @@ The repo serves **two roles**:
 
 | Entity | What it is |
 |---|---|
-| `omarchy-vm` | The VM template: `source.kind: iso` downloads the official **Omarchy installer ISO** (`https://iso.omarchy.org/omarchy-4.0.3.iso`, sha256-checked), runs the unattended install (user `user`, hostname `omarchy`), 40G disk / 2G RAM / 1 vCPU, q35 + UEFI, libvirt, SPICE + guest agent |
+| `omarchy-vm` | The VM template: `source.kind: iso` downloads the official **Omarchy installer ISO** (`https://iso.omarchy.org/omarchy-4.0.4.iso`, sha256-checked), runs the unattended install (user `user`, hostname `omarchy`), 40G disk / 2G RAM / 1 vCPU, q35 + UEFI, libvirt, SPICE + guest agent |
 | `check-omarchy-eval-base` | Provisions that VM and captures an external **`golden` snapshot** at install-finalize; adds the charly toolchain |
 | `check-omarchy-eval-base-inst` | The **INSTRUMENTED golden** (the STABLE channel): the base golden + autologin, the record tooling (incl. acpid), the `pr-apply` helper, asciinema + the record/spice plugin providers, the harden candy, and the omarchy corpus — captured as its own golden |
 | `check-omarchy-eval-edge-inst` | The EDGE channel twin (also the golden the acceptance corpus clones): channel-bootstrap `edge` + the pending migrations + the same eval payload |

@@ -9,7 +9,7 @@
 
 ## The chain
 
-    omarchy-vm  (ISO installer template, kind: vm; omarchy-4.0.3.iso)
+    omarchy-vm  (ISO installer template, kind: vm; omarchy-4.0.4.iso)
       → check-omarchy-eval-base      (provisions the VM, captures snapshot `golden` — external)
 
     omarchy.omarchy-vm  (the distro import template)
