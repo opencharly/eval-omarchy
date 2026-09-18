@@ -27,8 +27,10 @@ defaults:
         auto: false
         max_mb: 128
 import:
-    # The omarchy image family (base box, suite-base, VM templates) lives in
-    # opencharly/distro-omarchy. Qualified refs: omarchy.omarchy-suite-base.
+    # opencharly/distro-omarchy supplies the omarchy-autologin +
+    # omarchy-channel-bootstrap candies the goldens add (bare names resolve from
+    # the import). The golden VM template is the LOCAL omarchy-vm below — every
+    # golden derives from it, so the import is no longer a template source.
     - omarchy: '@github.com/opencharly/distro-omarchy:v2026.251.2301'
 discover:
     - path: candy
@@ -36,7 +38,7 @@ discover:
     - path: eval
       recursive: true
 
-# ── the omarchy VM template (local copy — the import does not expose the entity) ──
+# ── the omarchy VM template: the ONE golden base (every golden derives from it) ──
 omarchy-vm:
     vm:
         source:

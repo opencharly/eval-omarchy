@@ -9,10 +9,9 @@
 
 ## The chain
 
-    omarchy-vm  (ISO installer template, kind: vm; omarchy-4.0.4.iso)
+    omarchy-vm  (ISO installer template, kind: vm; omarchy-4.0.4.iso — the ONE template
+                 every golden below derives from)
       → check-omarchy-eval-base      (provisions the VM, captures snapshot `golden` — external)
-
-    omarchy.omarchy-vm  (the distro import template)
       → check-omarchy-eval-base-inst (the STABLE instrumented golden: charly, autologin, the
                                       record tools incl. acpid, pr-apply, the harden candy,
                                       omarchy-corpus — captured as its own `golden`)
