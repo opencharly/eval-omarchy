@@ -31,7 +31,7 @@ import:
     # omarchy-channel-bootstrap candies the goldens add (bare names resolve from
     # the import). The golden VM template is the LOCAL omarchy-vm below — every
     # golden derives from it, so the import is no longer a template source.
-    - omarchy: '@github.com/opencharly/distro-omarchy:v2026.251.2301'
+    - omarchy: '@github.com/opencharly/distro-omarchy:v2026.262.1421'
 discover:
     - path: candy
       recursive: true
