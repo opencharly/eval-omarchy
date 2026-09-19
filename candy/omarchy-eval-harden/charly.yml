@@ -42,6 +42,20 @@ omarchy-eval-harden:
                       sleep $((_attempt * 2))
                     done
                   }
+                  # SELF-TEST (B12 coverage): exercise the retry logic against INDUCED
+                  # failures so a regression in transient()/git_retry() FAILS this deploy.
+                  # The transient/permanent discriminator and the 3-attempt bound are the
+                  # new behaviour; the happy-path git calls below cannot cover them.
+                  # The intentional failure output is captured (never emitted to this
+                  # step's stderr), so the deploy-diagnostics scan cannot read it as an error.
+                  _flaky() { _n=$(cat /tmp/.omarchy-retry-n 2>/dev/null || echo 0); if [ "$_n" -lt 1 ]; then echo 1 > /tmp/.omarchy-retry-n; echo "failed to connect to github.com port 443 (induced transient)" >&2; return 1; fi; return 0; }
+                  rm -f /tmp/.omarchy-retry-n
+                  if ! git_retry _flaky >/dev/null 2>&1; then echo "preseed self-test FAILED: a transient failure did not retry to success"; exit 1; fi
+                  _perm() { echo "no such ref (induced permanent)" >&2; return 1; }
+                  if git_retry _perm >/dev/null 2>&1; then echo "preseed self-test FAILED: a permanent failure was treated as retryable"; exit 1; fi
+                  if ! transient "failed to connect to github.com port 443"; then echo "preseed self-test FAILED: a transient signature was not recognized"; exit 1; fi
+                  if transient "no such ref (induced permanent)"; then echo "preseed self-test FAILED: a permanent error was classified transient"; exit 1; fi
+                  echo "preseed self-test PASS: transient retries to success; permanent fails fast"
                   if [ ! -d "$R" ]; then git_retry git clone --bare -q https://github.com/omacom/omarchy "$R"; fi
                   for h in $HEADS; do git_retry git -C "$R" fetch -q origin "$h"; done
                   for h in $HEADS; do git -C "$R" cat-file -e "$h^{commit}" || { echo "preseed: head object $h missing - the fetch failed"; exit 1; }; done
