@@ -27,8 +27,10 @@ defaults:
         auto: false
         max_mb: 128
 import:
-    # The omarchy image family (base box, suite-base, VM templates) lives in
-    # opencharly/distro-omarchy. Qualified refs: omarchy.omarchy-suite-base.
+    # opencharly/distro-omarchy supplies the omarchy-autologin +
+    # omarchy-channel-bootstrap candies the goldens add (bare names resolve from
+    # the import). The golden VM template is the LOCAL omarchy-vm below — every
+    # golden derives from it, so the import is no longer a template source.
     - omarchy: '@github.com/opencharly/distro-omarchy:v2026.251.2301'
 discover:
     - path: candy
@@ -36,14 +38,14 @@ discover:
     - path: eval
       recursive: true
 
-# ── the omarchy VM template (local copy — the import does not expose the entity) ──
+# ── the omarchy VM template: the ONE golden base (every golden derives from it) ──
 omarchy-vm:
     vm:
         source:
             kind: iso
             distro: omarchy
-            url: https://iso.omarchy.org/omarchy-4.0.3.iso
-            checksum: {type: sha256, value: 03d60bc74306dca51f96e1a84b690871d8d606826b260edd0208962da8507d14}
+            url: https://iso.omarchy.org/omarchy-4.0.4.iso
+            checksum: {type: sha256, value: ddeded2758c48318d201dfdac905ecb28f570441883f0c052ea3cd5d05acf92d}
             installer:
                 username: user
                 password: user
@@ -56,8 +58,8 @@ omarchy-vm:
                 disk: /dev/vda
                 encrypt: false
         disk_size: 40G
-        ram: 2G
-        cpu: 1
+        ram: 4G
+        cpu: 2
         machine: q35
         firmware: uefi-insecure
         network: {mode: user}
@@ -75,7 +77,7 @@ omarchy-vm:
 
 check-omarchy-eval-edge-inst:
     vm:
-        from: omarchy.omarchy-vm
+        from: omarchy-vm
         disposable: true
         lifecycle: dev
         snapshot:
@@ -164,7 +166,7 @@ check-omarchy-eval-edge-inst:
 
 check-omarchy-eval-rc-inst:
     vm:
-        from: omarchy.omarchy-vm
+        from: omarchy-vm
         disposable: true
         lifecycle: dev
         snapshot:
@@ -253,7 +255,7 @@ check-omarchy-eval-rc-inst:
 
 check-omarchy-eval-dev-inst:
     vm:
-        from: omarchy.omarchy-vm
+        from: omarchy-vm
         disposable: true
         lifecycle: dev
         snapshot:
