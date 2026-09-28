@@ -14,7 +14,6 @@
 #      charly pipeline run eval-pr-plan --pr <N> [--lanes 16]
 #      charly pipeline run eval-pr-plan --prs <N> <N> <N>
 #      charly check run check-omarchy-accept-suite      (the acceptance corpus)
-version: 2026.249.2125
 repo: github.com/opencharly/eval-omarchy
 defaults:
     platform:
