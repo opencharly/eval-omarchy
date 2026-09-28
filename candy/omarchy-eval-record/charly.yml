@@ -1,6 +1,5 @@
 omarchy-eval-record:
     candy:
-        version: 2026.247.1400
         description: |
             The eval-tooling payload for omarchy PR evaluations: recording tools (tmux +
             asciinema, eval rule 6) + acpid (fast ACPI shutdown — the golden shuts down in
