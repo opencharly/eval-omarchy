@@ -12,7 +12,6 @@
 # expose its FIRST entity to the include splicer.
 omarchy-accept-rec-stop:
     candy:
-        version: 2026.253.2700
         description: |-
             The recording wrapper R1: capture the SPICE screenshot, stop the
             SPICE + terminal captures, render the GIF, and transcode the MP4 —
