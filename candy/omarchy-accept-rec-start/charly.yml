@@ -8,7 +8,6 @@
 # expose its FIRST entity to the include splicer.
 omarchy-accept-rec-start:
     candy:
-        version: 2026.253.2700
         description: |-
             The recording wrapper R0: start the terminal (asciinema) + SPICE
             captures BEFORE the bed's Phase A checks. Included by every
