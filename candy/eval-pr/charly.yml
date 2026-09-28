@@ -25,7 +25,6 @@
 
 eval-pr:
   candy:
-    version: 2026.257.1700
     description: |-
       The minimal omarchy PR-eval lane: one disposable golden clone per PR, the
       PR applied via the pr-apply seam, known-red checks proven by a negative
