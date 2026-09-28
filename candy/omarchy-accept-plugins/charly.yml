@@ -3,7 +3,6 @@
 # omarchy-corpus] — the 9-line list collapsed to one ref.
 omarchy-accept-plugins:
     candy:
-        version: 2026.253.2700
         description: |-
             The acceptance plugin meta-candy: composes the record/spice/omarchy/
             wl/quickshell/dbus/media plugin providers for the acceptance
