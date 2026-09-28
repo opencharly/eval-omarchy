@@ -1,6 +1,5 @@
 omarchy-pr-apply:
     candy:
-        version: 2026.247.1100
         description: |
             The ONE runtime PR-apply helper for omarchy evaluations (T10 — the
             single-source apply seam; R3: no per-PR copy-paste of the git-fetch
