@@ -17,7 +17,7 @@ the claim. A mocked check is not evidence; an evaluation built on mocks is
 useless.
    → the lane's never-mock rule (the entry `omarchy-eval` skill entity in
    `candy/eval-pr/charly.yml`), charly's RDD tenet
-   (charly/VISION.md tenet 5).
+   (the umbrella VISION.md tenet 5).
 
 2. **Binary verdicts, or no validation.** The only valid verdicts are PASS
 (verified working on a live system) and FAIL (verified not working). A
@@ -30,7 +30,7 @@ the validation itself fails, and NO VALIDATION is the honest result.
 way another user who tried the PR would report them. Every result is validated by
 a cold reader — someone who did not author the evaluation — against the rubric
 before it is finalized or posted.
-   → charly's ADE tenet (charly/VISION.md tenet 6), the cold-reader rubric
+   → charly's ADE tenet (the umbrella VISION.md tenet 6), the cold-reader rubric
    (the `omarchy-eval-cold-reader` skill entity in `candy/eval-pr/charly.yml`).
 
 4. **Honest tiers, honest hardware.** A container run proves the PR's files are
@@ -50,7 +50,7 @@ known-red fixture): a check that passes without the PR proves nothing (the contr
 6. **The cookbook never lies.** Lessons are written down true, in the present
 tense, in the lane contract — and what merely happened (dated RCA narratives,
 measured runs) belongs in the CHANGELOG, never on the standing pages.
-   → charly's cookbook tenet (charly/VISION.md tenet 10), the standing-rules
+   → charly's cookbook tenet (the umbrella VISION.md tenet 10), the standing-rules
    convention (the `omarchy-eval` skill entities in `candy/eval-pr/charly.yml` +
    `CHANGELOG/`).
 
@@ -61,7 +61,7 @@ measured runs) belongs in the CHANGELOG, never on the standing pages.
    criteria every opencharly repo uses for its own PRs — the org `pr-validator` —
    except that this lane RUNS the R10 the pr-validator would otherwise assume the
    author pasted.
-   → charly's tenet 12 (charly/VISION.md), the full-loop contract
+   → charly's tenet 12 (the umbrella VISION.md), the full-loop contract
    (the `eval-pr-plan` pipeline's `redo:` edges + the `cold-read` stage in
    `charly.yml`), the org pr-validator spec
    (`opencharly/layer-charly-internals-extra` → `marketplace/internals/agents/pr-validator.md`).
