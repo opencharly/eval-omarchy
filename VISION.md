@@ -15,8 +15,8 @@ the real one proves nothing about the candy. Every check exercises the REAL tool
 the REAL system state, the REAL behavior — on the tier whose semantics justify
 the claim. A mocked check is not evidence; an evaluation built on mocks is
 useless.
-   → the lane's never-mock rule (the entry `omarchy-eval` skill entity in
-   `candy/eval-pr/charly.yml`), charly's RDD tenet
+   → the lane's never-mock rule (the entry `omarchy-eval` skill body,
+   `.agents/skills/omarchy-eval/SKILL.md`), charly's RDD tenet
    (the umbrella VISION.md tenet 5).
 
 2. **Binary verdicts, or no validation.** The only valid verdicts are PASS
@@ -24,34 +24,34 @@ useless.
 "might work" that was never verified on a live system is strictly forbidden —
 the validation itself fails, and NO VALIDATION is the honest result.
    → the lane's packet verdicts + the strict no-fake-report rule (the
-   `omarchy-eval-cold-reader` skill entity in `candy/eval-pr/charly.yml`).
+   `omarchy-eval-cold-reader` skill body, `.agents/skills/omarchy-eval-cold-reader/SKILL.md`).
 
 3. **Test like a user, judge like a fresh reader.** Reports are first-person, the
 way another user who tried the PR would report them. Every result is validated by
 a cold reader — someone who did not author the evaluation — against the rubric
 before it is finalized or posted.
    → charly's ADE tenet (the umbrella VISION.md tenet 6), the cold-reader rubric
-   (the `omarchy-eval-cold-reader` skill entity in `candy/eval-pr/charly.yml`).
+   (`.agents/skills/omarchy-eval-cold-reader/SKILL.md`).
 
 4. **Honest tiers, honest hardware.** A container run proves the PR's files are
 applied and the script logic with real tools; a live VM proves system behavior.
 Hardware-bound classes are PARTIAL/NOT-EVALUABLE when the hardware is absent —
 never a faked bed, never a container claim smuggled in as a system proof.
-   → the lane's tier claim (the entry `omarchy-eval` skill entity in
-   `candy/eval-pr/charly.yml`, "Tier-2 live-VM claims"), /charly-distros:omarchy-eval.
+   → the lane's tier claim (the entry `omarchy-eval` skill body,
+   `.agents/skills/omarchy-eval/SKILL.md`, "Tier-2 live-VM claims"), /charly-distros:omarchy-eval.
 
 5. **One golden bench, many tastings.** Every evaluation runs on a clone of the
 instrumented golden VM — the reproducible system that makes evaluations
 comparable and fast. Every PR-specific check must fail on the golden (the
 known-red fixture): a check that passes without the PR proves nothing (the control bed proves every check red).
    → the golden chain (docs/golden-vm.md, /charly-vm:vm), the known-red rule
-   (the entry `omarchy-eval` skill entity in `candy/eval-pr/charly.yml`).
+   (`.agents/skills/omarchy-eval/SKILL.md`).
 
 6. **The cookbook never lies.** Lessons are written down true, in the present
 tense, in the lane contract — and what merely happened (dated RCA narratives,
 measured runs) belongs in the CHANGELOG, never on the standing pages.
    → charly's cookbook tenet (the umbrella VISION.md tenet 10), the standing-rules
-   convention (the `omarchy-eval` skill entities in `candy/eval-pr/charly.yml` +
+   convention (the `omarchy-eval` skill bodies under `.agents/skills/` +
    `CHANGELOG/`).
 
 7. **The bench evaluates itself.** The lane is the `eval-pr-plan` charly

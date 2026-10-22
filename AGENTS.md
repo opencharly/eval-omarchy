@@ -17,9 +17,11 @@ PARTIAL/NOT-EVALUABLE with the blocker, as part of the test record.
 
 ## The eval rules (every PR evaluation)
 
-The standing rules live **ONCE** in the `omarchy-eval` skill entity in
-`candy/eval-pr/charly.yml` (+ its `omarchy-eval-oracle` and
-`omarchy-eval-cold-reader` siblings, generated to `marketplace/distros/skills/`) —
+The standing rules live **ONCE** in the `omarchy-eval` skill body
+(`.agents/skills/omarchy-eval/SKILL.md`; its `skill:` entity in
+`candy/eval-pr/charly.yml` carries the metadata and routes to it) plus its
+`omarchy-eval-oracle` and `omarchy-eval-cold-reader` siblings under `.agents/skills/`,
+all generated to `marketplace/distros/skills/` —
 every agent and skill points there, never restates. In short: never mock; test like
 a user; Assisted-by footer on every posted comment; install missing software before
 declaring "couldn't be tested"; test to the maximum extent on a live system; record
@@ -45,8 +47,8 @@ live-system behavior from a container run.
 
 The full semantics — the routing rule, the binary purpose of a validation, the
 strict prohibition, and honesty about testing — live ONCE in the entry
-`omarchy-eval` skill entity (`candy/eval-pr/charly.yml`, "The one experiment" +
-"The terminal states"); every agent and skill points there, never restates.
+`omarchy-eval` skill body (`.agents/skills/omarchy-eval/SKILL.md`, "The one
+experiment" + "The terminal states"); every agent and skill points there, never restates.
 
 The **FULL LOOP** (every stage grades the previous stage and can trigger a change;
 the artifacts-only cold-read; the bounded redo budget) is the `eval-pr-plan`
@@ -70,7 +72,7 @@ Every evaluated PR gets ONE self-contained directory, following the established 
 | Artifact | Purpose |
 |---|---|
 | `candy/omarchy-pr-apply/` | The ONE runtime apply seam: `pr-apply <pr> <sha> <files...>` fetches the PR head (SHA-pinned) and installs only its changed files over the installed tree. The git-fetch block lives here and nowhere else (S9) |
-| `eval/pr-<N>/charly.yml` | The per-PR eval + control beds, RENDERED by the pipeline's `render` stage from the config-oracle's reply (the §Template is the `bed_template` block of the `eval-pr-plan` pipeline, `charly.yml`; the oracle contract is the `omarchy-eval-oracle` skill entity, `candy/eval-pr/charly.yml`) — the charly.yml IS the plan: the treatment bed `check-omarchy-pr-<N>-vm` (the clone `from: ${golden}` + apply via the single seam + known-red behavior checks + the FULL record:/spice: evidence loop) and the control twin `check-omarchy-pr-<N>-control` in the SAME file. Gate: `charly box validate` (run by the render stage's validate script); NO hand-edits; NO `run:` steps |
+| `eval/pr-<N>/charly.yml` | The per-PR eval + control beds, RENDERED by the pipeline's `render` stage from the config-oracle's reply (the §Template is the bed template authored at the render stage's `generate.template:` leaf of the `eval-pr-plan` pipeline, `charly.yml`; the oracle contract is the `omarchy-eval-oracle` skill body, `.agents/skills/omarchy-eval-oracle/SKILL.md`) — the charly.yml IS the plan: the treatment bed `check-omarchy-pr-<N>-vm` (the clone `from: ${golden}` + apply via the single seam + known-red behavior checks + the FULL record:/spice: evidence loop) and the control twin `check-omarchy-pr-<N>-control` in the SAME file. Gate: `charly box validate` (run by the render stage's validate script); NO hand-edits; NO `run:` steps |
 | `eval/pr-<N>/eval.yml` | The single self-contained record: the oracle decision + eval + control + gates + the org pr-validator verdict/checklist + media links + cold read + the user-voice report. EMITTED by the `emit` stage from a structured value validated against `candy/eval-pr/record.cue` (`#EvalRecord`) BEFORE the write — charly writes the YAML, an agent never hand-writes it. The record needs no other file to be read |
 | `eval/pr-<N>/media/` | The recordings (gitignored) |
 | `charly.yml` | The hand-authored config (VM template + the per-channel instrumented goldens + the `eval-pr-plan` pipeline); the per-PR beds + record are rendered into `eval/pr-<N>/` and COMMITTED so a clone can rerun every eval |
@@ -94,9 +96,9 @@ class impossible. Adding a record field means editing `record.cue` first.
 ## The report contract
 
 - Every report (the `report:` section of `eval/pr-<N>/eval.yml`) and every posted PR
-  comment is rendered from the inline `report.template` of the `eval-pr-plan` pipeline
-  in `charly.yml` — in user-testing voice, carrying the Assisted-by and Tested-by
-  footers.
+  comment is rendered from the report template authored inline at the `report:` leaf of
+  the `eval-pr-plan` pipeline's `record` stage in `charly.yml` — in user-testing voice,
+  carrying the Assisted-by and Tested-by footers.
 - Claims are scoped to the tier that produced them; untested live behavior is stated
   explicitly (the lane's claims are Tier-2 live-VM claims — a real omarchy system).
 - Every evaluation result is validated by a **cold reader** against the criteria before
@@ -118,8 +120,9 @@ class impossible. Adding a record field means editing `record.cue` first.
   contract gets root-cause analysis before remediation. No "pre-existing", "out of
   scope", or "follow-up PR" classifications.
 - **R3 — No duplication.** One canonical implementation per behavior. The standing
-  rules live once in `candy/eval-pr/charly.yml` (the `omarchy-eval`,
-  `omarchy-eval-oracle`, and `omarchy-eval-cold-reader` `skill:` entities); the
+  rules live once in the three skill bodies under `.agents/skills/` (their
+  `omarchy-eval`, `omarchy-eval-oracle`, and `omarchy-eval-cold-reader` `skill:`
+  entities in `candy/eval-pr/charly.yml` route to them); the
   pipeline templates and AGENTS.md point there, never copy them.
 - **R4 — No workarounds.** No sleeps, blind retries, or manual fixes. The never-mock
   rule is the fix, not a workaround.
@@ -164,9 +167,10 @@ Before the first tool call of a task, load the relevant skills. From the marketp
 - `strict-policy` / `root-cause-analyzer` — R1-R5 discipline
 - `git-workflow` — PR-only landing
 
-Plus the REPO skills authored as `skill:` entities in `candy/eval-pr/charly.yml`
-(the binding lane contract, generated to `marketplace/distros/skills/` — in addition
-to the marketplace procedure): `omarchy-eval` (the entry: the one experiment, the
+Plus the REPO skills, each body at `.agents/skills/<name>/SKILL.md` with its `skill:`
+entity in `candy/eval-pr/charly.yml` (the binding lane contract, generated to
+`marketplace/distros/skills/` — in addition to the marketplace procedure): `omarchy-eval`
+(the entry: the one experiment, the
 terminal states, the per-PR artifact), `omarchy-eval-oracle` (the triage contract +
 the control re-author contract), and `omarchy-eval-cold-reader` (the cold-read rubric
 + the packet verdict).
@@ -177,8 +181,8 @@ the control re-author contract), and `omarchy-eval-cold-reader` (the cold-read r
 The M4-era guidance — the ORACLE marker rule (author assertions that are red by
 construction: they reference the PR's own added lines) and the ORACLE path rule
 (assert at ABSOLUTE system paths) — lives ONCE in present-tense standing form in the
-`omarchy-eval-oracle` skill entity
-(`candy/eval-pr/charly.yml`, "The triage steps" 3–4). Its dated origin (the 16-lane
+`omarchy-eval-oracle` skill body
+(`.agents/skills/omarchy-eval-oracle/SKILL.md`, "The triage steps" 3–4). Its dated origin (the 16-lane
 batch, 2026-09-04, including the caught-live orphan-sequencing incidents) is archived
 in `CHANGELOG/2026.250.1700.md`. Agents point there; AGENTS.md never restates the
 rules.
