@@ -81,10 +81,13 @@ The lane is the `eval-pr-plan` `kind: pipeline` entity in `charly.yml`; it runs 
    verdict/checklist + media links + cold read + the user-voice report). The record
    needs no other file to be read.
 
-Lean PRs are meant to run in parallel — one eval lane per core. The per-lane CLI flag
-the lane was built on (`--lanes 16`) went away with the pipeline front-end cutover and is
-not restored yet (`opencharly/plugin-pipeline#43`); the width survives as the entity's
-`config.lanes: 16`, which no reader consults today. Each evaluation lands
+The acceptance matrix runs its 16 beds in parallel — one eval lane per core — through the
+workflow engine's pooled lane arm: `check-omarchy-accept-matrix` declares
+`lanes: ${prs}` / `batch_size: 16` / `item_var: pr`, and the list arrives as the run's
+runtime args (`--args-json '{"prs":[...]}'`). The per-lane CLI flags the lane was built on
+(`--prs` / `--lanes`, `opencharly/plugin-pipeline#43`) are RETIRED and are not what drives
+the fan-out; `eval-pr-plan`'s `config.lanes: 16` is the flattened `concurrency:` knob and
+still has no reader (`opencharly/plugin-pipeline#37`). Each evaluation lands
 in `eval/pr-<N>/`: the committed `charly.yml` beds + `eval.yml` record and the
 gitignored `media/`, so the whole run is reproducible from a fresh clone.
 
@@ -129,8 +132,8 @@ list with its per-step `redo:` triggers, and the golden chain entities — which
 ## Running a test environment
 
 ```bash
-charly pipeline run eval-pr-plan --pr <N>       # oracle → render → control → eval → gate → report → cold-read → record
-charly pipeline run check-omarchy-accept-suite  # the acceptance corpus
+charly pipeline run eval-pr-plan --args-json '{"pr":"<N>"}'   # oracle → render → control → eval → gate → report → cold-read → record
+charly pipeline run check-omarchy-accept-suite                # the acceptance corpus (all 16 beds)
 ```
 
 Requires a charly binary supporting the schema (`charly box validate` on the tree must be

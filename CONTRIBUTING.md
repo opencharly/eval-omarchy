@@ -40,7 +40,7 @@ verdict are SEPARATE record fields.
 ## Running one evaluation
 
 ```sh
-charly pipeline run eval-pr-plan --pr <N>       # oracle → render → control → eval → gate → validate → report → cold-read → record
+charly pipeline run eval-pr-plan --args-json '{"pr":"<N>"}'   # oracle → render → control → eval → gate → validate → report → cold-read → record
 ```
 
 or, to run a single rendered bed by hand:

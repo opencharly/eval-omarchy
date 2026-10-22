@@ -33,7 +33,15 @@ eval-pr:
       the lane's own R10 ledger, and ONE self-contained eval/pr-<N>/eval.yml
       record. Composes the generic pipeline engine + the PR tools.
     candy:
+      # the FRONT-END (resolve/validate/lower + the stage verbs) …
       - '@github.com/opencharly/plugin-pipeline/candy/plugin-pipeline:v2026.295.0740'
+      # … and the workflow ENGINE it dispatches to. The front-end cutover moved step
+      # execution OUT of plugin-pipeline into the `workflow` provider class, so the
+      # front-end alone is a manifest that loads and cannot run: `pipeline run` fails
+      # with "no provider registered for workflow:lobster". Neither plugin is compiled
+      # into charly (63 compiled_plugins, plugin-lobster and plugin-pipeline absent), so
+      # the engine MUST be pinned here with the front-end it executes.
+      - '@github.com/opencharly/plugin-lobster/candy/plugin-lobster:v2026.294.1246'
       - '@github.com/opencharly/plugin-review/candy/plugin-review:v2026.272.0450'
     var:
       EVAL_LANES: "16"
