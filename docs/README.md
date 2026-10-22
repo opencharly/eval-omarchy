@@ -3,7 +3,8 @@
 - Status: active documentation index
 - Owner: eval-omarchy maintainers
 - Source of truth: the linked repository files; the lane contract is the
-  `omarchy-eval` skill entity in `candy/eval-pr/charly.yml` (generated to
+  `omarchy-eval` skill body at `.agents/skills/omarchy-eval/SKILL.md` (its `skill:`
+  entity in `candy/eval-pr/charly.yml` carries the metadata; generated to
   `marketplace/distros/skills/`)
 - Update when: a document is added, retired, moved, changes lifecycle, or gains a new
   canonical owner
@@ -39,8 +40,8 @@ The relevant pages move in the same change when any of these surfaces move:
 |---|---|
 | charly.yml golden chain entities | docs/golden-vm.md |
 | distro-omarchy import pin bump / channel state change | docs/golden-vm.md (re-provision trigger) |
-| oracle bed template (`eval/pr-<N>/charly.yml`) | the `omarchy-eval-oracle` skill entity + docs/golden-vm.md |
-| The lane state machine / standing rules | `candy/eval-pr/charly.yml` + VISION.md |
+| oracle bed template (`eval/pr-<N>/charly.yml`) | the `omarchy-eval-oracle` skill body + docs/golden-vm.md |
+| The lane state machine / standing rules | `.agents/skills/` (the three bodies) + VISION.md |
 | Recording/evidence steps | the `eval-pr-plan` `media:` block in charly.yml + docs/evidence-and-media.md |
 | Schema floor bump | CONTRIBUTING.md (charly migrate) + README.md |
 | Posting/publication policy | VISION.md + CONTRIBUTING.md |

@@ -4,7 +4,7 @@
 - Owner: the omarchy eval lane (`eval-pr-plan` in charly.yml).
 - Source of truth: the lane's media contract — the `media:` block of the
   `eval-pr-plan` pipeline in `charly.yml` (the five artifact types + min sizes)
-  and the entry `omarchy-eval` skill entity in `candy/eval-pr/charly.yml`.
+  and the entry `omarchy-eval` skill body at `.agents/skills/omarchy-eval/SKILL.md`.
 
 ## What lives where
 
